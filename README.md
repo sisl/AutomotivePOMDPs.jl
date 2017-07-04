@@ -1,4 +1,4 @@
-# ADMScenarios: Scenario for policy evaluation and adaptive stress testing using AutomotiveDrivingModels.jl
+# ADMScenarios: Scenarios for policy evaluation and adaptive stress testing using AutomotiveDrivingModels.jl
 
 contact: Maxime Bouton, [boutonm@stanford.edu](boutonm@stanford.edu)
 
