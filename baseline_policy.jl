@@ -21,7 +21,7 @@ type waitAndGo
     N::Int64
 end
 
-waitAndGo() = waitAndGo(CrosswalkEnv(), 3.0, -4.0, 0.5, 2, 1., true, false, false, 0)
+waitAndGo() = waitAndGo(CrosswalkEnv(), Vehicle(), 3.0, -4.0, 0.5, 2, 1., true, false, false, 0)
 
 
 
