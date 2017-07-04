@@ -18,8 +18,9 @@ function initial_pedestrian(env::CrosswalkEnv, rng::AbstractRNG)
 
     #velocity
     v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
-
-    ped_initial_state = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, env.roadway, v0)
+    cw_roadway = Roadway([RoadSegment(2, [env.crosswalk])]);
+    ped_initial_state = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, cw_roadway, v0);
+    # ped_initial_state = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, env.roadway, v0)
 
     # new id, increment last id by 1
     id = scene.n + 1

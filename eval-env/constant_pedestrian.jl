@@ -35,13 +35,20 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDa
     v = veh.state.v
     lat = action.lat
     ϕ = veh.state.posF.ϕ
+    s = veh.state.posF.s
     Δs = v*cos(ϕ)*ΔT + lat*sin(ϕ)
     t = veh.state.posF.t
     Δt = v*sin(ϕ)*ΔT + lat*cos(ϕ)
+    # cannot go offroad
+    if t + Δt > roadway.segments[1].lanes[1].width
+        Δt = 0.
+    elseif t - Δt < -roadway.segments[1].lanes[1].width
+        Δt = 0.
+    end
 
     speed = action.v
 
-    #XXX what exactly is happening here ?
+    #XXX what exactly is happening here, ask Tim ?
     roadind = move_along(veh.state.posF.roadind, roadway, Δs)
     footpoint = roadway[roadind]
 

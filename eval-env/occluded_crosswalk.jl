@@ -54,9 +54,11 @@ function CrosswalkEnv(params::EnvParams = EnvParams())
     roadway = gen_straight_roadway(2, params.roadway_length)
     crosswalk_pos = params.roadway_length/2
     n_samples = 2 # for curve generation
-    crosswalk = Lane(LaneTag(1,1), gen_straight_curve(VecE2(crosswalk_pos, -params.crosswalk_length/2),
+    crosswalk = Lane(LaneTag(2,1), gen_straight_curve(VecE2(crosswalk_pos, -params.crosswalk_length/2),
                                                       VecE2(crosswalk_pos, params.crosswalk_length/2),
                                                        n_samples), width = params.crosswalk_width)
+    cw_segment = RoadSegment(2, [crosswalk])
+    push!(roadway.segments, cw_segment)
     obstacles = ConvexPolygon(4)
     #TODO parameterize the obstacle
     obstacles.pts = [VecSE2(15, -1.5), VecSE2(15, -4.5), VecSE2(22, -4.5), VecSE2(22, -1.5)]
