@@ -1,14 +1,17 @@
 ### Control the ego car in the occluded_crosswalk environment ###
 
-
-
 function AutomotiveDrivingModels.propagate(veh::Vehicle, action::Float64, roadway::Roadway, Δt::Float64)
-    lane_tag_orig = veh.state.posF.roadind.tag
-    state = propagate(veh, LatLonAccel(0., action), roadway, Δt)
-    roadproj = proj(state.posG, roadway[lane_tag_orig], roadway, move_along_curves=false)
-    retval = VehicleState(Frenet(roadproj, roadway), roadway, state.v)
-    return retval
+    x_ = veh.state.posG.x + veh.state.v*Δt + action*Δt^2/2
+    v_ = veh.state.v + action*Δt
+    return VehicleState(VecSE2(x_, veh.state.posG.y, veh.state.posG.θ), roadway, v_)
 end
+# function AutomotiveDrivingModels.propagate(veh::Vehicle, action::Float64, roadway::Roadway, Δt::Float64)
+#     lane_tag_orig = veh.state.posF.roadind.tag
+#     state = propagate(veh, LatLonAccel(0., action), roadway, Δt)
+#     roadproj = proj(state.posG, roadway[lane_tag_orig], roadway, move_along_curves=false)
+#     retval = VehicleState(Frenet(roadproj, roadway), roadway, state.v)
+#     return retval
+# end
 
 """
     The driver model to be evaluated, contains the policy and the sensor model. The action is an

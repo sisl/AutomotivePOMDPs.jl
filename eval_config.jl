@@ -17,11 +17,13 @@ end
 
 type TerminalCallback end
 
+type EgoCollisionCallback end
+
 function EvalConfig(; sim_dt::Float64 = 0.1,
                       rng::AbstractRNG = MersenneTwister(3),
                       n_episodes::Int64 = 1,
                       time_out::Int64 = 200,
-                      callbacks::Tuple{Vararg{Any}} = (CollisionCallback(),TerminalCallback())
+                      callbacks::Tuple{Vararg{Any}} = (EgoCollisionCallback(),TerminalCallback())
                       )
     return EvalConfig(sim_dt, rng, n_episodes, time_out, callbacks)
 end
@@ -29,14 +31,29 @@ end
 ## Define Callbacks
 
 function AutomotiveDrivingModels.run_callback{S,D,I,M<:DriverModel}(
-    callback::CollisionCallback,
+    callback::EgoCollisionCallback,
     rec::EntityQueueRecord{S,D,I},
     env::CrosswalkEnv,
     models::Dict{I,M},
     tick::Int,
     )
+    return is_crash(rec[0])
+end
 
-    return !is_collision_free(rec[0], callback.mem)
+function is_crash(scene::Scene)
+    ego = scene.entities[1]
+    @assert ego.id == 1
+    if ego.state.v ≈ 0
+        return false
+    end
+    for veh in scene
+        if veh.id != 1
+            if is_colliding(ego, veh)
+                return true
+            end
+        end
+    end
+    return false
 end
 
 function AutomotiveDrivingModels.run_callback{S,D,I,M<:DriverModel}(

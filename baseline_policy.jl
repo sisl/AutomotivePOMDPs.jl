@@ -4,30 +4,30 @@
 # check for N seconds
 # if free go, else wait
 # only account for 1 pedestrian
+using Parameters
 
-type waitAndGo
-    env::CrosswalkEnv
-    initial_state::Vehicle
-    max_acc::Float64
-    max_dec::Float64
-    Δt::Float64
-    N0::Int64 # Number of steps to wait
-    threshold::Float64
+@with_kw type waitAndGo
+    env::CrosswalkEnv = CrosswalkEnv()
+    initial_state::Vehicle = initial_ego(env, MersenneTwister(1))
+    max_acc::Float64 = 3.
+    max_dec::Float64 = -4.0
+    Δt::Float64 = 0.1
+    N0::Int64 = 3# Number of steps to wait
+    threshold::Float64 = 2.5
+    dist_delta::Float64 = 0.5
 
     # states
-    reaching::Bool
-    wait::Bool
-    go::Bool
-    N::Int64
+    reaching::Bool = true
+    wait::Bool = false
+    go::Bool = false
+    N::Int64 = 0.
 end
-
-waitAndGo() = waitAndGo(CrosswalkEnv(), Vehicle(), 3.0, -4.0, 0.5, 2, 1., true, false, false, 0)
 
 
 
 
 function action(policy::waitAndGo, b::Vector{Vehicle}, verbose::Bool = false)
-    crosswalk_x = policy.env.params.roadway_length/2 - policy.env.params.crosswalk_width
+    crosswalk_x = policy.env.params.roadway_length/2 - policy.env.params.crosswalk_width - policy.dist_delta
     v_max = policy.env.params.speed_limit
     ego = b[1].state
     @assert b[1].id == 1
@@ -38,12 +38,15 @@ function action(policy::waitAndGo, b::Vector{Vehicle}, verbose::Bool = false)
     acc = 0.
 
     if policy.reaching #TODO use a smarter controller
-        if ego.v + init_dec*policy.Δt < 0.
+        if ego.v*cos(ego.posG.θ) < 0.
             if verbose; println("adjusting") end
-            acc = -ego.v/policy.Δt
+            acc = -ego.v*cos(ego.posG.θ)/policy.Δt
+        elseif ego.v ≈ 0.
+            acc = 0.
         else
             acc = init_dec
         end
+        # acc = init_dec
         if verbose; println("reaching phase, acc = $acc") end
         if !policy.wait && (ego.v ≈ 0. && ego.posG.x > policy.initial_state.state.posG.x) # change state
             policy.reaching = false
@@ -57,7 +60,7 @@ function action(policy::waitAndGo, b::Vector{Vehicle}, verbose::Bool = false)
         ttc_min = Inf
         for ped in b
             ttc = (env.params.lane_width - ped.state.posG.y)/ped.state.v
-            if ttc < ttc_min
+            if 0 < ttc < ttc_min
                 ttc_min = ttc
             end
         end
@@ -65,7 +68,7 @@ function action(policy::waitAndGo, b::Vector{Vehicle}, verbose::Bool = false)
         # check
         if ttc_min > policy.threshold
             if verbose; println("keep checking $(policy.N)") end
-            policy.wait = false
+            # policy.wait = false
             policy.N += 1
         else
             if verbose; println("reset") end
