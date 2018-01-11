@@ -1,0 +1,219 @@
+####### STATE SPACE ##############################
+using GridInterpolations
+
+function POMDPs.states(pomdp::OCPOMDP)
+    env = pomdp.env
+    rl = env.params.roadway_length
+    cw = env.params.crosswalk_width
+    lw = env.params.lane_width
+    cl = env.params.crosswalk_length
+    x_ped = 0.5*(env.params.roadway_length - env.params.crosswalk_width + 1)
+    Y = linspace(-cl/4, cl/4, Int(floor(cl/2/pomdp.pos_res)) + 1)
+    V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
+    X = linspace(5., rl/2 + 2*cw , Int(floor((rl/2 + 2*cw -5)/pomdp.pos_res)) + 1)
+    V = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
+    y_ego = 0. #XXX might need to be a parameter
+    space = OCState[]
+    for x in X
+        for v in V
+            for y in Y
+                for v_ped in V_ped
+                    ego = VehicleState(VecSE2(x, y_ego, 0.), env.roadway, v)
+                    ped = VehicleState(VecSE2(x_ped, y, pi/2), env.roadway, v_ped)
+                    push!(space, OCState(is_crash(pomdp, ego, ped), ego, ped))
+                end
+            end
+        end
+    end
+    for x in X
+        for v in V
+            ego = VehicleState(VecSE2(x, y_ego, 0.), env.roadway, v)
+            ped =  get_off_the_grid(pomdp)
+            push!(space, OCState(is_crash(pomdp, ego, ped), ego, ped))
+        end
+    end
+    return space
+end
+
+function POMDPs.state_index(pomdp::OCPOMDP, s::OCState)
+    env = pomdp.env
+    rl = env.params.roadway_length
+    cw = env.params.crosswalk_width
+    lw = env.params.lane_width
+    cl = env.params.crosswalk_length
+    size_x = Int(floor((rl/2 + 2*cw -5)/pomdp.pos_res) + 1)
+    size_v = Int(floor(env.params.speed_limit/pomdp.vel_res) + 1)
+    size_y = Int(floor(cl/2/pomdp.pos_res) + 1)
+    size_v_ped = Int(floor(env.params.ped_max_speed/pomdp.vel_res) + 1)
+
+
+    x = s.ego.posG.x
+    v = s.ego.v
+    y = s.ped.posG.y
+    v_ped = s.ped.v
+
+    y_0 = -env.params.crosswalk_length/4
+    x_0 = 5
+    x_ind = Int(ceil((x - x_0)/pomdp.pos_res)) + 1
+    v_ind = Int(ceil(v/pomdp.vel_res)) + 1
+    y_ind = Int(ceil((y - y_0)/pomdp.pos_res)) + 1
+
+    if !off_the_grid(pomdp, s.ped)
+        v_ped_ind = Int(ceil(v_ped/pomdp.vel_res)) + 1
+        i = sub2ind((size_v_ped, size_y, size_v, size_x), v_ped_ind, y_ind, v_ind, x_ind)
+    else
+        off_grid_ind = sub2ind((size_v, size_x), v_ind, x_ind)
+        i = size_x*size_v*size_y*size_v_ped + off_grid_ind
+    end
+    return i
+end
+
+
+function POMDPs.n_states(pomdp::OCPOMDP)
+    env = pomdp.env
+    rl = env.params.roadway_length
+    cw = env.params.crosswalk_width
+    lw = env.params.lane_width
+    cl = env.params.crosswalk_length
+    size_x = floor((rl/2 + 2*cw -5)/pomdp.pos_res) + 1
+    size_v = floor(env.params.speed_limit/pomdp.vel_res) + 1
+    size_y = floor(cl/2/pomdp.pos_res) + 1
+    size_v_ped = floor(env.params.ped_max_speed/pomdp.vel_res) + 1
+    return Int(size_x*size_v*(size_y*size_v_ped + 1))
+end
+
+
+### OBSERVATION SPACE
+
+
+function POMDPs.observations(pomdp::OCPOMDP)
+    return states(pomdp)
+end
+
+function POMDPs.obs_index(pomdp::OCPOMDP, o::OCObs)
+    return state_index(pomdp, o)
+end
+
+function POMDPs.n_observations(pomdp::OCPOMDP)
+    return n_states(pomdp)
+end
+
+
+
+#### ACTION SPACE
+function POMDPs.actions(pomdp::OCPOMDP)
+    return [OCAction(-2*pomdp.max_acc), OCAction(-pomdp.max_acc), OCAction(0.0), OCAction(pomdp.max_acc)]
+end
+
+function POMDPs.n_actions(pomdp::OCPOMDP)
+    return 4
+end
+
+function POMDPs.action_index(pomdp::OCPOMDP, a::OCAction)
+    if a.acc < -2.
+        return 1
+    elseif -2. <= a.acc < 0.
+        return 2
+    elseif a.acc == 0.
+        return 3
+    else
+        return 4
+    end
+end
+
+######################### HELPERS ##################################################################
+
+"""
+    is_crash(pomdp::OCPOMDP, ego::VehicleState, ped::VehicleState)
+use ADM collision routine to check if a combination of ego car state and pedestrian state
+results in a collision
+"""
+function is_crash(pomdp::OCPOMDP, ego::VehicleState, ped::VehicleState)
+    return is_colliding(Vehicle(ego, pomdp.ego_type, 0), Vehicle(ped, pomdp.ped_type, 1))
+end
+"""
+    is_crash(pomdp::OCPOMDP, ego::VehicleState, ped::VehicleState)
+use ADM collision routine to check if a state results in a collision
+"""
+function is_crash(pomdp::OCPOMDP, s::OCState)
+    return is_crash(pomdp, s.ego, s.ped)
+end
+
+"""
+    off_the_grid(pomdp::OCPOMDP, ped::VehicleState)
+Check if the current state of the pedestrian is in the grid
+"""
+function off_the_grid(pomdp::OCPOMDP, ped::VehicleState)
+    return ped.v == Inf
+end
+
+"""
+    get_off_the_grid(pomdp::OCPOMDP)
+return the off the grid pedestrian state
+"""
+function get_off_the_grid(pomdp::OCPOMDP)
+    env = pomdp.env
+    x_ped = 0.5*(env.params.roadway_length - env.params.crosswalk_width + 1)
+    cl = pomdp.env.params.crosswalk_length
+    pos = VecSE2(x_ped, -cl/2 - 1, pi/2)
+    return VehicleState(pos, pomdp.env.roadway, Inf)
+end
+
+"""
+    get_X_grid(pomdp::OCPOMDP)
+Helper function to return the X discretization
+"""
+function get_X_grid(pomdp::OCPOMDP)
+    env = pomdp.env
+    rl = env.params.roadway_length
+    cw = env.params.crosswalk_width
+    lw = env.params.lane_width
+    cl = env.params.crosswalk_length
+    return linspace(5., rl/2 + 2*cw , Int(floor((rl/2 + 2*cw -5)/pomdp.pos_res)) + 1)
+end
+
+"""
+    get_V_grid(pomdp::OCPOMDP)
+Helper function to return the ego velocity discretization
+"""
+function get_V_grid(pomdp::OCPOMDP)
+    env = pomdp.env
+    V = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
+end
+
+"""
+    get_Y_grid(pomdp::OCPOMDP)
+Helper function to return the Y discretization
+"""
+function get_Y_grid(pomdp::OCPOMDP)
+    cl = pomdp.env.params.crosswalk_length
+    return linspace(-cl/4, cl/4, Int(floor(cl/2/pomdp.pos_res)) + 1)
+end
+
+"""
+    get_V_ped_grid(pomdp::OCPOMDP)
+Helper funcion to return the Velocity discretization for the pedestrian
+"""
+function get_V_ped_grid(pomdp::OCPOMDP)
+    env = pomdp.env
+    V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
+end
+
+"""
+    get_y_index(pomdp::OCPOMDP, y::Float64)
+return the index of y in the Y grid
+"""
+function get_y_index(pomdp::OCPOMDP, y::Float64)
+    y_0 = -pomdp.env.params.crosswalk_length/4
+    y_ind = Int(ceil((y - y_0)/pomdp.pos_res)) + 1
+    return y_ind
+end
+
+"""
+    get_v_ped_index(pomdp::OCPOMDP, v_ped::Float64)
+return the index of v_ped in the V_ped grid
+"""
+function get_v_ped_index(pomdp::OCPOMDP, v_ped::Float64)
+    v_ped_ind = Int(ceil(v_ped/pomdp.vel_res)) + 1
+    return v_ped_ind
+end

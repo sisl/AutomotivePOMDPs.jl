@@ -1,0 +1,16 @@
+WARNING: Method definition info(Any...) in module Base at util.jl:532 overwritten in module Logging at C:\Users\Maxime\.julia\v0.6\Logging\src\Logging.jl:115.
+WARNING: Method definition warn(Any...) in module Base at util.jl:585 overwritten in module Logging at C:\Users\Maxime\.julia\v0.6\Logging\src\Logging.jl:115.
+10-Oct 16:52:46:WARNING:root:replacing docs for 'scene_to_states :: Tuple{Records.Frame{Records.Entity{AutomotiveDrivingModels.VehicleState,AutomotiveDrivingModels.VehicleDef,Int64}},OCPOMDP}' in module 'Main'.
+10-Oct 16:52:46:WARNING:root:replacing docs for 'states_to_scene :: Tuple{Dict{Int64,OCState},OCPOMDP}' in module 'Main'.
+WARNING: Compat.AsyncCondition is deprecated, use Base.AsyncCondition instead.
+  likely near C:\Users\Maxime\OneDrive - Leland Stanford Junior University\Research\policy-correction\admenv\crosswalk\zmq_server.jl:34
+WARNING: Compat.AsyncCondition is deprecated, use Base.AsyncCondition instead.
+  likely near C:\Users\Maxime\OneDrive - Leland Stanford Junior University\Research\policy-correction\admenv\crosswalk\zmq_server.jl:34
+
+Please submit a bug report with steps to reproduce this fault, and any error messages that follow (in their entirety). Thanks.
+Exception: EXCEPTION_ACCESS_VIOLATION at 0x64f75a6a -- jl_enter_handler at /home/Administrator/buildbot/slave/package_win6_2-x64/build/src/home/Administrator/buildbot/slave/package_win6_2-x64/build/src\rtutils.c:213
+while loading C:\Users\Maxime\OneDrive - Leland Stanford Junior University\Research\policy-correction\admenv\crosswalk\zmq_server.jl, in expression starting on line 34
+
+Please submit a bug report with steps to reproduce this fault, and any error messages that follow (in their entirety). Thanks.
+Exception: EXCEPTION_ACCESS_VIOLATION at 0x64f75a6a -- jl_enter_handler at /home/Administrator/buildbot/slave/package_win6_2-x64/build/src/home/Administrator/buildbot/slave/package_win6_2-x64/build/src\rtutils.c:213
+while loading C:\Users\Maxime\OneDrive - Leland Stanford Junior University\Research\policy-correction\admenv\crosswalk\zmq_server.jl, in expression starting on line 1
