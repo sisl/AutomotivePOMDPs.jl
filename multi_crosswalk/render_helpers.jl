@@ -25,6 +25,18 @@ function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
     return rendermodel
 end
 
+function animate_hist(pomdp::OCPOMDP, hist)
+    duration = n_steps(hist)*pomdp.ΔT
+    fps = Int(1/pomdp.ΔT)
+    cam = FitToContentCamera(0.)
+    function render_hist(t, dt)
+        state_index = Int(floor(t/dt)) + 1
+        scene = state_hist(hist)[state_index]
+        return AutoViz.render(scene, pomdp.env, cam = cam)
+    end
+    return duration, fps, render_hist
+end
+
 
 function animate_record(rec::SceneRecord, pomdp::OCPOMDP, overlay::SceneOverlay, cam=FitToContentCamera(0.0))
     duration =rec.nframes*pomdp.ΔT
