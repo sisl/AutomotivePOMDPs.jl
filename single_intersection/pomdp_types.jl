@@ -71,7 +71,7 @@ end
 
 function OIPOMDP(; env::IntersectionEnv = IntersectionEnv(),
                    ego_type::VehicleDef = VehicleDef(),
-                   car_type::VehicleDef = VehicleDef(AgentClass.CAR, 6.0, 3.0),
+                   car_type::VehicleDef = VehicleDef(),
                    max_acc::Float64 = 2.0,
                    pos_res::Float64 = 2.,
                    vel_res::Float64 = 2.,
@@ -114,7 +114,7 @@ function POMDPs.reward(pomdp::OIPOMDP, s::OIState, a::OIAction, sp::OIState)
     if sp.crash
         r += pomdp.collision_cost
     end
-    if sp.ego.posF.s >= pomdp.s_goal 
+    if sp.ego.posF.s >= pomdp.s_goal
         r += pomdp.goal_reward
     elseif a.acc > 0.
         r += pomdp.action_cost

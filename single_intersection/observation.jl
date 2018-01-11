@@ -86,7 +86,7 @@ end
 Check if a state is in bound
 """
 function in_bounds_car(pomdp::OIPOMDP, veh::VehicleState)
-    lane = env.roadway[veh.posF.roadind.tag]
+    lane = pomdp.env.roadway[veh.posF.roadind.tag]
     s = get_end(lane)
     return (veh.posF.s <= s) && (veh.v <= pomdp.env.params.speed_limit) && (veh.v >= 0.) && (veh.posF.s >= 0.)
 end

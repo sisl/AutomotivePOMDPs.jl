@@ -27,7 +27,7 @@ function animate_record(rec::SceneRecord; sim_dt::Float64=0.1)
     fps = Int(1/sim_dt)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
-        return render(rec[frame_index-nframes(rec)], env, cam=cam)
+        return AutoViz.render(rec[frame_index-nframes(rec)], env, cam=cam)
     end
     return duration, fps, render_rec
 end
@@ -39,7 +39,7 @@ function animate_hist{B}(pomdp::OIPOMDP, hist::POMDPHistory{OIState,OIAction,OIS
     function render_hist(t, dt)
         state_index = Int(floor(t/dt)) + 1
         scene = state_to_scene(pomdp, state_hist(hist)[state_index])
-        return render(scene, pomdp.env, cam = cam)
+        return AutoViz.render(scene, pomdp.env, cam = cam)
     end
     return duration, fps, render_hist
 end

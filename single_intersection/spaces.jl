@@ -202,7 +202,7 @@ end
 returns all the possible position on the corresponding lane
 """
 function get_lane_s(pomdp::OIPOMDP, lane_id::String, res::Float64 = pomdp.pos_res)
-    s_end = get_end(env.lane_map[lane_id])
+    s_end = get_end(pomdp.env.lane_map[lane_id])
     S = linspace(0, s_end, Int(floor(s_end/res)) + 1)
     return S
 end
