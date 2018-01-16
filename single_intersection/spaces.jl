@@ -1,7 +1,5 @@
 #### STATE SPACE ############################
 
-const LANE_ID_LIST = ["right_from_left", "straight_from_right", "left_from_right", "straight_from_left"]
-
 function POMDPs.states(pomdp::OIPOMDP)
     env = pomdp.env
     V = linspace(0, pomdp.env.params.speed_limit, Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1)
@@ -163,7 +161,7 @@ function is_crash(pomdp::OIPOMDP, ego::VehicleState, car::VehicleState)
 end
 
 """
-    get_off_the_grid(pomdp::OCPOMDP)
+    get_off_the_grid(pomdp::OIPOMDP)
 return the off the grid state
 """
 function get_off_the_grid(pomdp::OIPOMDP)
@@ -212,13 +210,6 @@ function get_lane_s(pomdp::OIPOMDP, lane::Lane, res::Float64 = pomdp.pos_res)
     return S
 end
 
-function get_end(lane::Lane)
-    s_end = round(lane.curve[end].s)
-    if s_end % 2 == 1
-        s_end -= 1
-    end
-    return s_end
-end
 
 """
     car_states(pomdp::OIPOMDP)

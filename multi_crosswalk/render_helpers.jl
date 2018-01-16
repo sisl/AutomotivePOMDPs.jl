@@ -132,7 +132,7 @@ function render_lidar!(rendermodel::RenderModel, lidar::LidarSensor, posG::VecSE
 end
 
 function AutoViz.render!(rendermodel::RenderModel, overlay::LidarOverlay, scene::Scene, env::CrosswalkEnv)
-    ego = scene[findfirst(scene, EGO_INDEX)]
+    ego = scene[findfirst(scene, EGO_ID)]
     observe!(overlay.sensor, scene, env, ego.id)
     return render_lidar!(rendermodel, overlay.sensor, ego.state.posG)
 end

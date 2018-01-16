@@ -1,3 +1,5 @@
+### CONFIGURATION OF THE OCCLUDED CROSSWALK ENVIRONMENT
+
 """"
 Container type for the environment parameters
 """
@@ -66,5 +68,3 @@ function CrosswalkEnv(params::EnvParams = EnvParams())
     env = CrosswalkEnv(roadway, crosswalk, [obstacles], params)
     return env
 end
-
-const EGO_INDEX = 1

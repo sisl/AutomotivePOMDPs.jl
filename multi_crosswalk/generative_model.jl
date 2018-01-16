@@ -4,7 +4,7 @@
 
 function POMDPs.reward(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState)
     r = 0.
-    ego = sp[findfirst(sp, 1)]
+    ego = sp[findfirst(sp, EGO_ID)]
     if is_crash(sp)
         r += pomdp.collision_cost
     end
@@ -21,7 +21,7 @@ end
 ### TERMINAL STATES ###############################################################################
 
 function POMDPs.isterminal(pomdp::OCPOMDP, s::OCState)
-    ego = s[findfirst(s, EGO_INDEX)]
+    ego = s[findfirst(s, EGO_ID)]
     return is_crash(s) || ego.state.posG.x >= pomdp.ego_goal
 end
 
@@ -166,12 +166,12 @@ end
 
 # uncomment for LIDAR observation
 # function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState, rng::AbstractRNG)
-#     observe!(pomdp.sensor, sp, pomdp.env.roadway, EGO_INDEX)
+#     observe!(pomdp.sensor, sp, pomdp.env.roadway, EGO_ID)
 #     return pomdp.sensor
 # end
 #
 # function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, rng::AbstractRNG)
-#     observe!(pomdp.sensor, s, pomdp.env.roadway, EGO_INDEX)
+#     observe!(pomdp.sensor, s, pomdp.env.roadway, EGO_ID)
 #     return pomdp.sensor
 # end
 #
@@ -184,7 +184,7 @@ function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState,
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(2 + 2*pomdp.max_ped)
-    ego = sp[findfirst(sp, 1)].state
+    ego = sp[findfirst(sp, EGO_ID)].state
     o[1] = ego.posG.x
     o[2] = ego.v
     ped_off = get_off_the_grid(pomdp)
@@ -193,7 +193,7 @@ function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState,
         o[2*i] = 0.
     end
     for veh in sp
-        if veh.id == 1
+        if veh.id == EGO_ID
             continue
         end
         @assert veh.id <= pomdp.max_ped+1

@@ -31,7 +31,7 @@ end
 """
 Define the Intersection environment
 """
-mutable struct IntersectionEnv
+mutable struct IntersectionEnv <: OccludedEnv
     roadway::Roadway
     obstacles::Vector{ConvexPolygon}
     params::EnvParams
