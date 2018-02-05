@@ -1,6 +1,7 @@
 # additional method to render the crosswalk environment with obstacles
 function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
-    render!(rendermodel, env.roadway)
+    roadway = gen_straight_roadway(2, env.params.roadway_length)
+    render!(rendermodel, roadway)
 
     curve = env.crosswalk.curve
     n = length(curve)

@@ -1,5 +1,4 @@
 ####### STATE SPACE ##############################
-using GridInterpolations
 
 function POMDPs.states(pomdp::OCPOMDP)
     env = pomdp.env
@@ -129,7 +128,7 @@ use ADM collision routine to check if a combination of ego car state and pedestr
 results in a collision
 """
 function is_crash(pomdp::OCPOMDP, ego::VehicleState, ped::VehicleState)
-    return is_colliding(Vehicle(ego, pomdp.ego_type, 0), Vehicle(ped, pomdp.ped_type, 1))
+    return is_colliding(Vehicle(ego, pomdp.ego_type, EGO_ID), Vehicle(ped, pomdp.ped_type, PED_ID))
 end
 """
     is_crash(pomdp::OCPOMDP, ego::VehicleState, ped::VehicleState)

@@ -1,5 +1,7 @@
 ### CONFIGURATION OF THE OCCLUDED INTERSECTION ENVIRONMENT
 
+const LANE_ID_LIST = ["right_from_left", "straight_from_right", "left_from_right", "straight_from_left"]
+
 """
 Container type for the environment parameters
 """
@@ -156,7 +158,7 @@ end
 
 
 """
-    CrosswalkEnv(params::EnvParams)
+    IntersectionEnv(params::EnvParams)
 constructor for the crosswalk environment
 """
 function IntersectionEnv(params::EnvParams = EnvParams())

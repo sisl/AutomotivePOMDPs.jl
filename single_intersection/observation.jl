@@ -3,7 +3,7 @@
 
 function POMDPs.observation(pomdp::OIPOMDP, sp::OIState)
    # return OIDistribution([1.0], [sp])
-    if !is_observable(sp, pomdp.env) || off_the_grid(pomdp, sp.car)
+    if !is_observable_fixed(sp, pomdp.env) || off_the_grid(pomdp, sp.car)
         o = OIObs(false, sp.ego, get_off_the_grid(pomdp))
         return OIDistribution([1.0], [o])
     elseif is_crash(pomdp, sp.ego, sp.car)
@@ -42,7 +42,7 @@ end
 """
 Check if a car in s is observable or not
 """
-function is_observable(s::OIState, env::IntersectionEnv)
+function is_observable_fixed(s::OIState, env::IntersectionEnv)
     m = length(env.obstacles)
     car = s.car
     ego = s.ego

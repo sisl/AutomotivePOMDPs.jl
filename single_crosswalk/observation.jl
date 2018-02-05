@@ -1,7 +1,7 @@
 ### Observation model  ############################################################################
 
 function POMDPs.observation(pomdp::OCPOMDP, a::OCAction, sp::OCState)
-    if !is_observable(sp, pomdp.env) || off_the_grid(pomdp, sp.ped)
+    if !is_observable_fixed(sp, pomdp.env) || off_the_grid(pomdp, sp.ped)
         o = OCObs(false, sp.ego, get_off_the_grid(pomdp))
         return OCDistribution([1.0], [o])
     elseif is_crash(pomdp, sp)
@@ -45,14 +45,14 @@ while being in the state s
 """
 function obs_weight(o::OCState, s::OCState, pomdp::OCPOMDP)
     weight = 1.0
-    if !is_observable(s.ped, s.ego, pomdp.env)
+    if !is_observable_fixed(s.ped, s.ego, pomdp.env)
         if off_the_grid(pomdp, o.ped)
             return weight
         else
             return 0.
         end
     else
-        if off_the_grid(pomdp, o.ped) || !is_observable(o.ped, o.ego, pomdp.env)
+        if off_the_grid(pomdp, o.ped) || !is_observable_fixed(o.ped, o.ego, pomdp.env)
             return 0.
         else
             pos_noise = pomdp.pos_obs_noise
@@ -64,23 +64,11 @@ function obs_weight(o::OCState, s::OCState, pomdp::OCPOMDP)
     return float(NaN)
 end
 
-function AutomotiveDrivingModels.is_colliding(P::Projectile, poly::ConvexPolygon, A::VecSE2)
-    # collides if at least one of the segments collides with the ray
-    point_time = sqrt(abs2(A - P.pos))
-    for i in 1 : length(poly)
-        seg = get_edge(poly, i)
-        obs_time = get_intersection_time(P, seg)
-        if !isinf(obs_time) && obs_time < point_time
-            return true
-        end
-    end
-    false
-end
 
 """
 Check if a pedestrian in s is observable or not
 """
-function is_observable(s::OCState, env::CrosswalkEnv)
+function is_observable_fixed(s::OCState, env::CrosswalkEnv)
     m = length(env.obstacles)
     ped = s.ped
     ego = s.ego
@@ -97,55 +85,7 @@ function is_observable(s::OCState, env::CrosswalkEnv)
     end
     return true
 end
-function is_observable(car::VehicleState, ego::VehicleState, env::CrosswalkEnv)
-    m = length(env.obstacles)
-    front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(car.posG.y - front.y, car.posG.x - front.x)
-    ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
-    if isinf(car.v)
-        return false
-    end
-    for i = 1:m
-        if is_colliding(ray, env.obstacles[i], car.posG)
-            return false
-        end
-    end
-    return true
-end
 
-# check if a point in space is observable
-function is_observable(x::Float64, y::Float64, ego::VehicleState, env::CrosswalkEnv)
-    m = length(env.obstacles)
-    front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(y - front.y, x - front.x)
-    ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
-    for i = 1:m
-        if is_colliding(ray, env.obstacles[i], VecSE2(x,y,0.))
-            return false
-        end
-    end
-    return true
-end
-
-function AutomotiveDrivingModels.is_colliding(P::Projectile, poly::ConvexPolygon, A::VecSE2)
-    # collides if at least one of the segments collides with the ray
-    point_time = sqrt(abs2(A - P.pos))
-    for i in 1 : length(poly)
-        seg = get_edge(poly, i)
-        obs_time = get_intersection_time(P, seg)
-        if !isinf(obs_time) && obs_time < point_time
-            return true
-        end
-    end
-    false
-end
-# check if x,y is in veh
-function AutomotiveDrivingModels.is_colliding(x::Float64, y::Float64, veh::VehicleState)
-    v = VecSE2(x,y, 0.)
-    poly = get_oriented_bounding_box(Vehicle(veh, VehicleDef(), -1))
-    return contains(poly, v)
-
-end
 
 """
 Check if a state is in bound
@@ -159,18 +99,18 @@ end
 
 ### Helpers for converting OCObs to NN input
 
-"""
-    extract_gray!(s::Array{UInt32, 2}, dest::Array{Float64, 2})
-Extract a gray scale image from a CairoSurface object
-"""
-function extract_gray!(s::Array{UInt32, 2}, dest::Array{Float64, 2})
-    for (i,s) in enumerate(s)
-        dest[i] = 0.2989*convert(Float64, (s >> 16) & 0xFF) +
-                  0.5870*convert(Float64, (s >> 8) & 0xFF) +
-                  0.1140*convert(Float64, s & 0xFF)
-    end
-    return dest'
-end
+# """
+#     extract_gray!(s::Array{UInt32, 2}, dest::Array{Float64, 2})
+# Extract a gray scale image from a CairoSurface object
+# """
+# function extract_gray!(s::Array{UInt32, 2}, dest::Array{Float64, 2})
+#     for (i,s) in enumerate(s)
+#         dest[i] = 0.2989*convert(Float64, (s >> 16) & 0xFF) +
+#                   0.5870*convert(Float64, (s >> 8) & 0xFF) +
+#                   0.1140*convert(Float64, s & 0xFF)
+#     end
+#     return dest'
+# end
 
 # uncomment for image representation
 # /!\ do not forget to change the observation space size in the python wrapper

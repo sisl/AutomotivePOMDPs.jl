@@ -6,7 +6,7 @@ Convert an OCState object to a scene
 """
 function state_to_scene(pomdp::OCPOMDP, s::OCState)
     scene = Scene()
-    ego = Vehicle(s.ego, pomdp.ego_type, 1)
+    ego = Vehicle(s.ego, pomdp.ego_type, EGO_ID)
     ped = Vehicle(s.ped, pomdp.ped_type, 2)
     push!(scene, ego)
     push!(scene, ped)
@@ -22,7 +22,7 @@ function rand_scene(rng::AbstractRNG, b::Dict{Int64, OCDistribution}, env::Cross
     for id in keys(b)
         s = rand(rng, b[id])
         if scene.n == 0
-            ego = Vehicle(s.ego, pomdp.ego_type, 1)
+            ego = Vehicle(s.ego, pomdp.ego_type, EGO_ID)
             push!(scene, ego)
         end
         ped = Vehicle(s.ped, PEDESTRIAN_DEF, id)
@@ -36,7 +36,7 @@ end
 Convert a scene to a state representation, for each pedestrian present in the scene, a state object is created
 """
 function scene_to_states(scene::Scene, pomdp::OCPOMDP)
-    ego = scene[findfirst(scene, 1)]
+    ego = scene[findfirst(scene, EGO_ID)]
     states = Dict{Int64, OCState}()
     if scene.n == 1
         states[2] = OCState(false, ego, get_off_the_grid(pomdp))

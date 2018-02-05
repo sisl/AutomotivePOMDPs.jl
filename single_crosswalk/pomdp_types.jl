@@ -47,6 +47,7 @@ function Base.:(==)(a::OCAction, b::OCAction)
 end
 
 #### POMDP type
+const PED_ID = 2
 
 mutable struct OCPOMDP <: POMDP{OCState, OCAction, OCObs}
     env::CrosswalkEnv

@@ -198,7 +198,7 @@ function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState,
         end
         @assert veh.id <= pomdp.max_ped+1
         ped = veh.state
-        if is_observable(ped, ego, pomdp.env)
+        if is_observable_fixed(ped, ego, pomdp.env)
             o[2*veh.id - 1] = ped.posG.y + pos_noise*randn(rng)
             o[2*veh.id] = ped.v + vel_noise*randn(rng)
         end
@@ -241,33 +241,4 @@ function get_off_the_grid(pomdp::OCPOMDP)
     cl = pomdp.env.params.crosswalk_length
     pos = VecSE2(x_ped, -cl/2 - 1, pi/2)
     return VehicleState(pos, pomdp.env.roadway, Inf)
-end
-
-function is_observable(car::VehicleState, ego::VehicleState, env::CrosswalkEnv)
-    m = length(env.obstacles)
-    front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(car.posG.y - front.y, car.posG.x - front.x)
-    ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
-    if isinf(car.v)
-        return false
-    end
-    for i = 1:m
-        if is_colliding(ray, env.obstacles[i], car.posG)
-            return false
-        end
-    end
-    return true
-end
-
-function AutomotiveDrivingModels.is_colliding(P::Projectile, poly::ConvexPolygon, A::VecSE2)
-    # collides if at least one of the segments collides with the ray
-    point_time = sqrt(abs2(A - P.pos))
-    for i in 1 : length(poly)
-        seg = get_edge(poly, i)
-        obs_time = get_intersection_time(P, seg)
-        if !isinf(obs_time) && obs_time < point_time
-            return true
-        end
-    end
-    false
 end

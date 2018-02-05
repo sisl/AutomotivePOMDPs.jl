@@ -29,7 +29,7 @@ function POMDPs.initial_state_distribution(pomdp::OIPOMDP)
          for s in get_lane_s(pomdp, lane_id)
              for v in v_grid[3:end]
                  car = car_state(pomdp, lane_id, s, v)
-                 if !is_observable(ego, car, env)
+                 if !is_observable_fixed(ego, car, env)
                      push!(states, OIState(is_crash(pomdp, ego, car), ego, car))
                  end
              end

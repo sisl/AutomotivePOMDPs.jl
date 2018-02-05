@@ -218,7 +218,7 @@ function POMDPs.generate_o(pomdp::OIPOMDP, s::Scene, a::OIAction, sp::Scene, rng
         end
         @assert veh.id <= pomdp.max_cars+1
         car = veh.state
-        if is_observable(car, ego, pomdp.env)
+        if is_observable_fixed(ego, car, pomdp.env)
             o[n_features*veh.id - 3] = car.posG.x + pos_noise*randn(rng)
             o[n_features*veh.id - 2] = car.posG.y + pos_noise*randn(rng)
             o[n_features*veh.id - 1] = car.posG.θ
