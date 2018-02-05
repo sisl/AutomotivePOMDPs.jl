@@ -1,5 +1,9 @@
 
-function is_observable(ego::VehicleState, car::VehicleState, env::OccludedEnv)
+
+"""
+Occlusion checker with fixed obstacles
+"""
+function is_observable_fixed(ego::VehicleState, car::VehicleState, env::OccludedEnv)
     m = length(env.obstacles)
     front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
     angle = atan2(car.posG.y - front.y, car.posG.x - front.x)
@@ -10,6 +14,48 @@ function is_observable(ego::VehicleState, car::VehicleState, env::OccludedEnv)
         end
     end
     return true
+end
+
+# check if a point in space is observable
+function is_observable_fixed(x::Float64, y::Float64, ego::VehicleState, env::OccludedEnv)
+    m = length(env.obstacles)
+    front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
+    angle = atan2(y - front.y, x - front.x)
+    ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
+    for i = 1:m
+        if is_colliding(ray, env.obstacles[i], VecSE2(x,y,0.))
+            return false
+        end
+    end
+    return true
+end
+
+"""
+Occlusion checker with dynamic obstacles only
+"""
+function is_observable_dyna(ego::Vehicle, car::Vehicle, scene::Scene)
+    front = ego.state.posG + polar(ego.def.length/2, ego.state.posG.θ)
+    angle = atan2(car.state.posG.y - front.y, car.state.posG.x - front.x)
+    ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
+    for veh in scene
+        if veh.id == car.id || veh.id == ego.id
+            continue
+        end
+        box = get_oriented_bounding_box(veh)
+        if is_colliding(ray, box, car.state.posG)
+            return false
+        end
+    end
+    return true
+end
+
+
+
+"""
+General occlusion checker
+"""
+function is_observable(ego::Vehicle, car::Vehicle, scene::Scene, env::OccludedEnv)
+    return is_observable_dyna(ego, car, scene) && is_observable_fixed(ego.state, car.state, env)
 end
 
 function AutomotiveDrivingModels.is_colliding(P::Projectile, poly::ConvexPolygon, A::VecSE2)
@@ -23,4 +69,11 @@ function AutomotiveDrivingModels.is_colliding(P::Projectile, poly::ConvexPolygon
         end
     end
     false
+end
+
+# check if x,y is in veh
+function AutomotiveDrivingModels.is_colliding(x::Float64, y::Float64, veh::VehicleState)
+    v = VecSE2(x,y, 0.)
+    poly = get_oriented_bounding_box(Vehicle(veh, VehicleDef(), -1))
+    return contains(poly, v)
 end
