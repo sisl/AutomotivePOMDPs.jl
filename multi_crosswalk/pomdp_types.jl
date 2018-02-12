@@ -28,14 +28,6 @@ function Base.:(==)(a::OCAction, b::OCAction)
     return a.acc == b.acc
 end
 
-#### Ego car model #################################################################################
-# Dummy type since the action is given by the policy
-mutable struct EgoDriver <: DriverModel{OCAction}
-    a::OCAction
-end
-
-Base.rand(model::EgoDriver) = model.a
-
 
 #### POMDP type
 

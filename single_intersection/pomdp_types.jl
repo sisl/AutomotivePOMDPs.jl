@@ -1,48 +1,48 @@
 
 """
-Representation of a state for the OIcludedIntersection POMDP,
+Representation of a state for the SingleOIcludedIntersection POMDP,
 depends on ADM VehicleState type
 """
-mutable struct OIState
+mutable struct SingleOIState
     crash ::Bool
     ego::VehicleState
     car::VehicleState
 end
 
 # copy b to a
-function Base.copy!(a::OIState, b::OIState)
+function Base.copy!(a::SingleOIState, b::SingleOIState)
     a.crash = b.crash
     a.ego = b.ego
     a.car = b.car
 end
 
-function Base.hash(s::OIState, h::UInt64 = zero(UInt64))
+function Base.hash(s::SingleOIState, h::UInt64 = zero(UInt64))
     return hash(s.crash, hash(s.ego, hash(s.car, h)))
 end
 
-function Base.:(==)(a::OIState, b::OIState)
+function Base.:(==)(a::SingleOIState, b::SingleOIState)
     return a.crash == b.crash && a.ego == b.ego && a.car == b.car
 end
 
 #### Observaton type
 
-const OIObs = OIState
+const SingleOIObs = SingleOIState
 
 #### Action type
 
-mutable struct OIAction
+mutable struct SingleOIAction
     acc::Float64
 end
 
-function Base.copy!(a::OIAction, b::OIAction)
+function Base.copy!(a::SingleOIAction, b::SingleOIAction)
     a.acc = b.acc
 end
 
-function Base.hash(a::OIAction, h::UInt64 = zero(UInt64))
+function Base.hash(a::SingleOIAction, h::UInt64 = zero(UInt64))
     return hash(a.acc, h)
 end
 
-function Base.:(==)(a::OIAction, b::OIAction)
+function Base.:(==)(a::SingleOIAction, b::SingleOIAction)
     return a.acc == b.acc
 end
 
@@ -51,8 +51,8 @@ end
 
 
 
-mutable struct OIPOMDP <: POMDP{OIState, OIAction, OIObs}
-    env::IntersectionEnv
+mutable struct SingleOIPOMDP <: POMDP{SingleOIState, SingleOIAction, SingleOIObs}
+    env::SimpleInterEnv
     ego_type::VehicleDef
     car_type::VehicleDef
     max_acc::Float64
@@ -72,7 +72,7 @@ mutable struct OIPOMDP <: POMDP{OIState, OIAction, OIObs}
     γ::Float64 # discount factor
 end
 
-function OIPOMDP(; env::IntersectionEnv = IntersectionEnv(),
+function SingleOIPOMDP(; env::SimpleInterEnv = SimpleInterEnv(),
                    ego_type::VehicleDef = VehicleDef(),
                    car_type::VehicleDef = VehicleDef(),
                    max_acc::Float64 = 2.0,
@@ -90,7 +90,7 @@ function OIPOMDP(; env::IntersectionEnv = IntersectionEnv(),
                    action_cost::Float64 = 0.0,
                    goal_reward::Float64 = 1.,
                    γ::Float64  = 0.95)
-    return OIPOMDP(env,
+    return SingleOIPOMDP(env,
                    ego_type,
                    car_type,
                    max_acc,
@@ -112,7 +112,7 @@ end
 
 ### REWARD MODEL ##################################################################################
 
-function POMDPs.reward(pomdp::OIPOMDP, s::OIState, a::OIAction, sp::OIState)
+function POMDPs.reward(pomdp::SingleOIPOMDP, s::SingleOIState, a::SingleOIAction, sp::SingleOIState)
     r = 0.
     if sp.crash
         r += pomdp.collision_cost
@@ -128,30 +128,30 @@ function POMDPs.reward(pomdp::OIPOMDP, s::OIState, a::OIAction, sp::OIState)
 end
 
 # other method for SARSOP
-function POMDPs.reward(pomdp::OIPOMDP, s::OIState, a::OIAction)
+function POMDPs.reward(pomdp::SingleOIPOMDP, s::SingleOIState, a::SingleOIAction)
     return reward(pomdp, s, a, s)
 end
 
-function POMDPs.isterminal(pomdp::OIPOMDP, s::OIState)
+function POMDPs.isterminal(pomdp::SingleOIPOMDP, s::SingleOIState)
     return s.crash || s.ego.posF.s >= pomdp.s_goal
 end
 
 ######## DISTRIBUTION ############################################################################
 
 """
-Concrete type to represent a distribution over state for the OIcludedCrosswalk POMDP Problem
+Concrete type to represent a distribution over state for the SingleOIcludedCrosswalk POMDP Problem
 """
-mutable struct OIDistribution
+mutable struct SingleOIDistribution
     p::Vector{Float64}
-    it::Vector{OIState}
+    it::Vector{SingleOIState}
 end
 
-OIDistribution() = OIDistribution(Float64[], OIState[])
+SingleOIDistribution() = SingleOIDistribution(Float64[], SingleOIState[])
 
-POMDPs.iterator(d::OIDistribution) = d.it
+POMDPs.iterator(d::SingleOIDistribution) = d.it
 
 # transition and observation pdf
-function POMDPs.pdf(d::OIDistribution, s::OIState)
+function POMDPs.pdf(d::SingleOIDistribution, s::SingleOIState)
     for (i, sp) in enumerate(d.it)
         if sp==s
             return d.p[i]
@@ -160,27 +160,27 @@ function POMDPs.pdf(d::OIDistribution, s::OIState)
     return 0.
 end
 
-function POMDPs.rand(rng::AbstractRNG, d::OIDistribution)
+function POMDPs.rand(rng::AbstractRNG, d::SingleOIDistribution)
     ns = sample(d.it, Weights(d.p)) # sample a neighbor state according to the distribution c
     return ns
 end
 
 """
-    most_likely_state(d::OIDistribution)
+    most_likely_state(d::SingleOIDistribution)
 returns the most likely state given distribution d
 """
-function most_likely_state(d::OIDistribution)
+function most_likely_state(d::SingleOIDistribution)
     val, ind = findmax(d.p)
     return d.it[ind]
 end
 
 ### HELPERS
 
-function POMDPs.discount(pomdp::OIPOMDP)
+function POMDPs.discount(pomdp::SingleOIPOMDP)
     return pomdp.γ
 end
 
-function state_to_scene(pomdp::OIPOMDP, s::OIState)
+function state_to_scene(pomdp::SingleOIPOMDP, s::SingleOIState)
     scene = Scene()
     ego = Vehicle(s.ego, pomdp.ego_type, 1)
     car = Vehicle(s.car, pomdp.car_type, 2)

@@ -1,5 +1,5 @@
 # additional method to render the crosswalk environment with obstacles
-function AutoViz.render!(rendermodel::RenderModel, env::IntersectionEnv)
+function AutoViz.render!(rendermodel::RenderModel, env::SimpleInterEnv)
     render!(rendermodel, env.roadway)
 
     obs = env.obstacles[1]
@@ -32,7 +32,7 @@ function animate_record(rec::SceneRecord; sim_dt::Float64=0.1)
     return duration, fps, render_rec
 end
 
-function animate_hist{B}(pomdp::OIPOMDP, hist::POMDPHistory{OIState,OIAction,OIState, B})
+function animate_hist{B}(pomdp::SingleOIPOMDP, hist::POMDPHistory{SingleOIState,SingleOIAction,SingleOIState, B})
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)

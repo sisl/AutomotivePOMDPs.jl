@@ -1,6 +1,6 @@
 ### Implement transition and observation distributions
 
-function POMDPs.transition(pomdp::OIPOMDP, s::OIState, a::OIAction,
+function POMDPs.transition(pomdp::SingleOIPOMDP, s::SingleOIState, a::SingleOIAction,
                            dt::Float64 = pomdp.ΔT,
                            pos_res::Float64 = pomdp.pos_res,
                            vel_res::Float64 = pomdp.vel_res)
@@ -13,26 +13,26 @@ function POMDPs.transition(pomdp::OIPOMDP, s::OIState, a::OIAction,
     n_next_states = length(ego_states)*length(car_states)
 
     ### Total state
-    next_states = Vector{OIState}(n_next_states)
+    next_states = Vector{SingleOIState}(n_next_states)
     next_probs = zeros(n_next_states)
     ind = 1
     for (i,ego) in enumerate(ego_states)
         for (j,car) in enumerate(car_states)
             crash = is_crash(pomdp, ego, car)
-            next_states[ind] = OIState(crash, ego, car)
+            next_states[ind] = SingleOIState(crash, ego, car)
             next_probs[ind] = car_probs[j]*ego_probs[i]
             ind += 1
         end
     end
     normalize!(next_probs, 1)
-    return OIDistribution(next_probs, next_states)
+    return SingleOIDistribution(next_probs, next_states)
 end
 
 """
     ego_transition(pomdp::OCPOMDP, ego::VehicleState, a::OCAction)
 Returns the distribution over the possible future state for the ego car only
 """
-function ego_transition(pomdp::OIPOMDP, ego::VehicleState, a::OIAction, dt::Float64,
+function ego_transition(pomdp::SingleOIPOMDP, ego::VehicleState, a::SingleOIAction, dt::Float64,
                         pos_res::Float64 = pomdp.pos_res,
                         vel_res::Float64 = pomdp.vel_res)
     s_ = ego.posF.s + ego.v*cos(ego.posF.ϕ)*dt + 0.5*a.acc*dt^2
@@ -59,10 +59,10 @@ function ego_transition(pomdp::OIPOMDP, ego::VehicleState, a::OIAction, dt::Floa
 end
 
 """
-    car_transition(pomdp::OIPOMDP, car::VehicleState, dt::Float64)
+    car_transition(pomdp::SingleOIPOMDP, car::VehicleState, dt::Float64)
 return the next possible state and their probability for any other car
 """
-function car_transition(pomdp::OIPOMDP, car::VehicleState, dt::Float64,
+function car_transition(pomdp::SingleOIPOMDP, car::VehicleState, dt::Float64,
                         pos_res::Float64 = pomdp.pos_res,
                         vel_res::Float64 = pomdp.vel_res)
     env = pomdp.env

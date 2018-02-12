@@ -147,18 +147,10 @@ function initial_pedestrian(pomdp::OCPOMDP, scene::Scene, rng::AbstractRNG, firs
     return Vehicle(ped_initial_state, PEDESTRIAN_DEF, id)
 end
 
-mutable struct GenerativeDist
-    problem::OCPOMDP
-end
 
 function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
     return GenerativeDist(pomdp)
 end
-
-function Base.rand(rng::AbstractRNG, d::GenerativeDist)
-    return initial_state(d.problem, rng)
-end
-
 
 
 

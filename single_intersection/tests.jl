@@ -12,7 +12,7 @@ include("observation.jl")
 #### HELPER FOR TESTING #####
 
 # check that state indexing is consistent
-function check_indexing(pomdp::OIPOMDP, state_space::Vector{OIState})
+function check_indexing(pomdp::SingleOIPOMDP, state_space::Vector{SingleOIState})
     for (i,s) in enumerate(state_space)
         @test state_index(pomdp, s) == i
     end
@@ -20,8 +20,8 @@ end
 
 # custom type for ADM
 mutable struct PomdpAction
-    a::OIAction
-    pomdp::OIPOMDP
+    a::SingleOIAction
+    pomdp::SingleOIPOMDP
 end
 # custom propagate for testing
 function AutomotiveDrivingModels.propagate(veh::Vehicle, a::PomdpAction, roadway::Roadway, ΔT::Float64)
@@ -35,12 +35,12 @@ end
 Base.rand(model::EgoTestModel) = model.a
 
 # test 0 acceleration
-function test_no_motion(pomdp::OIPOMDP)
+function test_no_motion(pomdp::SingleOIPOMDP)
     ego = Vehicle(ego_state(pomdp, pomdp.s_start, 0.), VehicleDef(), 1)
     scene = Scene()
     push!(scene, ego)
     models = Dict{Int, DriverModel}()
-    models[1] = EgoTestModel(PomdpAction(OIAction(0.0), pomdp))
+    models[1] = EgoTestModel(PomdpAction(SingleOIAction(0.0), pomdp))
     nticks = 100
     rec = SceneRecord(nticks+1, 0.1)
     simulate!(rec, scene, pomdp.env.roadway, models, nticks)
@@ -49,12 +49,12 @@ function test_no_motion(pomdp::OIPOMDP)
 end
 
 # test max acceleration
-function test_reaching_goal(pomdp::OIPOMDP)
+function test_reaching_goal(pomdp::SingleOIPOMDP)
     ego = Vehicle(ego_state(pomdp, pomdp.s_start, 0.), VehicleDef(), 1)
     scene = Scene()
     push!(scene, ego)
     models = Dict{Int, DriverModel}()
-    models[1] = EgoTestModel(PomdpAction(OIAction(pomdp.max_acc), pomdp))
+    models[1] = EgoTestModel(PomdpAction(SingleOIAction(pomdp.max_acc), pomdp))
     nticks = 100
     rec = SceneRecord(nticks+1, 0.1)
     simulate!(rec, scene, pomdp.env.roadway, models, nticks)
@@ -62,7 +62,7 @@ function test_reaching_goal(pomdp::OIPOMDP)
 end
 
 # Test that transition sums up to 1
-function test_transition(pomdp::OIPOMDP)
+function test_transition(pomdp::SingleOIPOMDP)
     states_to_test = rand(ordered_states(pomdp), 100)
     @showprogress 0.5 "Checking transitions for 100 random states..." for (i, s) in enumerate(states_to_test)
         for (j, a) in enumerate(iterator(actions(pomdp)))
@@ -81,7 +81,7 @@ function test_transition(pomdp::OIPOMDP)
 end
 
 # Test that transition sums up to 1
-function test_full_transition(pomdp::OIPOMDP)
+function test_full_transition(pomdp::SingleOIPOMDP)
     @showprogress 0.5 "Checking transitions..." for (i, s) in enumerate(ordered_states(pomdp))
         for (j, a) in enumerate(iterator(actions(pomdp)))
             prob = 0.
@@ -99,7 +99,7 @@ function test_full_transition(pomdp::OIPOMDP)
 end
 
 #Test that observations sum up to 1
-function test_observation(pomdp::OIPOMDP)
+function test_observation(pomdp::SingleOIPOMDP)
     @showprogress 0.5 "Checking observations..." for (i, sp) in enumerate(ordered_states(pomdp))
         for (j, a) in enumerate(iterator(actions(pomdp)))
             prob = 0.
@@ -126,8 +126,8 @@ rng = MersenneTwister(3);
 # initialize the environment and the pomdp
 println("Testing Constructors")
 params = EnvParams()
-env = IntersectionEnv(params);
-pomdp = OIPOMDP(env = env)
+env = SimpleInterEnv(params);
+pomdp = SingleOIPOMDP(env = env)
 
 #### TEST STATE SPACES
 println("Testing state space")
@@ -135,7 +135,7 @@ state_space = states(pomdp)
 @test !isempty(state_space)
 @test n_states(pomdp) == length(state_space)
 check_indexing(pomdp, state_space)
-println("OIPOMDP with default parameters has ", n_states(pomdp), " states")
+println("SingleOIPOMDP with default parameters has ", n_states(pomdp), " states")
 
 #test helpers
 @test off_the_grid(pomdp, get_off_the_grid(pomdp))

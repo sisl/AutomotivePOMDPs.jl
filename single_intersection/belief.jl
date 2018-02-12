@@ -1,15 +1,15 @@
 # Implement all the belief related function
 
-const OIBelief = OIDistribution
+const SingleOIBelief = SingleOIDistribution
 
-mutable struct OIUpdater <: Updater
-    pomdp::OIPOMDP
+mutable struct SingleOIUpdater <: Updater
+    pomdp::SingleOIPOMDP
 end
 
 #for sarsop for exploration
-#function POMDPs.initial_state_distribution(pomdp::OIPOMDP)
+#function POMDPs.initial_state_distribution(pomdp::SingleOIPOMDP)
 #    state_space = states(pomdp)
-#    states_to_add = OIState[]
+#    states_to_add = SingleOIState[]
 #    for s in state_space
 #        if !s.crash
 #            push!(states_to_add, s)
@@ -17,20 +17,20 @@ end
 #    end
 #    probs = ones(length(states_to_add))
 #    normalize!(probs, 1)
-#    return OIDistribution(probs, states_to_add)
+#    return SingleOIDistribution(probs, states_to_add)
 #end
 
-function POMDPs.initial_state_distribution(pomdp::OIPOMDP)
+function POMDPs.initial_state_distribution(pomdp::SingleOIPOMDP)
      env = pomdp.env
      v_grid = get_v_grid(pomdp)
-     states = OIState[]
+     states = SingleOIState[]
      ego = ego_state(pomdp, pomdp.s_start, 0.)
      for lane_id in LANE_ID_LIST
          for s in get_lane_s(pomdp, lane_id)
              for v in v_grid[3:end]
                  car = car_state(pomdp, lane_id, s, v)
                  if !is_observable_fixed(ego, car, env)
-                     push!(states, OIState(is_crash(pomdp, ego, car), ego, car))
+                     push!(states, SingleOIState(is_crash(pomdp, ego, car), ego, car))
                  end
              end
          end
@@ -38,7 +38,7 @@ function POMDPs.initial_state_distribution(pomdp::OIPOMDP)
 
      # Add also the off the grid state, weight using the probability p_birth
      n_in_grid = length(states)
-     push!(states, OIState(false, ego, get_off_the_grid(pomdp)))
+     push!(states, SingleOIState(false, ego, get_off_the_grid(pomdp)))
      n_off_grid = length(states) - n_in_grid
      probs = ones(length(states))
      probs[1:n_in_grid] = pomdp.p_birth/n_in_grid
@@ -46,16 +46,16 @@ function POMDPs.initial_state_distribution(pomdp::OIPOMDP)
      @assert n_off_grid == 1
      @assert sum(probs) ≈ 1.
      # normalize!(probs, 1)
-     return OIBelief(probs, states)
+     return SingleOIBelief(probs, states)
 end
 
-function initial_ego_state(pomdp::OIPOMDP)
+function initial_ego_state(pomdp::SingleOIPOMDP)
     return ego_state(pomdp, pomdp.s_start, 0.)
 end
 
 # Updates the belief given the current action and observation
-function POMDPs.update(bu::OIUpdater, bold::OIBelief, a::OIAction, o::OIObs)
-    bnew = OIBelief()
+function POMDPs.update(bu::SingleOIUpdater, bold::SingleOIBelief, a::SingleOIAction, o::SingleOIObs)
+    bnew = SingleOIBelief()
     pomdp = bu.pomdp
     # initialize spaces
     pomdp_states = ordered_states(pomdp)

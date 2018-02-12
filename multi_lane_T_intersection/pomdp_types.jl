@@ -31,14 +31,6 @@ function Base.:(==)(a::OIAction, b::OIAction)
 end
 
 
-#### Ego car model #################################################################################
-# Dummy type since the action is given by the policy
-mutable struct EgoDriver <: DriverModel{OIAction}
-    a::OIAction
-end
-
-Base.rand(model::EgoDriver) = model.a
-
 
 #### POMDP type
 

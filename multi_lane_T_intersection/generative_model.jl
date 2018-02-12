@@ -157,16 +157,8 @@ function initial_ego(pomdp::OIPOMDP, rng::AbstractRNG)
     return Vehicle(state, pomdp.ego_type, EGO_ID)
 end
 
-mutable struct GenerativeDist
-    problem::OIPOMDP
-end
-
 function POMDPs.initial_state_distribution(pomdp::OIPOMDP)
     return GenerativeDist(pomdp)
-end
-
-function Base.rand(rng::AbstractRNG, d::GenerativeDist)
-    return initial_state(d.problem, rng)
 end
 
 

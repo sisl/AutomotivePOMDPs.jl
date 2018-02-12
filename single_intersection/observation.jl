@@ -1,13 +1,13 @@
 ### Implementation of observation model
 
 
-function POMDPs.observation(pomdp::OIPOMDP, sp::OIState)
-   # return OIDistribution([1.0], [sp])
+function POMDPs.observation(pomdp::SingleOIPOMDP, sp::SingleOIState)
+   # return SingleOIDistribution([1.0], [sp])
     if !is_observable_fixed(sp, pomdp.env) || off_the_grid(pomdp, sp.car)
-        o = OIObs(false, sp.ego, get_off_the_grid(pomdp))
-        return OIDistribution([1.0], [o])
+        o = SingleOIObs(false, sp.ego, get_off_the_grid(pomdp))
+        return SingleOIDistribution([1.0], [o])
     elseif is_crash(pomdp, sp.ego, sp.car)
-        return OIDistribution([1.0], [sp])
+        return SingleOIDistribution([1.0], [sp])
     end
     ego = sp.ego
     car = sp.car
@@ -23,18 +23,18 @@ function POMDPs.observation(pomdp::OIPOMDP, sp::OIState)
     neighbors[8] = car_state(pomdp, lane, car.posF.s, car.v + pomdp.vel_res)
     neighbors[9] = car_state(pomdp, lane, car.posF.s, car.v)
 
-    states = OIObs[]
+    states = SingleOIObs[]
     sizehint!(states, 9)
     for neighbor in neighbors
         if in_bounds_car(pomdp, neighbor) && !is_crash(pomdp, ego, neighbor)
-            push!(states, OIObs(false, ego, neighbor))
+            push!(states, SingleOIObs(false, ego, neighbor))
         end
     end
     probs = ones(length(states))
     probs = normalize!(probs, 1)
-    return OIDistribution(probs, states)
+    return SingleOIDistribution(probs, states)
 end
-function POMDPs.observation(pomdp::OIPOMDP, a::OIAction, sp::OIState)
+function POMDPs.observation(pomdp::SingleOIPOMDP, a::SingleOIAction, sp::SingleOIState)
     return observation(pomdp, sp)
 end
 
@@ -42,7 +42,7 @@ end
 """
 Check if a car in s is observable or not
 """
-function is_observable_fixed(s::OIState, env::IntersectionEnv)
+function is_observable_fixed(s::SingleOIState, env::SimpleInterEnv)
     m = length(env.obstacles)
     car = s.car
     ego = s.ego
@@ -60,7 +60,7 @@ end
 """
 Check if a state is in bound
 """
-function in_bounds_car(pomdp::OIPOMDP, veh::VehicleState)
+function in_bounds_car(pomdp::SingleOIPOMDP, veh::VehicleState)
     lane = pomdp.env.roadway[veh.posF.roadind.tag]
     s = get_end(lane)
     return (veh.posF.s <= s) && (veh.v <= pomdp.env.params.speed_limit) && (veh.v >= 0.) && (veh.posF.s >= 0.)

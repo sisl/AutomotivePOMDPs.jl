@@ -1,6 +1,22 @@
 # Some useful function for the multiple user occluded crosswalk environment
 
 
+#### POMDP related stuff #################################################################################
+# Dummy type since the action is given by the policy
+mutable struct EgoDriver{A} <: DriverModel{A}
+    a::A
+end
+
+Base.rand(model::EgoDriver) = model.a
+
+mutable struct GenerativeDist
+    problem::POMDP
+end
+
+function Base.rand(rng::AbstractRNG, d::GenerativeDist)
+    return initial_state(d.problem, rng)
+end
+
 
 """
     is_crash(scene::Scene)

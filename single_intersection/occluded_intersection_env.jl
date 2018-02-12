@@ -6,7 +6,7 @@ const LANE_ID_LIST = ["right_from_left", "straight_from_right", "left_from_right
 """
 Container type for the environment parameters
 """
-mutable struct EnvParams
+mutable struct SimpleInterParams
     # geometry
     n_lanes::Int64
     hor_roadway_length::Float64
@@ -19,7 +19,7 @@ mutable struct EnvParams
     car_rate::Float64
 end
 
-function EnvParams(;n_lanes::Int64 = 2,
+function SimpleInterParams(;n_lanes::Int64 = 2,
                     hor_roadway_length::Float64 = 20.,
                     ver_roadway_length::Float64 = 10.,
                     lane_width::Float64 = 3.,
@@ -27,26 +27,26 @@ function EnvParams(;n_lanes::Int64 = 2,
                     stop_line::Float64 = 8.,
                     speed_limit::Float64 = 8.,
                     car_rate::Float64 = 0.5)
-    return EnvParams(n_lanes, hor_roadway_length, ver_roadway_length, lane_width, turn_radius,
+    return SimpleInterParams(n_lanes, hor_roadway_length, ver_roadway_length, lane_width, turn_radius,
                      stop_line, speed_limit, car_rate)
 end
 
 """
 Define the Intersection environment
 """
-mutable struct IntersectionEnv <: OccludedEnv
+mutable struct SimpleInterEnv <: OccludedEnv
     roadway::Roadway
     obstacles::Vector{ConvexPolygon}
-    params::EnvParams
+    params::SimpleInterParams
     lane_map::Dict{String, Lane}
     end_pos::Float64
 end
 
 """
-    build_t_shape(params::EnvParams)
+    build_t_shape(params::SimpleInterParams)
 generate a T-shape intersection using AutomotiveDrivingModels
 """
-function build_t_shape(params::EnvParams)
+function build_t_shape(params::SimpleInterParams)
     roadway = Roadway()
     BEZIER_SAMPLES = 51
     LANE_ID_MAP = Dict{String, Lane}()
@@ -137,7 +137,7 @@ function append_to_curve!(target::Curve, newstuff::Curve)
     return target
 end
 
-function build_obstacles(params::EnvParams)
+function build_obstacles(params::SimpleInterParams)
     HEIGHT = 6
     WIDTH = 6
 
@@ -159,12 +159,12 @@ end
 
 
 """
-    CrosswalkEnv(params::EnvParams)
+    CrosswalkEnv(params::SimpleInterParams)
 constructor for the crosswalk environment
 """
-function IntersectionEnv(params::EnvParams = EnvParams())
+function SimpleInterEnv(params::SimpleInterParams = SimpleInterParams())
     roadway, lane_id_map = build_t_shape(params)
     obstacles = build_obstacles(params)
     end_pos = round(lane_id_map["ego_left"].curve[end].s)
-    return IntersectionEnv(roadway, obstacles, params, lane_id_map, end_pos)
+    return SimpleInterEnv(roadway, obstacles, params, lane_id_map, end_pos)
 end
