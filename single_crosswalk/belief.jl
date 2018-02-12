@@ -1,8 +1,8 @@
-const OCBelief =  OCDistribution
+const SingleOCBelief =  SingleOCDistribution
 
-# function POMDPs.initialize_belief(pomdp::OCPOMDP)
+# function POMDPs.initialize_belief(pomdp::SingleOCPOMDP)
 #     b0 = DiscreteBelief(n_states(pomdp))
-#     d0 = initial_state_distribution(pomdp::OCPOMDP)
+#     d0 = initial_state_distribution(pomdp::SingleOCPOMDP)
 #     for (i, s) in enumerate(iterator(states(pomdp)))
 #         b0.b[i] = pdf(d0, s)
 #     end
@@ -11,9 +11,9 @@ const OCBelief =  OCDistribution
 # end
 
 # #for sarsop for exploration
-# function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
+# function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP)
 #      state_space = states(pomdp)
-#      states_to_add = OCState[]
+#      states_to_add = SingleOCState[]
 #      for s in state_space
 #          if !s.crash
 #              push!(states_to_add, s)
@@ -21,13 +21,13 @@ const OCBelief =  OCDistribution
 #      end
 #      probs = ones(length(states_to_add))
 #      normalize!(probs, 1)
-#      return OCDistribution(probs, states_to_add)
+#      return SingleOCDistribution(probs, states_to_add)
 #  end
 
 """
 Returns the initial state of the pomdp problem
 """
-function POMDPs.initial_state(pomdp::OCPOMDP, rng::AbstractRNG)
+function POMDPs.initial_state(pomdp::SingleOCPOMDP, rng::AbstractRNG)
     ped = rand(rng) > pomdp.no_ped_prob
     if ped
         pomdp.no_ped = false
@@ -36,7 +36,7 @@ function POMDPs.initial_state(pomdp::OCPOMDP, rng::AbstractRNG)
     else
         # println("No pedestrians")
         pomdp.no_ped = true
-        d = initial_distribution_no_ped(pomdp::OCPOMDP)
+        d = initial_distribution_no_ped(pomdp::SingleOCPOMDP)
         s = rand(rng, d)
     end
     return s
@@ -45,7 +45,7 @@ end
 """
 Returns the initial state distribution over the ego car state when there is no pedestrians
 """
-function initial_distribution_no_ped(pomdp::OCPOMDP)
+function initial_distribution_no_ped(pomdp::SingleOCPOMDP)
     env = pomdp.env
     V_ego = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
     rl = env.params.roadway_length
@@ -56,18 +56,18 @@ function initial_distribution_no_ped(pomdp::OCPOMDP)
     x_ped = 0.5*(env.params.roadway_length - env.params.crosswalk_width + 1)
     y_ego = 0. #XXX might need to be a parameter
     x_start = pomdp.x_start #XXX parameterized
-    states = OCState[]
+    states = SingleOCState[]
     for v in V_ego
         ego = VehicleState(VecSE2(x_start, y_ego, 0.), env.roadway, v)
-        push!(states, OCState(false, ego, get_off_the_grid(pomdp)))
+        push!(states, SingleOCState(false, ego, get_off_the_grid(pomdp)))
     end
     probs = ones(length(states))
     probs = normalize!(probs, 1)
-    return OCBelief(probs, states)
+    return SingleOCBelief(probs, states)
 end
 
 
-function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
+function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP)
     env = pomdp.env
     V_ego = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
     rl = env.params.roadway_length
@@ -80,7 +80,7 @@ function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
     x_start = pomdp.x_start #XXX parameterized
     Y = get_Y_grid(pomdp)
     V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
-    states = OCState[]
+    states = SingleOCState[]
     for v in V_ego
         ego = VehicleState(VecSE2(x_start, y_ego, 0.), env.roadway, v)
         for y in Y[1:div(length(Y),2)]
@@ -88,7 +88,7 @@ function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
                 ped = VehicleState(VecSE2(x_ped, y, pi/2), env.roadway, v_ped)
                 crash = is_colliding(Vehicle(ego, pomdp.ego_type, 0),
                                      Vehicle(ped, pomdp.ped_type, 1))
-                push!(states, OCState(crash, ego, ped))
+                push!(states, SingleOCState(crash, ego, ped))
             end
         end
     end
@@ -97,7 +97,7 @@ function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
     n_in_grid = length(states)
     for v in V_ego
         ego = VehicleState(VecSE2(x_start, y_ego, 0.), env.roadway, v)
-        push!(states, OCState(false, ego, get_off_the_grid(pomdp)))
+        push!(states, SingleOCState(false, ego, get_off_the_grid(pomdp)))
     end
     n_off_grid = length(states) - n_in_grid
     probs = ones(length(states))
@@ -105,10 +105,10 @@ function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
     probs[n_in_grid + 1:end] = (1.0 - p_birth)/n_off_grid
     normalize!(probs, 1)
     @assert sum(probs) ≈ 1.
-    return OCBelief(probs, states)
+    return SingleOCBelief(probs, states)
 end
 
-function POMDPs.initial_state_distribution(pomdp::OCPOMDP, ego::VehicleState)
+function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP, ego::VehicleState)
     env = pomdp.env
     rl = env.params.roadway_length
     cw = env.params.crosswalk_width
@@ -120,19 +120,19 @@ function POMDPs.initial_state_distribution(pomdp::OCPOMDP, ego::VehicleState)
     x_start = pomdp.x_start #XXX parameterized
     Y = get_Y_grid(pomdp)
     V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
-    states = OCState[]
+    states = SingleOCState[]
     for y in Y[1:div(length(Y),2)]
         for v_ped in V_ped
             ped = VehicleState(VecSE2(x_ped, y, pi/2), env.roadway, v_ped)
             crash = is_colliding(Vehicle(ego, pomdp.ego_type, 0),
                                  Vehicle(ped, pomdp.ped_type, 1))
-            push!(states, OCState(crash, ego, ped))
+            push!(states, SingleOCState(crash, ego, ped))
         end
     end
     # Add also the off the grid state, weight using the probability p_birth
     # of a pedestrian actually being here
     n_in_grid = length(states)
-    push!(states, OCState(false, ego, get_off_the_grid(pomdp)))
+    push!(states, SingleOCState(false, ego, get_off_the_grid(pomdp)))
 
     n_off_grid = length(states) - n_in_grid
     probs = ones(length(states))
@@ -140,17 +140,17 @@ function POMDPs.initial_state_distribution(pomdp::OCPOMDP, ego::VehicleState)
     probs[n_in_grid + 1:end] = (1.0 - p_birth)/n_off_grid
     # normalize!(probs, 1)
     @assert sum(probs) ≈ 1.
-    return OCBelief(probs, states)
+    return SingleOCBelief(probs, states)
 end
 
-mutable struct OCUpdater <: Updater
-    pomdp::OCPOMDP
+mutable struct SingleOCUpdater <: Updater
+    pomdp::SingleOCPOMDP
 end
 
 
 # Updates the belief given the current action and observation
-function POMDPs.update(bu::OCUpdater, bold::OCBelief, a::OCAction, o::OCObs)
-    bnew = OCBelief()
+function POMDPs.update(bu::SingleOCUpdater, bold::SingleOCBelief, a::SingleOCAction, o::SingleOCObs)
+    bnew = SingleOCBelief()
     pomdp = bu.pomdp
     # initialize spaces
     pomdp_states = ordered_states(pomdp)
@@ -192,13 +192,13 @@ end
 # These functions are helpful to reshape the belief as input of a deep RL algorithm
 
 """
-    vec2dis(bvec::Vector{Float64}, state_space::Vector{OCState} = state_space)
-Convert a discrete belief representation to a more compact one using the OCDistribution type
+    vec2dis(bvec::Vector{Float64}, state_space::Vector{SingleOCState} = state_space)
+Convert a discrete belief representation to a more compact one using the SingleOCDistribution type
 """
-function vec2dis(bvec::Vector{Float64}, state_space::Vector{OCState} = state_space)
+function vec2dis(bvec::Vector{Float64}, state_space::Vector{SingleOCState} = state_space)
     bsparse = sparsevec(bvec)
     n = nnz(bsparse)
-    bdis = OCDistribution(zeros(n), Vector{OCState}(n))
+    bdis = SingleOCDistribution(zeros(n), Vector{SingleOCState}(n))
     for i = 1:n
         ind = bsparse.nzind[i]
         bdis.p[i] = bsparse.nzval[i]
@@ -208,10 +208,10 @@ function vec2dis(bvec::Vector{Float64}, state_space::Vector{OCState} = state_spa
 end
 
 """
-    dis2vec!(pomdp::OCPOMDP, bdis::OCDistribution, bvec::Vector{Float64})
-convert an OCDistribution to a full vector representation
+    dis2vec!(pomdp::SingleOCPOMDP, bdis::SingleOCDistribution, bvec::Vector{Float64})
+convert an SingleOCDistribution to a full vector representation
 """
-function dis2vec!(pomdp::OCPOMDP, bdis::OCDistribution, bvec::Vector{Float64})
+function dis2vec!(pomdp::SingleOCPOMDP, bdis::SingleOCDistribution, bvec::Vector{Float64})
     for i =1:length(bdis.p)
         ind = state_index(pomdp, bdis.it[i])
         bvec[ind] = bdis.p[i]
@@ -219,10 +219,10 @@ function dis2vec!(pomdp::OCPOMDP, bdis::OCDistribution, bvec::Vector{Float64})
 end
 
 """
-    get_belief_image(pomdp::OCPOMDP, d0::OCDistribution, Y::LinSpace{Float64} = get_Y_grid(pomdp), V_ped::LinSpace{Float64} = get_V_ped_grid(pomdp))
-returns a probability matrix where the index are the pedestrian position and velocity, the values are the probability of such y,v pair
+    get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinSpace{Float64} = get_Y_grid(pomdp), V_ped::LinSpace{Float64} = get_V_ped_grid(pomdp))
+returns a probability matrix where the index are the pedestrian position and velSingleOCity, the values are the probability of such y,v pair
 """
-function get_belief_image(pomdp::OCPOMDP, d0::OCDistribution, Y::LinSpace{Float64} = get_Y_grid(pomdp), V_ped::LinSpace{Float64} = get_V_ped_grid(pomdp))
+function get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinSpace{Float64} = get_Y_grid(pomdp), V_ped::LinSpace{Float64} = get_V_ped_grid(pomdp))
     Y = get_Y_grid(pomdp)
     V_ped = get_V_ped_grid(pomdp)
     P = zeros(length(Y), length(V_ped))
@@ -241,13 +241,13 @@ function get_belief_image(pomdp::OCPOMDP, d0::OCDistribution, Y::LinSpace{Float6
 end
 
 """
-    tuple_to_belief(pomdp::OCPOMDP, t::Tuple{Array{Float64,1},Array{Float64,2}})
-convert tuple representation to OCDistribution object
+    tuple_to_belief(pomdp::SingleOCPOMDP, t::Tuple{Array{Float64,1},Array{Float64,2}})
+convert tuple representation to SingleOCDistribution object
 """
-function tuple_to_belief(pomdp::OCPOMDP, t::Tuple{Array{Float64,1},Array{Float64,2}})
+function tuple_to_belief(pomdp::SingleOCPOMDP, t::Tuple{Array{Float64,1},Array{Float64,2}})
     Y_grid = get_Y_grid(pomdp)
     V_ped = get_V_ped_grid(pomdp)
-    b = OCDistribution()
+    b = SingleOCDistribution()
     P = t[2]
     ego_x, ego_v, p_off = t[1][1], t[1][2], t[1][3]
     ego = xv_to_state(pomdp, ego_x, ego_v)
@@ -256,13 +256,13 @@ function tuple_to_belief(pomdp::OCPOMDP, t::Tuple{Array{Float64,1},Array{Float64
         for j=1:m
             if P[j, i] != 0
             ped = yv_to_state(pomdp, Y_grid[j], V_ped[i])
-            s = OCState(is_crash(pomdp, ego, ped), ego, ped)
+            s = SingleOCState(is_crash(pomdp, ego, ped), ego, ped)
             push!(b.it, s)
             push!(b.p, P[j, i])
             end
         end
     end
-    s_off = OCState(false, ego, get_off_the_grid(pomdp))
+    s_off = SingleOCState(false, ego, get_off_the_grid(pomdp))
     push!(b.it, s_off)
     push!(b.p, p_off)
     # sanity check
@@ -272,11 +272,11 @@ function tuple_to_belief(pomdp::OCPOMDP, t::Tuple{Array{Float64,1},Array{Float64
 end
 
 """
-    belief_to_tuple(pomdp::OCPOMDP, b::OCDistribution)
+    belief_to_tuple(pomdp::SingleOCPOMDP, b::SingleOCDistribution)
 only valid after first step when ego car is known
 convert a belief representation into a tuple [ego.x, ego.v, p_off], belief image
 """
-function belief_to_tuple(pomdp::OCPOMDP, b::OCDistribution)
+function belief_to_tuple(pomdp::SingleOCPOMDP, b::SingleOCDistribution)
     vec = zeros(3)
     ego_x, ego_v = b.it[1].ego.posG.x, b.it[1].ego.v
     img, p_off = get_belief_image(pomdp, b, get_Y_grid(pomdp), get_V_ped_grid(pomdp))

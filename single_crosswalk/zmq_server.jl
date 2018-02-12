@@ -23,14 +23,14 @@ function add_noise(o::Vector{Float64})
     return o + 1e-3*randn()
 end
 
-function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, rng::AbstractRNG)
-    o = generate_o(pomdp, s, OCAction(0.), s, rng)
+function POMDPs.generate_o(pomdp::SingleOCPOMDP, s::SingleOCState, rng::AbstractRNG)
+    o = generate_o(pomdp, s, SingleOCAction(0.), s, rng)
     return o
 end
 
 
 
-pomdp = OCPOMDP()
+pomdp = SingleOCPOMDP()
 pomdp.p_birth = 0.3
 pomdp.pos_res = 0.5
 pomdp.vel_res = 0.5

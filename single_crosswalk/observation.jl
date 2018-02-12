@@ -1,11 +1,11 @@
 ### Observation model  ############################################################################
 
-function POMDPs.observation(pomdp::OCPOMDP, a::OCAction, sp::OCState)
+function POMDPs.observation(pomdp::SingleOCPOMDP, a::SingleOCAction, sp::SingleOCState)
     if !is_observable_fixed(sp, pomdp.env) || off_the_grid(pomdp, sp.ped)
-        o = OCObs(false, sp.ego, get_off_the_grid(pomdp))
-        return OCDistribution([1.0], [o])
+        o = SingleOCObs(false, sp.ego, get_off_the_grid(pomdp))
+        return SingleOCDistribution([1.0], [o])
     elseif is_crash(pomdp, sp)
-        return OCDistribution([1.0], [sp])
+        return SingleOCDistribution([1.0], [sp])
     end
     ego = sp.ego
     ped = sp.ped
@@ -22,11 +22,11 @@ function POMDPs.observation(pomdp::OCPOMDP, a::OCAction, sp::OCState)
     neighbors[9] = yv_to_state(pomdp, ped.posG.y, ped.v)
 
 
-    states = OCObs[]
+    states = SingleOCObs[]
     sizehint!(states, 9)
     for neighbor in neighbors
         if in_bounds_ped(pomdp, neighbor) && !is_crash(pomdp, ego, neighbor)
-            push!(states, OCObs(false, ego, neighbor))
+            push!(states, SingleOCObs(false, ego, neighbor))
         end
     end
     probs = zeros(length(states))
@@ -35,15 +35,15 @@ function POMDPs.observation(pomdp::OCPOMDP, a::OCAction, sp::OCState)
     end
     probs = normalize!(probs, 1)
     @assert length(probs) == length(states)
-    return OCDistribution(probs, states)
+    return SingleOCDistribution(probs, states)
 end
 
 """
-    function obs_weight(o::OCState, s::OCState, pomdp::OCPOMDP)
+    function obs_weight(o::SingleOCState, s::SingleOCState, pomdp::SingleOCPOMDP)
 Given a continuous observation returns a weight proportional to the probability of observing o
 while being in the state s
 """
-function obs_weight(o::OCState, s::OCState, pomdp::OCPOMDP)
+function obs_weight(o::SingleOCState, s::SingleOCState, pomdp::SingleOCPOMDP)
     weight = 1.0
     if !is_observable_fixed(s.ped, s.ego, pomdp.env)
         if off_the_grid(pomdp, o.ped)
@@ -68,7 +68,7 @@ end
 """
 Check if a pedestrian in s is observable or not
 """
-function is_observable_fixed(s::OCState, env::CrosswalkEnv)
+function is_observable_fixed(s::SingleOCState, env::CrosswalkEnv)
     m = length(env.obstacles)
     ped = s.ped
     ego = s.ego
@@ -90,14 +90,14 @@ end
 """
 Check if a state is in bound
 """
-function in_bounds_ped(pomdp::OCPOMDP, veh::VehicleState)
+function in_bounds_ped(pomdp::SingleOCPOMDP, veh::VehicleState)
     cl = pomdp.env.params.crosswalk_length
     y_min = -cl/4
     y_max = cl/4
     return (y_min <= veh.posG.y <= y_max) && (0. <= veh.v <= pomdp.env.params.ped_max_speed)
 end
 
-### Helpers for converting OCObs to NN input
+### Helpers for converting SingleOCObs to NN input
 
 # """
 #     extract_gray!(s::Array{UInt32, 2}, dest::Array{Float64, 2})
@@ -114,7 +114,7 @@ end
 
 # uncomment for image representation
 # /!\ do not forget to change the observation space size in the python wrapper
-# function POMDPs.convert_o(o::OCObs, pomdp::OCPOMDP)
+# function POMDPs.convert_o(o::SingleOCObs, pomdp::SingleOCPOMDP)
 #     scene = state_to_scene(pomdp, o)
 #     img = AutoViz.render(scene, DQNFeatures(pomdp.env), [InflateOverlay()], cam=StaticCamera(VecE2(25, 0.), 20.))
 #     gray_img = Array{Float64, 2}(Int(img.width), Int(img.height))
@@ -123,8 +123,8 @@ end
 #     gray_img /= 255.0
 # end
 
-# uncomment for engineered feature representation with occlusion map
-# function POMDPs.convert_o(::Type{Array{Float64, 1}}, o::OCObs, pomdp::OCPOMDP)
+# uncomment for engineered feature representation with SingleOCclusion map
+# function POMDPs.convert_o(::Type{Array{Float64, 1}}, o::SingleOCObs, pomdp::SingleOCPOMDP)
 #     X = get_X_grid(pomdp)
 #     Y = get_Y_grid(pomdp)
 #     im_w = length(X)
@@ -148,7 +148,7 @@ end
 
 # uncomment for vector representation
 # /!\ do not forget to change the observation space size in the python wrapper
-function POMDPs.convert_o(::Type{Array{Float64, 1}}, o::OCObs, pomdp::OCPOMDP)
+function POMDPs.convert_o(::Type{Array{Float64, 1}}, o::SingleOCObs, pomdp::SingleOCPOMDP)
     o_vec = Vector{Float64}(4)
     o_vec[1], o_vec[2] = o.ego.posG.x/pomdp.x_goal, o.ego.v/pomdp.env.params.speed_limit
     o_vec[3] = o.ped.posG.y/pomdp.y_goal

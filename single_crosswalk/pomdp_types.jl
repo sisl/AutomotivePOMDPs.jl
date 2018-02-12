@@ -1,55 +1,55 @@
 
 """
-Representation of a state for the OccludedCrosswalk POMDP,
+Representation of a state for the SingleOCcludedCrosswalk POMDP,
 depends on ADM VehicleState type
 """
-mutable struct OCState
+mutable struct SingleOCState
     crash ::Bool
     ego::VehicleState
     ped::VehicleState
 end
 
 # copy b to a
-function Base.copy!(a::OCState, b::OCState)
+function Base.copy!(a::SingleOCState, b::SingleOCState)
     a.crash = b.crash
     a.ego = b.ego
     a.ped = b.ped
 end
 
-function Base.hash(s::OCState, h::UInt64 = zero(UInt64))
+function Base.hash(s::SingleOCState, h::UInt64 = zero(UInt64))
     return hash(s.crash, hash(s.ego, hash(s.ped, h)))
 end
 
-function Base.:(==)(a::OCState, b::OCState)
+function Base.:(==)(a::SingleOCState, b::SingleOCState)
     return a.crash == b.crash && a.ego == b.ego && a.ped == b.ped
 end
 
 #### Observaton type
 
-const OCObs = OCState
+const SingleOCObs = SingleOCState
 
 #### Action type
 
-mutable struct OCAction
+mutable struct SingleOCAction
     acc::Float64
 end
 
-function Base.copy!(a::OCAction, b::OCAction)
+function Base.copy!(a::SingleOCAction, b::SingleOCAction)
     a.acc = b.acc
 end
 
-function Base.hash(a::OCAction, h::UInt64 = zero(UInt64))
+function Base.hash(a::SingleOCAction, h::UInt64 = zero(UInt64))
     return hash(a.acc, h)
 end
 
-function Base.:(==)(a::OCAction, b::OCAction)
+function Base.:(==)(a::SingleOCAction, b::SingleOCAction)
     return a.acc == b.acc
 end
 
 #### POMDP type
 const PED_ID = 2
 
-mutable struct OCPOMDP <: POMDP{OCState, OCAction, OCObs}
+mutable struct SingleOCPOMDP <: POMDP{SingleOCState, SingleOCAction, SingleOCObs}
     env::CrosswalkEnv
     ego_type::VehicleDef
     ped_type::VehicleDef
@@ -73,7 +73,7 @@ mutable struct OCPOMDP <: POMDP{OCState, OCAction, OCObs}
     γ::Float64 # discount factor
 end
 
-function OCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
+function SingleOCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
                    ego_type::VehicleDef = VehicleDef(),
                    ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0),#,env.params.crosswalk_width),
                    max_acc::Float64 = 2.0,
@@ -94,7 +94,7 @@ function OCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
                    action_cost::Float64 = 0.0,
                    goal_reward::Float64 = 1.,
                    γ::Float64  = 0.95)
-    return OCPOMDP(env,
+    return SingleOCPOMDP(env,
                    ego_type,
                    ped_type,
                    max_acc,
@@ -119,7 +119,7 @@ end
 
 ### REWARD MODEL ##################################################################################
 
-function POMDPs.reward(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState)
+function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction, sp::SingleOCState)
     r = 0.
     if sp.crash
         r += pomdp.collision_cost
@@ -135,7 +135,7 @@ function POMDPs.reward(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState)
 end
 
 # other method for SARSOP
-function POMDPs.reward(pomdp::OCPOMDP, s::OCState, a::OCAction)
+function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction)
     r = 0.
     if s.crash
         r += pomdp.collision_cost
@@ -150,26 +150,26 @@ function POMDPs.reward(pomdp::OCPOMDP, s::OCState, a::OCAction)
     return r
 end
 
-function POMDPs.isterminal(pomdp::OCPOMDP, s::OCState)
+function POMDPs.isterminal(pomdp::SingleOCPOMDP, s::SingleOCState)
     return s.crash || s.ego.posG.x >= pomdp.x_goal
 end
 
 ######## DISTRIBUTION ############################################################################
 
 """
-Concrete type to represent a distribution over state for the OccludedCrosswalk POMDP Problem
+Concrete type to represent a distribution over state for the SingleOCcludedCrosswalk POMDP Problem
 """
-mutable struct OCDistribution
+mutable struct SingleOCDistribution
     p::Vector{Float64}
-    it::Vector{OCState}
+    it::Vector{SingleOCState}
 end
 
-OCDistribution() = OCDistribution(Float64[], OCState[])
+SingleOCDistribution() = SingleOCDistribution(Float64[], SingleOCState[])
 
-POMDPs.iterator(d::OCDistribution) = d.it
+POMDPs.iterator(d::SingleOCDistribution) = d.it
 
 # transition and observation pdf
-function POMDPs.pdf(d::OCDistribution, s::OCState)
+function POMDPs.pdf(d::SingleOCDistribution, s::SingleOCState)
     for (i, sp) in enumerate(d.it)
         if sp==s
             return d.p[i]
@@ -178,16 +178,16 @@ function POMDPs.pdf(d::OCDistribution, s::OCState)
     return 0.
 end
 
-function POMDPs.rand(rng::AbstractRNG, d::OCDistribution)
+function POMDPs.rand(rng::AbstractRNG, d::SingleOCDistribution)
     ns = sample(d.it, Weights(d.p)) # sample a neighbor state according to the distribution c
     return ns
 end
 
 """
-    most_likely_state(d::OCDistribution)
+    most_likely_state(d::SingleOCDistribution)
 returns the most likely state given distribution d
 """
-function most_likely_state(d::OCDistribution)
+function most_likely_state(d::SingleOCDistribution)
     val, ind = findmax(d.p)
     return d.it[ind]
 end
@@ -198,6 +198,6 @@ end
 
 
 
-function POMDPs.discount(pomdp::OCPOMDP)
+function POMDPs.discount(pomdp::SingleOCPOMDP)
     return pomdp.γ
 end

@@ -37,7 +37,7 @@ function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::Abstrac
             max_id = veh.id
         end
     end
-    if rand(rng) < 0.01 && max_id < 9
+    if rand(rng) < pomdp.p_birth && max_id < 9
         # println("Spawning new pedestrians")
         new_ped = initial_pedestrian(pomdp, sp, rng)
         pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
@@ -50,17 +50,17 @@ function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::Abstrac
     return sp
 end
 
-function clean_scene!(env::CrosswalkEnv, scene::Scene)
-    for veh in scene
-        if veh.id == 1
-            continue
-        end
-        y = veh.state.posG.y
-        if y >= env.params.crosswalk_length/4
-            deleteat!(scene, findfirst(scene, veh.id))
-        end
-    end
-end
+# function clean_scene!(env::CrosswalkEnv, scene::Scene)
+#     for veh in scene
+#         if veh.id == 1
+#             continue
+#         end
+#         y = veh.state.posG.y
+#         if y >= env.params.crosswalk_length/4
+#             deleteat!(scene, findfirst(scene, veh.id))
+#         end
+#     end
+# end
 
 function AutomotiveDrivingModels.propagate(veh::Vehicle, action::OCAction, roadway::Roadway, Δt::Float64)
     x_ = veh.state.posG.x + veh.state.v*Δt + action.acc*Δt^2/2
@@ -76,7 +76,7 @@ end
 ### INITIAL STATES ################################################################################
 
 function POMDPs.initial_state(pomdp::OCPOMDP, rng::AbstractRNG)
-    max_init_ped = 10 # maximum number of pedestrians initially present
+    max_init_ped = 10 # maximum number of pedestrians initially present #TODO parameterize
 
     scene = Scene()
     n_ped = rand(rng, 0:max_init_ped)

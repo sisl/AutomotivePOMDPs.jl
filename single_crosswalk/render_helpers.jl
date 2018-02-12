@@ -52,7 +52,7 @@ function animate_scenes(scenes::Vector{Scene}, overlay::SceneOverlay)
     return duration, fps, render_rec
 end
 
-function animate_states(pomdp::OCPOMDP, states::Vector{OCState}, overlay=nothing)
+function animate_states(pomdp::SingleOCPOMDP, states::Vector{SingleOCState}, overlay=nothing)
     duration = length(states)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)
@@ -64,7 +64,7 @@ function animate_states(pomdp::OCPOMDP, states::Vector{OCState}, overlay=nothing
     return duration, fps, render_states
 end
 
-function animate_hist{B}(pomdp::OCPOMDP, hist::POMDPHistory{OCState,OCAction,OCState, B})
+function animate_hist{B}(pomdp::SingleOCPOMDP, hist::POMDPHistory{SingleOCState,SingleOCAction,SingleOCState, B})
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)
