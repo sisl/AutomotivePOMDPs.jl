@@ -42,7 +42,7 @@ function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::Abstrac
             max_id = veh.id
         end
     end
-    if rand(rng) < pomdp.p_birth && max_id < 9
+    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_cars+1
         new_car = initial_car(pomdp, sp, rng)
         if can_push(pomdp.env, sp, new_car)
             lane = get_lane(pomdp.env.roadway, new_car)
@@ -291,7 +291,7 @@ end
 return the list of lanes the ego car should take
 """
 function get_ego_route(pomdp::OIPOMDP)
-    tags = [LaneTag(6,1), LaneTag(13, 1), LaneTag(2,1)]
+    tags = [LaneTag(6,1), LaneTag(13, 1), LaneTag(2,pomdp.env.params.nlanes_main)]
     lanes = Array{Lane}(length(tags))
     for (i,tag) in enumerate(tags)
         lanes[i] = pomdp.env.roadway[tag]
