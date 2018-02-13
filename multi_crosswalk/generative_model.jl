@@ -37,7 +37,7 @@ function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::Abstrac
             max_id = veh.id
         end
     end
-    if rand(rng) < pomdp.p_birth && max_id < 9
+    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_ped+1 && !pomdp.no_ped
         # println("Spawning new pedestrians")
         new_ped = initial_pedestrian(pomdp, sp, rng)
         pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
@@ -76,15 +76,17 @@ end
 ### INITIAL STATES ################################################################################
 
 function POMDPs.initial_state(pomdp::OCPOMDP, rng::AbstractRNG)
-    max_init_ped = 10 # maximum number of pedestrians initially present #TODO parameterize
-
+    max_init_ped = pomdp.max_ped # maximum number of pedestrians initially present #TODO parameterize
+    pomdp.no_ped = rand(rng) < pomdp.no_ped_prob
     scene = Scene()
-    n_ped = rand(rng, 0:max_init_ped)
-    for i=1:n_ped
-        if rand(rng) < pomdp.p_birth # pedestrian appear
-            new_ped = initial_pedestrian(pomdp, scene, rng, true)
-            pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)
-            push!(scene, new_ped)
+    if !pomdp.no_ped
+        n_ped = rand(rng, 0:max_init_ped)
+        for i=1:n_ped
+            if rand(rng) < pomdp.p_birth # pedestrian appear
+                new_ped = initial_pedestrian(pomdp, scene, rng, true)
+                pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)
+                push!(scene, new_ped)
+            end
         end
     end
     ego = initial_ego(pomdp, rng)

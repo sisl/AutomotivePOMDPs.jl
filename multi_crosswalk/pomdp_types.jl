@@ -45,6 +45,8 @@ mutable struct OCPOMDP <: POMDP{OCState, OCAction, OCObs}
     ΔT::Float64 # decision frequency
     p_birth::Float64 # probability of appearance
     max_ped::Int64
+    no_ped_prob::Float64 # probability that there is no pedestrian (for training)
+    no_ped::Bool
     v_noise::Float64
     pos_obs_noise::Float64
     vel_obs_noise::Float64
@@ -67,6 +69,8 @@ function OCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
                    ΔT::Float64  = 0.5,
                    p_birth::Float64 = 0.3,
                    max_ped::Int64=10,
+                   no_ped_prob::Float64 = 0.3,
+                   no_ped::Bool = false,
                    v_noise::Float64 = 1.,
                    pos_obs_noise::Float64 = 0.5,
                    vel_obs_noise::Float64 = 0.5,
@@ -87,6 +91,8 @@ function OCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
                    ΔT,
                    p_birth,
                    max_ped,
+                   no_ped_prob,
+                   no_ped,
                    v_noise,
                    pos_obs_noise,
                    vel_obs_noise,
