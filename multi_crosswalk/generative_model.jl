@@ -68,8 +68,7 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::OCAction, roadw
         x_ = veh.state.posG.x
     end
     v_ = veh.state.v + action.acc*Δt
-    clamp(v_, 0., 8.) # parameterized
-
+    v_ = clamp(v_, 0., 8.) # parameterized
     return VehicleState(VecSE2(x_, veh.state.posG.y, veh.state.posG.θ), roadway, v_)
 end
 
@@ -169,6 +168,10 @@ end
 #     return pomdp.sensor
 # end
 #
+# function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
+#     return [o.ranges/pomdp.sensor.max_range, o.range_rates/pomdp.env.params.speed_limit]
+# end
+
 # function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
 #     return [o.ranges/pomdp.sensor.max_range, o.range_rates/pomdp.env.params.speed_limit]
 # end

@@ -1,12 +1,12 @@
 
-function animate_hist(pomdp::OCPOMDP, hist)
+function animate_hist(pomdp::OCPOMDP, hist, overlays::Vector{SceneOverlay} = SceneOverlay[])
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)
     function render_hist(t, dt)
         state_index = Int(floor(t/dt)) + 1
         scene = state_hist(hist)[state_index]
-        return AutoViz.render(scene, pomdp.env, cam = cam)
+        return AutoViz.render(scene, pomdp.env, overlays, cam = cam)
     end
     return duration, fps, render_hist
 end
@@ -17,7 +17,7 @@ function animate_record(rec::SceneRecord, pomdp::OCPOMDP, overlay::SceneOverlay,
     fps = Int(1/pomdp.ΔT)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
-        return render(rec[frame_index-nframes(rec)], pomdp.env, [overlay], cam=cam)
+        return AutoViz.render(rec[frame_index-nframes(rec)], pomdp.env, [overlay], cam=cam)
     end
     return duration, fps, render_rec
 end
@@ -118,7 +118,7 @@ end
 
 function AutoViz.render!(rendermodel::RenderModel, env_::DQNFeatures)
     env = env_.env
-    render!(rendermodel, env.roadway)
+    AutoViz.render!(rendermodel, env.roadway)
 
     obs = env.obstacles[1]
     for obs in env.obstacles

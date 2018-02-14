@@ -67,16 +67,19 @@ function update_clear!(model::CrosswalkDriver, ego::Vehicle, scene::Scene, roadw
     println("buffer ped ttc ", min_ped_ttc)
     ego_ttc = compute_time_of_approach(model, cw_center, ego.state, roadway,
                                        +model.crosswalk.width/2 + ego.def.length/2)
+    if isinf(ego_ttc)
+        ego_ttc = 0. # it is stopped
+    end
     println("ego ttc ", ego_ttc)
+    has_crossed = -0.5*model.intersect.width/model.ped_model.v_desired
+    println("has_crossed ttc", has_crossed)
     for ped in peds
         ttc = compute_time_of_approach(model, cw_center, ped.state, roadway, model.intersect.width/2)
-        if ttc < min_ped_ttc
+        if has_crossed < ttc < min_ped_ttc
             min_ped_ttc = ttc
         end
     end
     println("min ped ttc ", min_ped_ttc)
-    has_crossed = -0.5*model.intersect.width/model.ped_model.v_desired
-    println("has_crossed ttc", has_crossed)
     if has_crossed < min_ped_ttc < ego_ttc
         model.clear = false
     else
@@ -103,5 +106,5 @@ function dist_to_stop(model::CrosswalkDriver, ego::Vehicle, roadway::Roadway)
     cw_length = get_end(model.crosswalk)
     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
     intersect_pt = Frenet(cw_center, model.intersect, roadway)
-    return intersect_pt.s - model.crosswalk.width/2
+    return intersect_pt.s - model.crosswalk.width/2 - ego.state.posF.s - ego.def.length/2
 end
