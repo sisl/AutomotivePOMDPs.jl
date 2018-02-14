@@ -105,7 +105,10 @@ class OccludedCrosswalk(gym.Env):
         self._conn = ZMQConnection(ip, port)
         self.running_average = np.ones(1000)
         # self.observation_space = ObservationSpace((100,1,1)) # for lidar
-        self.observation_space = ObservationSpace((22,1,1)) # for vector
+        data = self._conn.sendreq({"cmd": "obs_dimensions"})
+        assert 'obs_dim' in data
+        obs_dim = data['obs_dim']
+        self.observation_space = ObservationSpace((*obs_dim,1)) # for vector
         self.action_space = ActionSpace(4)
         self.time_limit = 100
         self.metadata = {}

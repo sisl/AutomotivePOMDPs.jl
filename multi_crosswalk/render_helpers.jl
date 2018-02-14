@@ -12,7 +12,7 @@ function animate_hist(pomdp::OCPOMDP, hist, overlays::Vector{SceneOverlay} = Sce
 end
 
 
-function animate_record(rec::SceneRecord, pomdp::OCPOMDP, overlay::SceneOverlay, cam=FitToContentCamera(0.0))
+function animate_record(rec::SceneRecord, pomdp::OCPOMDP, overlay::Vector{SceneOverlay}= SceneOverlay[], cam=FitToContentCamera(0.0))
     duration =rec.nframes*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     function render_rec(t, dt)

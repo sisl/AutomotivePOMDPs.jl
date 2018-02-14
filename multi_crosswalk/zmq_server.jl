@@ -1,5 +1,9 @@
-using Parameters, AutomotiveDrivingModels, POMDPs, DeepRL
+using POMDPs, POMDPToolbox, DeepRL, Parameters
+using AutomotiveDrivingModels, AutoUrban, AutoViz, Reel
 using ArgParse
+
+include("../AutomotivePOMDPs.jl")
+using AutomotivePOMDPs
 
 s = ArgParseSettings()
 @add_arg_table s begin
@@ -10,16 +14,12 @@ s = ArgParseSettings()
 end
 parsed_args = parse_args(ARGS, s)
 
-include("occluded_crosswalk_env.jl")
-include("helpers.jl")
-include("pomdp_types.jl")
-include("constant_pedestrian.jl")
-include("generative_model.jl")
-
 rng = MersenneTwister(1)
-pomdp = OCPOMDP()
+pomdp = OCPOMDP(max_ped=1, no_ped_prob=0.1)
 
 ip = "127.0.0.1"
 port = parsed_args["port"]
 
-DeepRL.run_env_server(ip, port, pomdp)
+env = KMarkovEnvironment(pomdp, k=4)
+
+DeepRL.run_env_server(ip, port, env)
