@@ -108,6 +108,8 @@ class OccludedCrosswalk(gym.Env):
         data = self._conn.sendreq({"cmd": "obs_dimensions"})
         assert 'obs_dim' in data
         obs_dim = data['obs_dim']
+        if len(obs_dim)==1:
+            obs_dim = obs_dim + [1]
         self.observation_space = ObservationSpace((*obs_dim,1)) # for vector
         self.action_space = ActionSpace(4)
         self.time_limit = 100

@@ -4,27 +4,7 @@ function animate(t, dt)
     return render(rec[frame_index-nframes(rec)], env.roadway, [CarFollowingStatsOverlay(1)], cam=cam)
 end
 
-function animate_scenes(scenes::Vector{Scene})
-    duration =length(scenes)*config.sim_dt
-    fps = Int(1/config.sim_dt)
-    cam = FitToContentCamera(0.)
-    function render_rec(t, dt)
-        frame_index = Int(floor(t/dt)) + 1
-        return render(scenes[frame_index], env, cam=cam)
-    end
-    return duration, fps, render_rec
-end
 
-function animate_scenes(scenes::Vector{Scene}, overlay::SceneOverlay)
-    duration =length(scenes)*config.sim_dt
-    fps = Int(1/config.sim_dt)
-    cam = FitToContentCamera(0.)
-    function render_rec(t, dt)
-        frame_index = Int(floor(t/dt)) + 1
-        return render(scenes[frame_index], env, [overlay], cam=cam)
-    end
-    return duration, fps, render_rec
-end
 
 function animate_states(pomdp::SingleOCPOMDP, states::Vector{SingleOCState}, overlay=nothing)
     duration = length(states)*pomdp.ΔT

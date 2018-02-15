@@ -21,5 +21,5 @@ ip = "127.0.0.1"
 port = parsed_args["port"]
 
 env = KMarkovEnvironment(pomdp, k=4)
-
 DeepRL.run_env_server(ip, port, env)
+# DeepRL.run_env_server(ip, port, pomdp)

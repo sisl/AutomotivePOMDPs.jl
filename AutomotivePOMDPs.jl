@@ -27,6 +27,7 @@ export
     # for rendering
     animate_hist,
     animate_record,
+    animate_scenes,
 
     # pomdp types
     OCPOMDP,
