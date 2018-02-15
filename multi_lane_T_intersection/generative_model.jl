@@ -207,13 +207,14 @@ end
 function POMDPs.convert_o(::Type{Vector{Float64}}, o::OIObs, pomdp::OIPOMDP)
     # rescale
     n_features = 4
-    o[1] /= pomdp.ego_goal
-    o[2] /= pomdp.ego_goal
+    max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
+    o[1] /= max_ego_dist
+    o[2] /= max_ego_dist
     o[3] /= pi/2
     o[4] /= pomdp.env.params.speed_limit
     for i=2:pomdp.max_cars+1
-        o[n_features*i - 3] /= pomdp.ego_goal
-        o[n_features*i - 2] /= pomdp.ego_goal
+        o[n_features*i - 3] /= max_ego_dist
+        o[n_features*i - 2] /= max_ego_dist
         o[n_features*i - 1] /= pi
         o[n_features*i] /= pomdp.env.params.speed_limit # XXX parameterized
     end
