@@ -137,7 +137,7 @@ function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
     while !isempty(cur_lane.exits)
         rand_exit = rand(rng, cur_lane.exits)
         next_lane_tag = rand_exit.target.tag
-        next_lane = env.roadway[next_lane_tag]
+        next_lane = roadway[next_lane_tag]
         push!(lanes, next_lane)
         cur_lane = next_lane
     end
