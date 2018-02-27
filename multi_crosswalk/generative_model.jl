@@ -37,7 +37,7 @@ function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::Abstrac
             max_id = veh.id
         end
     end
-    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_ped+1 && !pomdp.no_ped
+    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_peds+1 && !pomdp.no_ped && false
         # println("Spawning new pedestrians")
         new_ped = initial_pedestrian(pomdp, sp, rng)
         pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
@@ -75,12 +75,10 @@ end
 ### INITIAL STATES ################################################################################
 
 function POMDPs.initial_state(pomdp::OCPOMDP, rng::AbstractRNG)
-    max_init_ped = pomdp.max_ped # maximum number of pedestrians initially present #TODO parameterize
     pomdp.no_ped = rand(rng) < pomdp.no_ped_prob
     scene = Scene()
     if !pomdp.no_ped
-        n_ped = rand(rng, 0:max_init_ped)
-        for i=1:n_ped
+        for i=1:pomdp.max_peds
             if rand(rng) < pomdp.p_birth # pedestrian appear
                 new_ped = initial_pedestrian(pomdp, scene, rng, true)
                 pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)
@@ -180,12 +178,12 @@ end
 function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState, rng::AbstractRNG)
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
-    o = zeros(2 + 2*pomdp.max_ped)
+    o = zeros(2 + 2*pomdp.max_peds)
     ego = sp[findfirst(sp, EGO_ID)].state
     o[1] = ego.posG.x
     o[2] = ego.v
     ped_off = get_off_the_grid(pomdp)
-    for i=2:pomdp.max_ped+1
+    for i=2:pomdp.max_peds+1
         o[2*i - 1] = ped_off.posG.y
         o[2*i] = 0.
     end
@@ -193,7 +191,7 @@ function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState,
         if veh.id == EGO_ID
             continue
         end
-        @assert veh.id <= pomdp.max_ped+1
+        @assert veh.id <= pomdp.max_peds+1
         ped = veh.state
         if is_observable_fixed(ped, ego, pomdp.env)
             o[2*veh.id - 1] = ped.posG.y + pos_noise*randn(rng)
@@ -210,7 +208,7 @@ end
 function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
     o[1] /= pomdp.ego_goal
     o[2] /= pomdp.env.params.speed_limit
-    for i=2:pomdp.max_ped+1
+    for i=2:pomdp.max_peds+1
         o[2*i - 1] /= pomdp.ped_goal
         o[2*i] /= 2. # XXX parameterized
     end

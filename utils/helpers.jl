@@ -52,19 +52,12 @@ function clean_scene!(env::OccludedEnv, scene::Scene)
         end
     end
     for veh in scene
-        # if veh.id == 1; continue; end
-        # fore = get_neighbor_fore_along_lane(scene, findfirst(scene, veh.id), env.roadway,
-        #                                     VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())
-        # if fore.ind != 0
-        #     headway, v_oth = fore.Δs, scene[fore.ind].state.v
-        # else
-        #     headway, v_oth = NaN, NaN
-        # end
-        # if !isnan(headway) && headway < 0.
-        #     deleteat!(scene, findfirst(scene, veh.id))
-        # end
         for veh_ in scene
-            if is_colliding(veh, veh_) && veh.id != 1 && veh_.id != 1 && veh.id != veh_.id
+            if is_colliding(veh, veh_) &&
+               veh.id != 1 && veh_.id != 1 &&
+               veh.id != veh_.id &&
+               veh_.def.class != AgentClass.PEDESTRIAN && veh.def.class != AgentClass.PEDESTRIAN &&
+               !(min(veh_.state.v, veh.state.v) ≈ 0.)
                 deleteat!(scene, findfirst(scene, veh_.id))
             end
         end
@@ -151,7 +144,7 @@ function get_start_lanes(roadway::Roadway)
     lanes = Lane[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
-            if isempty(lane.entrances)
+            if isempty(lane.entrances) && !is_crosswalk(lane)
                 push!(lanes, lane)
             end
         end
@@ -159,11 +152,15 @@ function get_start_lanes(roadway::Roadway)
     return lanes
 end
 
+is_crosswalk(lane::Lane) = lane.width > 3.0  #XXX hack
+
 function get_lanes(roadway::Roadway)
     lanes = Lane[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
-            push!(lanes, lane)
+            if !is_crosswalk(lane)
+                push!(lanes, lane)
+            end
         end
     end
     return lanes

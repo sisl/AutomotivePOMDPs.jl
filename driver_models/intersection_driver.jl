@@ -179,7 +179,7 @@ set the state stop! to true if veh is stopped at the intersection
 """
 function update_stop!(model::IntersectionDriver, veh::Vehicle, roadway::Roadway)
     dist_to_end = get_dist_to_end(veh, roadway)
-    if veh.state.v ≈ 0. && isapprox(dist_to_end, 0, atol=1.0) # parameterize rtol?
+    if veh.state.v ≈ 0. && isapprox(dist_to_end, 0, atol=0.5) # parameterize rtol?
         model.stop = true
     end
 end

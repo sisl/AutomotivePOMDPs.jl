@@ -14,7 +14,7 @@ const OIObs = Array{Float64, 1}
 
 #### Action type
 
-mutable struct OIAction
+struct OIAction
     acc::Float64
 end
 
