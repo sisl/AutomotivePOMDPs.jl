@@ -61,9 +61,13 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                                                      intersection_exits = intersection_exits,
                                                      stop_delta=0.,
                                                      accel_tol=0.)
+            cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalk, pomdp.env.roadway)
             crosswalk_driver = CrosswalkDriver(navigator = navigator,
-                                               crosswalk = pomdp.env.crosswalk,
-                                               intersect = get_lane(pomdp.env.roadway, new_car))
+                                   crosswalk = pomdp.env.crosswalk,
+                                   conflict_lanes = cw_conflict_lanes,
+                                   intersection_entrances = intersection_entrances,
+                                   yield=!isempty(intersect(cw_conflict_lanes, route))
+                                   )
             pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
                                     intersection_driver=intersection_driver,
                                    crosswalk_driver=crosswalk_driver
@@ -124,9 +128,13 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG)
                                                          intersection_exits = intersection_exits,
                                                          stop_delta=0.,
                                                          accel_tol=0.)
+                cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalk, pomdp.env.roadway)
                 crosswalk_driver = CrosswalkDriver(navigator = navigator,
-                                                   crosswalk = pomdp.env.crosswalk,
-                                                   intersect = get_lane(pomdp.env.roadway, new_car))
+                                        crosswalk = pomdp.env.crosswalk,
+                                        conflict_lanes = cw_conflict_lanes,
+                                        intersection_entrances = intersection_entrances,
+                                        yield=!isempty(intersect(cw_conflict_lanes, route))
+                                        )
                 pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
                                                        intersection_driver=intersection_driver,
                                                        crosswalk_driver=crosswalk_driver

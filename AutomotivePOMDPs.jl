@@ -48,6 +48,7 @@ export
     random_route,
     is_observable_fixed,
     off_the_grid,
+    get_conflict_lanes,
 
 
     # pomdp types

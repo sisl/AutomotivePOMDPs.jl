@@ -200,6 +200,35 @@ function get_exit_lanes(lanes::Vector{Lane}, roadway::Roadway)
     return exits
 end
 
+function lane_to_segment(lane::Lane, roadway::Roadway)
+    # only works for straight lanes
+    lane_a = get_posG(Frenet(lane, 0.), roadway)
+    lane_b = get_posG(Frenet(lane, get_end(lane)), roadway)
+    return LineSegment(lane_a, lane_b)
+end
+
+function  get_conflict_lanes(crosswalk::Lane, roadway::Roadway)
+    # find lane intersecting with crosswalk
+    cw_seg = lane_to_segment(crosswalk, roadway)
+    conflict_lanes = Lane[]
+    lanes = get_lanes(roadway)
+    for lane in lanes
+        lane_seg = lane_to_segment(lane, roadway)
+        if intersects(lane_seg, cw_seg) && !(lane ∈ conflict_lanes)
+            push!(conflict_lanes, lane)
+        end
+    end
+    return conflict_lanes
+end
+
+# return +1 if going toward, -1 if going away
+function direction_from_center(ped::Vehicle, crosswalk::Lane)
+    s_ped = ped.state.posF.s
+    Δs = get_end(crosswalk)/2 - s_ped
+    return sign(Δs*cos(ped.state.posF.ϕ))
+end
+
+
 mutable struct LonAccelDirection
     a_lon::Float64
     direction::Int
