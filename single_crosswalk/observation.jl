@@ -45,14 +45,14 @@ while being in the state s
 """
 function obs_weight(o::SingleOCState, s::SingleOCState, pomdp::SingleOCPOMDP)
     weight = 1.0
-    if !is_observable_fixed(s.ped, s.ego, pomdp.env)
+    if !is_observable_fixed(s.ego, s.ped, pomdp.env)
         if off_the_grid(pomdp, o.ped)
             return weight
         else
             return 0.
         end
     else
-        if off_the_grid(pomdp, o.ped) || !is_observable_fixed(o.ped, o.ego, pomdp.env)
+        if off_the_grid(pomdp, o.ped) || !is_observable_fixed(o.ego, o.ped, pomdp.env)
             return 0.
         else
             pos_noise = pomdp.pos_obs_noise
@@ -61,7 +61,6 @@ function obs_weight(o::SingleOCState, s::SingleOCState, pomdp::SingleOCPOMDP)
             return weight
         end
     end
-    return float(NaN)
 end
 
 

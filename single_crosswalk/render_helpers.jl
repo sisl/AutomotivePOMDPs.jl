@@ -18,14 +18,14 @@ function animate_states(pomdp::SingleOCPOMDP, states::Vector{SingleOCState}, ove
     return duration, fps, render_states
 end
 
-function animate_hist{B}(pomdp::SingleOCPOMDP, hist::POMDPHistory{SingleOCState,SingleOCAction,SingleOCState, B})
+function animate_hist{B}(pomdp::SingleOCPOMDP, hist::POMDPHistory{SingleOCState,SingleOCAction,SingleOCState, B}, overlays::Vector{SceneOverlay}=SceneOverlay[])
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)
     function render_hist(t, dt)
         state_index = Int(floor(t/dt)) + 1
         scene = state_to_scene(pomdp, state_hist(hist)[state_index])
-        return AutoViz.render(scene, pomdp.env, cam = cam)
+        return AutoViz.render(scene, pomdp.env, overlays, cam = cam)
     end
     return duration, fps, render_hist
 end
