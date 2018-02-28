@@ -46,11 +46,10 @@ function AutomotiveDrivingModels.observe!(model::CrosswalkDriver, scene::Scene, 
     if !model.stop
         update_stop!(model, ego, roadway, dist_to_cw)
     end
-    if !model.priority
-        grow_wait_list!(model, scene, roadway, egoid)
-        ungrow_wait_list!(model, scene, roadway, egoid)
-        update_priority!(model, scene, roadway, egoid)
-    end
+    grow_wait_list!(model, scene, roadway, egoid)
+    ungrow_wait_list!(model, scene, roadway, egoid)
+    update_priority!(model, scene, roadway, egoid)
+
     if model.debug
         println("ID ", egoid, " priority ", model.priority, " stop ", model.stop, " a ", a_lon, " wait list ", model.wait_list, " dist_to_cw ", dist_to_cw)
     end
@@ -62,7 +61,13 @@ Check if all the pedestrian have crossed
 """
 function update_priority!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
-    model.priority = isempty(model.wait_list)
+    lane = get_lane(roadway, ego)
+    cw_length = get_end(model.crosswalk)
+    cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+    collision_point = VecSE2(cw_center.x+model.crosswalk.width/2, ego.state.posG.y)
+    collision_point_posF = Frenet(collision_point, lane, roadway)
+    has_passed = lane ∈ model.conflict_lanes && (ego.state.posF.s > collision_point_posF.s)
+    model.priority = isempty(model.wait_list) || has_passed
 end
 
 function grow_wait_list!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)

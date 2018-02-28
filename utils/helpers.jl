@@ -49,6 +49,12 @@ function clean_scene!(env::OccludedEnv, scene::Scene)
         s_end = get_end(lane)
         if s >= s_end && lane ∈ exit_lanes
             deleteat!(scene, findfirst(scene, veh.id))
+        elseif veh.def.class == AgentClass.PEDESTRIAN
+            if isapprox(s, 0., atol=0.01) && veh.state.posF.ϕ ≈ float(π)
+                deleteat!(scene, findfirst(scene, veh.id))
+            elseif s >= s_end && veh.state.posF.ϕ ≈ 0.
+                deleteat!(scene, findfirst(scene, veh.id))
+            end
         end
     end
     for veh in scene

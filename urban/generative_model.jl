@@ -208,14 +208,18 @@ function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, f
 
     # position along the crosswalk
     t0 = rand(rng, Uniform(-env.params.crosswalk_width/2, env.params.crosswalk_width/2))
-    s0 = 0.
+    s0 = rand(rng, [0., get_end(env.crosswalk)])
+    ϕ0 = float(π)
+    if s0 == 0.
+        ϕ0 = 0.
+    end
     if first_scene
         s0 = rand(rng, Uniform(0., get_end(env.crosswalk)))
     end
 
     #velocity
     v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
-    posF = Frenet(env.crosswalk, s0, t0)
+    posF = Frenet(env.crosswalk, s0, t0, ϕ0)
 
     ped_initial_state = VehicleState(posF, env.roadway, v0);
 

@@ -29,20 +29,20 @@ end
 
 function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
     # regular roadway
-    roadway = Roadway(env.roadway.segments[1:end-1])
-    AutoViz.render!(rendermodel, roadway)
+    # roadway = Roadway(env.roadway.segments[1:end-1])
+    AutoViz.render!(rendermodel, env.roadway)
 
-    # crosswalk
-    cw_segment = env.roadway.segments[end]
-    curve = cw_segment.lanes[1].curve
-    n = length(curve)
-    pts = Array{Float64}(2, n)
-    for (i,pt) in enumerate(curve)
-        pts[1,i] = pt.pos.x
-        pts[2,i] = pt.pos.y
+    for (i, cw) in enumerate(env.crosswalks)
+        # crosswalk
+        curve = cw.curve
+        n = length(curve)
+        pts = Array{Float64}(2, n)
+        for (i,pt) in enumerate(curve)
+            pts[1,i] = pt.pos.x
+            pts[2,i] = pt.pos.y
+        end
+        add_instruction!(rendermodel, render_dashed_line, (pts, colorant"white", cw.width, 0.5, 0.7, 0.0, Cairo.CAIRO_LINE_CAP_BUTT))
     end
-    add_instruction!(rendermodel, render_dashed_line, (pts, colorant"white", env.params.crosswalk_width, 0.5, 0.7, 0.0, Cairo.CAIRO_LINE_CAP_BUTT))
-
     # obstacles
     for obs in env.obstacles
         pts = Array{Float64}(2, obs.npts)

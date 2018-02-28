@@ -14,9 +14,9 @@ Container type for the environment parameters
     nlanes_main::Int64 = 2
     nlanes::Int64 = 1
     # crosswalk
-    crosswalk_pos::VecSE2 = VecSE2(12., 0., pi/2)
-    crosswalk_length::Float64  = 20.0
-    crosswalk_width::Float64 = 4.0
+    crosswalk_pos::Vector{VecSE2} = [VecSE2(6, 0., pi/2), VecSE2(-6, 0., pi/2), VecSE2(0., -8., 0.)]
+    crosswalk_length::Vector{Float64}  = [20.0, 20., 10.0]
+    crosswalk_width::Vector{Float64} = [4.0, 4.0, 3.0]
 
     stop_line::Float64 = 10. # in m along the ego car lane
     # cars
@@ -34,7 +34,7 @@ Urban Environment with intersections and crosswalk
 """
 mutable struct UrbanEnv <: OccludedEnv
     roadway::Roadway
-    crosswalk::Lane
+    crosswalks::Vector{Lane}
     obstacles::Vector{ConvexPolygon}
     params::UrbanParams
 end
@@ -45,15 +45,21 @@ function UrbanEnv(;params=UrbanParams())
                                        params. lane_width, params.nlanes_main, params.nlanes,
                                        params. stop_line, params.speed_limit, params.car_rate)
     roadway = gen_T_roadway(intersection_params)
-    cw_tag = LaneTag(length(roadway.segments)+1, 1)
+    crosswalks = Lane[]
+    cw_id = length(roadway.segments)+1
+    for i =1:length(params.crosswalk_pos)
+        cw_tag = LaneTag(cw_id, 1)
 
-    crosswalk = Lane(cw_tag, gen_straight_curve(VecE2(params.crosswalk_pos) - polar(params.crosswalk_length/2, params.crosswalk_pos.θ),
-                                                          VecE2(params.crosswalk_pos) + polar(params.crosswalk_length/2, params.crosswalk_pos.θ),
-                                                           2), width = params.crosswalk_width)
-    cw_segment = RoadSegment(length(roadway.segments)+1, [crosswalk])
-    push!(roadway.segments, cw_segment)
+        crosswalk = Lane(cw_tag, gen_straight_curve(VecE2(params.crosswalk_pos[i]) - polar(params.crosswalk_length[i]/2, params.crosswalk_pos[i].θ),
+                                                              VecE2(params.crosswalk_pos[i]) + polar(params.crosswalk_length[i]/2, params.crosswalk_pos[i].θ),
+                                                               2), width = params.crosswalk_width[i])
+        cw_segment = RoadSegment(length(roadway.segments)+1, [crosswalk])
+        push!(crosswalks, crosswalk)
+        # push!(roadway.segments, cw_segment)
+        cw_id += 1
+    end
     obstacles = Vector{ConvexPolygon}[]
-    return UrbanEnv(roadway, crosswalk, obstacles, params)
+    return UrbanEnv(roadway, crosswalks, obstacles, params)
 end
 
 #### Obstacle generation ####
@@ -83,8 +89,10 @@ function right_obstacle_space(env::UrbanEnv; delta::Float64=1.0, y_min=env.param
 end
 
 function upper_obstacle_space(env::UrbanEnv; max_width = 2.0)
-    x_min = env.params.x_min + env.params.x_max
-    x_max = env.params.crosswalk_pos.x - env.params.crosswalk_width/2
+    # x_min = env.params.x_min
+    x_min = minimum([pos.x for pos in env.params.crosswalk_pos]) + maximum(env.params.crosswalk_width/2)
+    # x_max = env.params.crosswalk_pos.x - env.params.crosswalk_width/2
+    x_max = maximum([pos.x for pos in env.params.crosswalk_pos]) - maximum(env.params.crosswalk_width/2)
     y_min = env.params.inter_y + env.params.nlanes_main*env.params.lane_width
     y_max = y_min + max_width
     return x_min, x_max, y_min, y_max
@@ -124,8 +132,12 @@ function ObstacleDistribution(env::UrbanEnv ;
                                left_obs_pres_prob::Float64 = 0.75,
                                right_obs_pres_prob::Float64 = 0.75,
                                obs_widths::Vector{Float64} = [5., 10., 17.])
+    # upper_xmin, upper_xmax, upper_ymin, upper_ymax = upper_obstacle_space(env)
+    # obs_upper = [upper_xmin + minimum(obs_widths)/2, 0.5*upper_xmin + 0.5*upper_xmax, upper_xmax - minimum(obs_widths)/2]
+
     upper_xmin, upper_xmax, upper_ymin, upper_ymax = upper_obstacle_space(env)
-    obs_upper = [upper_xmin + minimum(obs_widths)/2, 0.5*upper_xmin + 0.5*upper_xmax, upper_xmax - minimum(obs_widths)/2]
+    obs_upper = [0.5*upper_xmin + 0.5*upper_xmax]
+
 
     left_xmin, left_xmax, left_ymin, left_ymax = left_obstacle_space(env)
     obs_left = [left_xmin + minimum(obs_widths)/2, 0.5*left_xmin + 0.5*left_xmax, left_xmax - minimum(obs_widths)/2]
