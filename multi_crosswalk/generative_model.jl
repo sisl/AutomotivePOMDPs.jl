@@ -37,7 +37,7 @@ function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::Abstrac
             max_id = veh.id
         end
     end
-    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_peds+1 && !pomdp.no_ped && false
+    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_peds+1 && !pomdp.no_ped
         # println("Spawning new pedestrians")
         new_ped = initial_pedestrian(pomdp, sp, rng)
         pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized

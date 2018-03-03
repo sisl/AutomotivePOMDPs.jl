@@ -7,7 +7,7 @@
     horizon::Float64 = 20.0 # distance from the intersection to start the logic
     stop_delta::Float64 = 0. # precision for stopping slightly before the line
     accel_tol::Float64 = 1e-2 # if |a| < accel_tol then a = 0.
-
+    priorities::Dict{Tuple{LaneTag, LaneTag}, Bool} = Dict{Tuple{LaneTag, LaneTag}, Bool}()
     # states
     have_wait_list::Bool = false
     wait_list::Vector{Int} = Int[]
@@ -38,7 +38,7 @@ function AutomotiveDrivingModels.observe!(model::IntersectionDriver, scene::Scen
     dir = model.navigator.dir
     a_lon =0.
     a_lon_idm = model.navigator.a
-    if isempty(model.intersection) # no intersection, go
+    if isempty(model.intersection) || model.priorities[(model.navigator.route[1].tag,model.navigator.route[end].tag)] # no intersection, go
         a_lon = model.navigator.a
     else
         if !model.priority && !model.stop # reach stop line
@@ -73,7 +73,7 @@ function AutomotiveDrivingModels.observe!(model::IntersectionDriver, scene::Scen
     # println("n_yield ", model.n_yield)
     # println("a_lon ", a_lon)
     # println("v ", ego.state.v)
-    model.a = LonAccelDirection(a_lon, dir)
+    model.a = LonAccelDirection(a_lon + 2*model.accel_tol*randn(), dir) # add noise to break ties #XXX remove with priorities
     d_stop = get_dist_to_end(ego, roadway)
     # println("veh ", ego.id, " wait_list ", model.wait_list, " stop ", model.stop, " priority ", model.priority, " dstop ", d_stop, " a_lon ", a_lon, " v ", ego.state.v )
     # println("veh ", ego.id, " taking action ", model.a)
@@ -147,7 +147,15 @@ function tts(dist::Float64, v::Float64)
 end
 
 function is_intersection_cleared(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int, delta::Float64=2.0)
-    ego = scene[findfirst(scene, egoid)]
+    for veh in scene
+        if veh.id == egoid
+            continue
+        end
+        if !(is_exiting(model, veh, roadway) || is_at_intersection(model, veh, roadway))
+            return false
+        end
+    end
+    return true
 end
 
 function is_exiting(model::IntersectionDriver, veh::Vehicle, roadway::Roadway)
@@ -179,7 +187,7 @@ set the state stop! to true if veh is stopped at the intersection
 """
 function update_stop!(model::IntersectionDriver, veh::Vehicle, roadway::Roadway)
     dist_to_end = get_dist_to_end(veh, roadway)
-    if veh.state.v ≈ 0. && isapprox(dist_to_end, 0, atol=0.5) # parameterize rtol?
+    if veh.state.v ≈ 0. && isapprox(dist_to_end - model.stop_delta, 0, atol=0.5) # parameterize rtol?
         model.stop = true
     end
 end
@@ -194,4 +202,14 @@ function get_dist_to_end(veh::Vehicle, roadway::Roadway)
     # println("dist_to_end ", dist_to_end)
     # println("State ", veh.state.posF)
     return dist_to_end
+end
+
+
+## Fancier priority model
+function check_priority(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+    ego = scene[findfirst(scene, egoid)]
+    lane = get_lane(roadway, ego)
+    route = model.navigator.route
+    next_lane = intersect(lane.exits, model.navigator.route)
+
 end

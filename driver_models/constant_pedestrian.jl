@@ -55,9 +55,9 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDa
     t = veh.state.posF.t
     Δt = v*sin(ϕ)*ΔT + lat*cos(ϕ)
     # cannot go offroad
-    if t + Δt > roadway.segments[1].lanes[1].width
+    if t + Δt > get_lane(roadway, veh).width/2
         Δt = 0.
-    elseif t - Δt < -roadway.segments[1].lanes[1].width
+    elseif t - Δt < -get_lane(roadway, veh).width/2
         Δt = 0.
     end
 

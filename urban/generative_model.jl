@@ -35,13 +35,13 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
     sp = deepcopy(s) #XXX bad
-    max_id = 0
-    for veh in sp
-        if veh.id > max_id
-            max_id = veh.id
-        end
-    end
-    if rand(rng) < pomdp.car_birth && max_id < pomdp.max_entities+1
+    # max_id = 0
+    # for veh in sp
+    #     if veh.id > max_id
+    #         max_id = veh.id
+    #     end
+    # end
+    if rand(rng) < pomdp.car_birth && n_cars(s) < pomdp.max_cars + 1
         new_car = initial_car(pomdp, sp, rng)
         if can_push(pomdp.env, sp, new_car)
             lane = get_lane(pomdp.env.roadway, new_car)
@@ -59,22 +59,26 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                                                      intersection=intersection,
                                                      intersection_entrances = intersection_entrances,
                                                      intersection_exits = intersection_exits,
-                                                     stop_delta=0.,
-                                                     accel_tol=0.)
-            cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalk, pomdp.env.roadway)
-            crosswalk_driver = CrosswalkDriver(navigator = navigator,
-                                   crosswalk = pomdp.env.crosswalk,
-                                   conflict_lanes = cw_conflict_lanes,
-                                   intersection_entrances = intersection_entrances,
-                                   yield=!isempty(intersect(cw_conflict_lanes, route))
-                                   )
+                                                     stop_delta=maximum(pomdp.env.params.crosswalk_width),
+                                                     accel_tol=0.,
+                                                     priorities = pomdp.env.priorities)
+            crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
+            for i=1:length(pomdp.env.crosswalks)
+                cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalks[i], pomdp.env.roadway)
+                crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
+                                         crosswalk = pomdp.env.crosswalks[i],
+                                         conflict_lanes = cw_conflict_lanes,
+                                         intersection_entrances = intersection_entrances,
+                                         yield=!isempty(intersect(cw_conflict_lanes, route))
+                                         )
+            end
             pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
-                                    intersection_driver=intersection_driver,
-                                   crosswalk_driver=crosswalk_driver
-                                                   )
+                                                    intersection_driver=intersection_driver,
+                                                    crosswalk_drivers=crosswalk_drivers
+                                                    )
             push!(sp, new_car)
         end
-        if rand(rng) < pomdp.ped_birth && max_id < pomdp.max_entities+1
+        if rand(rng) < pomdp.ped_birth && n_pedestrians(s) < pomdp.max_peds
             # println("Spawning new pedestrians")
             new_ped = initial_pedestrian(pomdp, sp, rng)
             pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
@@ -99,11 +103,13 @@ end
 
 ### INITIAL STATES ################################################################################
 
-function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG)
+function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
     sample_obstacles!(pomdp.env, pomdp.obs_dist, rng)
     scene = Scene()
-    ego = initial_ego(pomdp, rng)
-    push!(scene, ego)
+    if !no_ego
+        ego = initial_ego(pomdp, rng)
+        push!(scene, ego)
+    end
 
     # add cars
     for i=1:pomdp.max_cars
@@ -126,18 +132,22 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG)
                                                          intersection=intersection,
                                                          intersection_entrances = intersection_entrances,
                                                          intersection_exits = intersection_exits,
-                                                         stop_delta=0.,
-                                                         accel_tol=0.)
-                cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalk, pomdp.env.roadway)
-                crosswalk_driver = CrosswalkDriver(navigator = navigator,
-                                        crosswalk = pomdp.env.crosswalk,
-                                        conflict_lanes = cw_conflict_lanes,
-                                        intersection_entrances = intersection_entrances,
-                                        yield=!isempty(intersect(cw_conflict_lanes, route))
-                                        )
+                                                         stop_delta=maximum(pomdp.env.params.crosswalk_width),
+                                                         accel_tol=0.,
+                                                         priorities = pomdp.env.priorities)
+                crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
+                for i=1:length(pomdp.env.crosswalks)
+                    cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalks[i], pomdp.env.roadway)
+                    crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
+                                            crosswalk = pomdp.env.crosswalks[i],
+                                            conflict_lanes = cw_conflict_lanes,
+                                            intersection_entrances = intersection_entrances,
+                                            yield=!isempty(intersect(cw_conflict_lanes, route))
+                                            )
+                end
                 pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
                                                        intersection_driver=intersection_driver,
-                                                       crosswalk_driver=crosswalk_driver
+                                                       crosswalk_drivers=crosswalk_drivers
                                                        )
             end
             # pomdp.models[new_car.id] = RouteFollowingIDM(route = random_route(rng,
@@ -176,16 +186,17 @@ function initial_car(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, first_sc
 
 
     # new id, increment last id
-    max_id = 0
-    for veh in scene
-        if veh.id > max_id
-            max_id = veh.id
-        end
-    end
-    id = max_id + 1
-    if max_id == 0
-        id = 2
-    end
+    # max_id = 0
+    # for veh in scene
+    #     if veh.id > max_id
+    #         max_id = veh.id
+    #     end
+    # end
+    # id = max_id + 1
+    # if max_id == 0
+    #     id = 2
+    # end
+    id = next_car_id(pomdp, scene, rng)
 
     return Vehicle(initial_state, pomdp.car_type, id)
 end
@@ -204,37 +215,38 @@ Create a new pedestrian entity at its initial state
 """
 function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, first_scene::Bool = false)
     env = pomdp.env
-    crosswalk_pos = env.params.crosswalk_pos
+    cw_ind = rand(rng, 1:length(env.params.crosswalk_pos))
+    crosswalk_pos = env.params.crosswalk_pos[cw_ind]
 
     # position along the crosswalk
-    t0 = rand(rng, Uniform(-env.params.crosswalk_width/2, env.params.crosswalk_width/2))
-    s0 = rand(rng, [0., get_end(env.crosswalk)])
+    t0 = rand(rng, Uniform(-env.params.crosswalk_width[cw_ind]/2, env.params.crosswalk_width[cw_ind]/2))
+    s0 = rand(rng, [0., get_end(env.crosswalks[cw_ind])])
     ϕ0 = float(π)
     if s0 == 0.
         ϕ0 = 0.
     end
     if first_scene
-        s0 = rand(rng, Uniform(0., get_end(env.crosswalk)))
+        s0 = rand(rng, Uniform(0., get_end(env.crosswalks[cw_ind])))
     end
 
     #velocity
     v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
-    posF = Frenet(env.crosswalk, s0, t0, ϕ0)
+    posF = Frenet(env.crosswalks[cw_ind], s0, t0, ϕ0)
 
     ped_initial_state = VehicleState(posF, env.roadway, v0);
 
     # new id, increment last id
-    max_id = 0
-    for veh in scene
-        if veh.id > max_id
-            max_id = veh.id
-        end
-    end
-    id = max_id + 1
-    if max_id == 0
-        id = 2
-    end
-
+    # max_id = 0
+    # for veh in scene
+    #     if veh.id > max_id
+    #         max_id = veh.id
+    #     end
+    # end
+    # id = max_id + 1
+    # if max_id == 0
+    #     id = 2
+    # end
+    id = next_ped_id(pomdp, scene, rng)
 
     return Vehicle(ped_initial_state, PEDESTRIAN_DEF, id)
 end
@@ -260,7 +272,7 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::Scene, a::UrbanAction, sp::Scen
     o[3] = ego.posG.θ
     o[4] = ego.v
     pos_off = get_off_the_grid(pomdp)
-    for i=2:pomdp.max_cars+1
+    for i=2:pomdp.max_cars + pomdp.max_peds +1
         o[n_features*i - 3] = pos_off.posG.x
         o[n_features*i - 2] = pos_off.posG.y
         o[n_features*i - 1] = pos_off.posG.θ
@@ -270,12 +282,24 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::Scene, a::UrbanAction, sp::Scen
         if veh.id == EGO_ID
             continue
         end
+        if veh.def.class == AgentClass.CAR
         # @assert veh.id <= pomdp.max_cars+1
-        if is_observable_fixed(ego, veh.state, pomdp.env)
-            o[n_features*veh.id - 3] = veh.state.posG.x + pos_noise*randn(rng)
-            o[n_features*veh.id - 2] = veh.state.posG.y + pos_noise*randn(rng)
-            o[n_features*veh.id - 1] = veh.state.posG.θ
-            o[n_features*veh.id] = veh.state.v + vel_noise*randn(rng)
+            if is_observable_fixed(ego, veh.state, pomdp.env)
+                o[n_features*veh.id - 3] = veh.state.posG.x + pos_noise*randn(rng)
+                o[n_features*veh.id - 2] = veh.state.posG.y + pos_noise*randn(rng)
+                o[n_features*veh.id - 1] = veh.state.posG.θ
+                o[n_features*veh.id] = veh.state.v + vel_noise*randn(rng)
+            end
+        end
+        if veh.def.class == AgentClass.PEDESTRIAN
+            # println(" veh id ", veh.id)
+            # println(" index " , n_features*(veh.id - 100 + pomdp.max_cars + 1))
+            if is_observable_fixed(ego, veh.state, pomdp.env)
+                o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x + pos_noise*randn(rng)
+                o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y + pos_noise*randn(rng)
+                o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ
+                o[n_features*(veh.id - 100 + pomdp.max_cars + 1)] = veh.state.v + vel_noise*randn(rng)
+            end
         end
     end
     return o
@@ -371,4 +395,56 @@ function get_ego_route(pomdp::UrbanPOMDP)
         lanes[i] = pomdp.env.roadway[tag]
     end
     lanes
+end
+
+"""
+create a unique ID for a new car
+"""
+function next_car_id(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG)
+    max_id = pomdp.max_cars+1
+    current_car_ids = []
+    for veh in scene
+        if veh.def.class == AgentClass.CAR
+            push!(current_car_ids, veh.id)
+        end
+    end
+    possible_ids = setdiff(2:max_id, current_car_ids)
+    id = rand(rng, possible_ids)
+    return id
+end
+
+"""
+create a unique ID for a new pedestrian
+"""
+function next_ped_id(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG)
+    max_id = pomdp.max_peds
+    current_ped_ids = []
+    for veh in scene
+        if veh.def.class == AgentClass.PEDESTRIAN
+            push!(current_ped_ids, veh.id)
+        end
+    end
+    possible_ids = setdiff(101:100+max_id, current_ped_ids)
+    id = rand(rng, possible_ids)
+    return id
+end
+
+function n_cars(scene::Scene)
+    n = 0
+    for veh in scene
+        if veh.def.class == AgentClass.CAR
+            n += 1
+        end
+    end
+    return n
+end
+
+function n_pedestrians(scene::Scene)
+    n = 0
+    for veh in scene
+        if veh.def.class == AgentClass.PEDESTRIAN
+            n += 1
+        end
+    end
+    return n
 end

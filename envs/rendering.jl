@@ -29,8 +29,8 @@ end
 
 function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
     # regular roadway
-    # roadway = Roadway(env.roadway.segments[1:end-1])
-    AutoViz.render!(rendermodel, env.roadway)
+    roadway = Roadway(env.roadway.segments[1:end-length(env.crosswalks)])
+    AutoViz.render!(rendermodel, roadway)
 
     for (i, cw) in enumerate(env.crosswalks)
         # crosswalk

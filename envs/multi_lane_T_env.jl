@@ -102,12 +102,62 @@ mutable struct IntersectionEnv <: OccludedEnv
     obstacles::Vector{ConvexPolygon}
     params::TInterParams
     lane_map::Dict{String, Lane}
+    priorities::Dict{Tuple{LaneTag, LaneTag}, Bool}
+    directions::Dict{Symbol, Tuple{LaneTag, LaneTag}}
 end
 
 
 function IntersectionEnv(params::TInterParams = TInterParams())
     roadway = gen_T_roadway(params)
     lane_map = Dict{String, Lane}()
-    obstalces = Vector{ConvexPolygon}[]
-    return IntersectionEnv(roadway, Vector{ConvexPolygon}[], params, lane_map)
+    obstacles = Vector{ConvexPolygon}[]
+    priorities, directions = priority_map(roadway)
+    return IntersectionEnv(roadway, obstacles, params, lane_map, priorities, directions)
+end
+
+# return a mapping between a label and a route for a 2 lanes T intersection
+function priority_map(roadway::Roadway)
+    priorities = Dict{Tuple{LaneTag, LaneTag}, Bool}()
+    directions = Dict{Symbol, Tuple{LaneTag, LaneTag}}()
+
+    # straight from right
+    route = (LaneTag(1,1),LaneTag(2,1))
+    priorities[route] = true
+    directions[:straight_from_right] = route
+    route = (LaneTag(1,2),LaneTag(2,2))
+    priorities[route] = true
+    directions[:straight_from_right2] = route
+
+    # straight from left
+    route = (LaneTag(3,1),LaneTag(4,1))
+    priorities[route] = false
+    directions[:straight_from_left] = (LaneTag(1,1),LaneTag(2,1))
+    route = (LaneTag(3,2),LaneTag(4,2))
+    priorities[route] = false
+    directions[:straight_from_left2] = (LaneTag(1,2),LaneTag(2,2))
+
+    # right turns
+    route = (LaneTag(3,1), LaneTag(5,1))
+    priorities[route] = false
+    directions[:right_from_left] = route
+    route = (LaneTag(3,2), LaneTag(5,1))
+    priorities[route] = false
+    directions[:right_from_left2] = route
+    route = (LaneTag(6,1), LaneTag(4,1))
+    priorities[route] = false
+    directions[:right_from_bot] = route
+    route = (LaneTag(6,1), LaneTag(4,2))
+    priorities[route] = false
+    directions[:right_from_bot2] = route
+
+    # left turns
+    route = (LaneTag(6,1), LaneTag(2,2))
+    priorities[route] = false
+    route = (LaneTag(6,1), LaneTag(2,1))
+    priorities[route] = false
+    route = (LaneTag(1,1), LaneTag(5,1))
+    priorities[route] = false
+    route = (LaneTag(1,2), LaneTag(5,1))
+    priorities[route] = false
+    return priorities, directions
 end

@@ -60,7 +60,8 @@ function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::Abstrac
                                                        intersection_entrances = intersection_entrances,
                                                        intersection_exits = intersection_exits,
                                                        stop_delta=0.,
-                                                       accel_tol=0.)
+                                                       accel_tol=0.,
+                                                       priorities = pomdp.env.priorities)
             push!(sp, new_car)
         end
         actions = Array{Any}(length(sp))
@@ -107,7 +108,8 @@ function POMDPs.initial_state(pomdp::OIPOMDP, rng::AbstractRNG)
                                                            intersection_entrances = intersection_entrances,
                                                            intersection_exits = intersection_exits,
                                                            stop_delta=0.,
-                                                           accel_tol=0.)
+                                                           accel_tol=0.,
+                                                           priorities = pomdp.env.priorities)
             end
             # pomdp.models[new_car.id] = RouteFollowingIDM(route = random_route(rng,
             #                                                                   pomdp.env.roadway,

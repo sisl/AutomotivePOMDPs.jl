@@ -16,7 +16,7 @@ Container type for the environment parameters
     # crosswalk
     crosswalk_pos::Vector{VecSE2} = [VecSE2(6, 0., pi/2), VecSE2(-6, 0., pi/2), VecSE2(0., -8., 0.)]
     crosswalk_length::Vector{Float64}  = [20.0, 20., 10.0]
-    crosswalk_width::Vector{Float64} = [4.0, 4.0, 3.0]
+    crosswalk_width::Vector{Float64} = [4.0, 4.0, 3.1]
 
     stop_line::Float64 = 10. # in m along the ego car lane
     # cars
@@ -37,6 +37,8 @@ mutable struct UrbanEnv <: OccludedEnv
     crosswalks::Vector{Lane}
     obstacles::Vector{ConvexPolygon}
     params::UrbanParams
+    priorities::Dict{Tuple{LaneTag, LaneTag}, Bool}
+    directions::Dict{Symbol, Tuple{LaneTag, LaneTag}}
 end
 
 function UrbanEnv(;params=UrbanParams())
@@ -55,11 +57,12 @@ function UrbanEnv(;params=UrbanParams())
                                                                2), width = params.crosswalk_width[i])
         cw_segment = RoadSegment(length(roadway.segments)+1, [crosswalk])
         push!(crosswalks, crosswalk)
-        # push!(roadway.segments, cw_segment)
+        push!(roadway.segments, cw_segment)
         cw_id += 1
     end
     obstacles = Vector{ConvexPolygon}[]
-    return UrbanEnv(roadway, crosswalks, obstacles, params)
+    priorities, directions = priority_map(roadway)
+    return UrbanEnv(roadway, crosswalks, obstacles, params, priorities, directions)
 end
 
 #### Obstacle generation ####
