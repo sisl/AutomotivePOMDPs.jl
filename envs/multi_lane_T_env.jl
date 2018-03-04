@@ -125,7 +125,7 @@ function priority_map(roadway::Roadway)
     priorities[route] = true
     directions[:straight_from_right] = route
     route = (LaneTag(1,2),LaneTag(2,2))
-    priorities[route] = true
+    priorities[route] = false
     directions[:straight_from_right2] = route
 
     # straight from left

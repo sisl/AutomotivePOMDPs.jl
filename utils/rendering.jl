@@ -28,13 +28,24 @@ function animate_scenes(scenes::Vector{Scene}, env; cam=FitToContentCamera(0.), 
     return duration, fps, render_rec
 end
 
-function animate_scenes(scenes::Vector{Scene}, env, overlays::Vector{SceneOverlay} = SceneOverlay[], cam=FitToContentCamera(0.),  sim_dt=0.1)
+function animate_scenes(scenes::Vector{Scene}, env; overlays::Vector{SceneOverlay} = SceneOverlay[], cam=FitToContentCamera(0.),  sim_dt=0.1)
     duration =length(scenes)*sim_dt
     fps = Int(1/sim_dt)
     cam = FitToContentCamera(0.)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
         return AutoViz.render(scenes[frame_index], env, overlays, cam=cam)
+    end
+    return duration, fps, render_rec
+end
+
+function animate_scenes(scenes::Vector{Scene}, actions::Vector{Float64}, env; cam=FitToContentCamera(0.), sim_dt=0.1)
+    duration =length(scenes)*sim_dt
+    fps = Int(1/sim_dt)
+    cam = FitToContentCamera(0.)
+    function render_rec(t, dt)
+        frame_index = Int(floor(t/dt)) + 1
+        return AutoViz.render(scenes[frame_index], env, SceneOverlay[TextOverlay(text = ["Acc: $(actions[frame_index])"])], cam=cam)
     end
     return duration, fps, render_rec
 end
