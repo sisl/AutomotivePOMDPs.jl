@@ -76,14 +76,14 @@ export
     UrbanState,
     UrbanAction,
     UrbanObs,
-    TwoCars,
-    PedCar,
-    ObsPed,
-    ObsCar,
     initial_car,
     initial_pedestrian,
     initial_ego,
-    obs_weight
+    obs_weight,
+    TwoCars,
+    PedCar,
+    ObsPed,
+    ObsCar
 
 # helpers
 include("constants.jl")

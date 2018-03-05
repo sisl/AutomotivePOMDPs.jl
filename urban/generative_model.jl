@@ -98,7 +98,9 @@ end
 ### INITIAL STATES ################################################################################
 
 function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
-    sample_obstacles!(pomdp.env, pomdp.obs_dist, rng)
+    if pomdp.obstacles
+        sample_obstacles!(pomdp.env, pomdp.obs_dist, rng)
+    end
     scene = Scene()
     if !no_ego
         ego = initial_ego(pomdp, rng)
