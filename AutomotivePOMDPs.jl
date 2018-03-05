@@ -76,6 +76,10 @@ export
     UrbanState,
     UrbanAction,
     UrbanObs,
+    TwoCars,
+    PedCar,
+    ObsPed,
+    ObsCar,
     initial_car,
     initial_pedestrian,
     initial_ego,
@@ -130,6 +134,7 @@ include("multi_lane_T_intersection/render_helpers.jl")
 #urban
 include("urban/pomdp_types.jl")
 include("urban/generative_model.jl")
+include("decomposition/base_scenarios.jl")
 
 
 
