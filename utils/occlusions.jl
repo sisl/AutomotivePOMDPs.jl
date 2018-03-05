@@ -60,7 +60,7 @@ end
 
 function AutomotiveDrivingModels.is_colliding(P::Projectile, poly::ConvexPolygon, A::VecSE2)
     # collides if at least one of the segments collides with the ray
-    point_time = sqrt(abs2(A - P.pos))
+    point_time = norm(VecE2(A - P.pos))
     for i in 1 : length(poly)
         seg = get_edge(poly, i)
         obs_time = get_intersection_time(P, seg)

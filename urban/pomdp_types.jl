@@ -33,7 +33,7 @@ end
     ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0)
     max_cars::Int64 = 10
     max_peds::Int64 = 10
-    max_entities::Int64 = 10
+    obstacles::Bool = true
     max_acc::Float64 = 2.0
     ego_start::Float64 = UrbanEnv().params.stop_line - ego_type.length/2
     ego_goal::LaneTag = LaneTag(2,1)
