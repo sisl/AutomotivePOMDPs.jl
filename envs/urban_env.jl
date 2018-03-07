@@ -5,7 +5,7 @@ Container type for the environment parameters
     # geometry
     x_min::Float64 = -30.0
     x_max::Float64 = 30.0
-    y_min::Float64 = -20.0
+    y_min::Float64 = -30.0
     inter_x::Float64 = 0.
     inter_y::Float64 = 0.
     inter_width::Float64 = 6.0
@@ -18,7 +18,7 @@ Container type for the environment parameters
     crosswalk_length::Vector{Float64}  = [20.0, 20., 10.0]
     crosswalk_width::Vector{Float64} = [4.0, 4.0, 3.1]
 
-    stop_line::Float64 = 9. # in m along the ego car lane
+    stop_line::Float64 = 19. # in m along the ego car lane
     # cars
     speed_limit::Float64 = 10.0 # in m/s
     car_rate::Float64 = 0.3 # probability of a car appearing every time steps
