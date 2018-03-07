@@ -38,7 +38,7 @@ function is_observable_dyna(ego::Vehicle, car::Vehicle, scene::Scene)
     angle = atan2(car.state.posG.y - front.y, car.state.posG.x - front.x)
     ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
     for veh in scene
-        if veh.id == car.id || veh.id == ego.id
+        if veh.id == car.id || veh.id == ego.id || veh.def == PEDESTRIAN_DEF
             continue
         end
         box = get_oriented_bounding_box(veh)
