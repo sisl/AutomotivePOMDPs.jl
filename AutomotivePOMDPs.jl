@@ -30,7 +30,8 @@ export
     RouteFollowingIDM,
     LonAccelDirection,
     CrosswalkDriver,
-    IntersectionDriver,
+    StopIntersectionDriver,
+    TTCIntersectionDriver,
     UrbanDriver,
 
     # for rendering
@@ -98,7 +99,8 @@ include("envs/rendering.jl")
 # driver models
 include("driver_models/route_following_idm.jl")
 include("driver_models/stop.jl")
-include("driver_models/intersection_driver.jl")
+include("driver_models/stop_intersection_driver.jl")
+include("driver_models/ttc_intersection_driver.jl")
 include("driver_models/constant_pedestrian.jl")
 include("driver_models/crosswalk_driver.jl")
 include("driver_models/urban_driver.jl")

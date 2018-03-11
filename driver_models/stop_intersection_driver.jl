@@ -1,4 +1,4 @@
-@with_kw mutable struct IntersectionDriver <: DriverModel{LonAccelDirection}
+@with_kw mutable struct StopIntersectionDriver <: DriverModel{LonAccelDirection}
     a::LonAccelDirection = LonAccelDirection(0., 1)
     navigator::RouteFollowingIDM = RouteFollowingIDM()
     intersection::Vector{Lane} = Lane[]
@@ -16,15 +16,15 @@
     n_yield::Int64 = 0 # number of vehicles to yield to
 end
 
-get_name(::IntersectionDriver) = "IntersectionDriver"
-Base.rand(model::IntersectionDriver) = model.a
+get_name(::StopIntersectionDriver) = "StopIntersectionDriver"
+Base.rand(model::StopIntersectionDriver) = model.a
 
-function AutomotiveDrivingModels.set_desired_speed!(model::IntersectionDriver, v_des::Float64)
+function AutomotiveDrivingModels.set_desired_speed!(model::StopIntersectionDriver, v_des::Float64)
     model.navigator.v_des = v_des
     model
 end
 
-function AutomotiveDrivingModels.reset_hidden_state!(model::IntersectionDriver)
+function AutomotiveDrivingModels.reset_hidden_state!(model::StopIntersectionDriver)
     model.priority = false
     model.stop = false
     model.n_yield = 0
@@ -32,7 +32,7 @@ function AutomotiveDrivingModels.reset_hidden_state!(model::IntersectionDriver)
 end
 
 
-function AutomotiveDrivingModels.observe!(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+function AutomotiveDrivingModels.observe!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
     AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
     dir = model.navigator.dir
@@ -83,7 +83,7 @@ end
 """
 If other vehicles reaches the intersection before the ego vehicle they are added to the waitlist
 """
-function grow_wait_list!(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+function grow_wait_list!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
     ego_dist = get_dist_to_end(ego, roadway)
     ego_tts = tts(ego_dist, ego.state.v)
@@ -111,7 +111,7 @@ end
 """
 Remove from the wait list vehicles that are now exiting the intersection
 """
-function ungrow_wait_list!(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+function ungrow_wait_list!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
     ego_dist = get_dist_to_end(ego, roadway)
     n = length(model.wait_list)
@@ -146,7 +146,7 @@ function tts(dist::Float64, v::Float64)
     return dist/v
 end
 
-function is_intersection_cleared(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int, delta::Float64=2.0)
+function is_intersection_cleared(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int, delta::Float64=2.0)
     for veh in scene
         if veh.id == egoid
             continue
@@ -158,7 +158,7 @@ function is_intersection_cleared(model::IntersectionDriver, scene::Scene, roadwa
     return true
 end
 
-function is_exiting(model::IntersectionDriver, veh::Vehicle, roadway::Roadway)
+function is_exiting(model::StopIntersectionDriver, veh::Vehicle, roadway::Roadway)
     lane = get_lane(roadway, veh)
     return lane ∈ model.intersection_exits
 end
@@ -166,7 +166,7 @@ end
 """
 return true if veh is before the intersection
 """
-function is_at_intersection(model::IntersectionDriver, veh::Vehicle, roadway::Roadway)
+function is_at_intersection(model::StopIntersectionDriver, veh::Vehicle, roadway::Roadway)
     lane = get_lane(roadway, veh)
     return lane ∈ model.intersection_entrances
 end
@@ -174,22 +174,10 @@ end
 """
 Check if the ego car has priority or not
 """
-function update_priority!(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+function update_priority!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
     model.priority = isempty(model.wait_list) && model.stop ||
                        !(get_lane(roadway, ego) ∈ model.intersection_entrances)
-end
-
-
-
-"""
-set the state stop! to true if veh is stopped at the intersection
-"""
-function update_stop!(model::IntersectionDriver, veh::Vehicle, roadway::Roadway)
-    dist_to_end = get_dist_to_end(veh, roadway)
-    if veh.state.v ≈ 0. && isapprox(dist_to_end - model.stop_delta, 0, atol=0.5) # parameterize rtol?
-        model.stop = true
-    end
 end
 
 """
@@ -206,7 +194,7 @@ end
 
 
 ## Fancier priority model
-function check_priority(model::IntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+function check_priority(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
     lane = get_lane(roadway, ego)
     route = model.navigator.route

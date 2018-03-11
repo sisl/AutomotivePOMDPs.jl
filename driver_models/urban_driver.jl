@@ -1,7 +1,7 @@
 @with_kw mutable struct UrbanDriver <: DriverModel{LonAccelDirection}
     a::LonAccelDirection = LonAccelDirection(0., 1)
     navigator::RouteFollowingIDM = RouteFollowingIDM()
-    intersection_driver::IntersectionDriver = IntersectionDriver()
+    intersection_driver::DriverModel = StopIntersectionDriver()
     crosswalk_drivers::Vector{CrosswalkDriver} = [CrosswalkDriver()]
 
 

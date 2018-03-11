@@ -49,13 +49,22 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                 intersection=Lane[route[1], route[2]]
             end
             navigator = RouteFollowingIDM(route=route)
-            intersection_driver = IntersectionDriver(navigator= navigator,
-                                                     intersection=intersection,
-                                                     intersection_entrances = intersection_entrances,
-                                                     intersection_exits = intersection_exits,
-                                                     stop_delta=maximum(pomdp.env.params.crosswalk_width),
-                                                     accel_tol=0.,
-                                                     priorities = pomdp.env.priorities)
+            intersection_driver = TTCIntersectionDriver(navigator = navigator,
+                                                        intersection = intersection,
+                                                        intersection_pos = VecSE2(pomdp.env.params.inter_x,
+                                                                                  pomdp.env.params.inter_y),
+                                                        stop_delta = maximum(pomdp.env.params.crosswalk_width),
+                                                        accel_tol = 0.,
+                                                        priorities = pomdp.env.priorities,
+                                                        ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
+                                                        )
+            # intersection_driver = StopIntersectionDriver(navigator= navigator,
+            #                                          intersection=intersection,
+            #                                          intersection_entrances = intersection_entrances,
+            #                                          intersection_exits = intersection_exits,
+            #                                          stop_delta=maximum(pomdp.env.params.crosswalk_width),
+            #                                          accel_tol=0.,
+            #                                          priorities = pomdp.env.priorities)
             crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
             for i=1:length(pomdp.env.crosswalks)
                 cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalks[i], pomdp.env.roadway)
@@ -124,7 +133,7 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=
                     intersection=Lane[route[1], route[2]]
                 end
                 navigator = RouteFollowingIDM(route=route)
-                intersection_driver = IntersectionDriver(navigator= navigator,
+                intersection_driver = StopIntersectionDriver(navigator= navigator,
                                                          intersection=intersection,
                                                          intersection_entrances = intersection_entrances,
                                                          intersection_exits = intersection_exits,

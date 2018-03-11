@@ -55,7 +55,7 @@ function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::Abstrac
                 intersection_exits = get_exit_lanes(pomdp.env.roadway)
                 intersection=Lane[route[1], route[2]]
             end
-            pomdp.models[new_car.id] = IntersectionDriver(navigator=RouteFollowingIDM(route=route),
+            pomdp.models[new_car.id] = StopIntersectionDriver(navigator=RouteFollowingIDM(route=route),
                                                        intersection=intersection,
                                                        intersection_entrances = intersection_entrances,
                                                        intersection_exits = intersection_exits,
@@ -103,7 +103,7 @@ function POMDPs.initial_state(pomdp::OIPOMDP, rng::AbstractRNG)
                     intersection_exits = get_exit_lanes(pomdp.env.roadway)
                     intersection=Lane[route[1], route[2]]
                 end
-                pomdp.models[new_car.id] = IntersectionDriver(navigator=RouteFollowingIDM(route=route),
+                pomdp.models[new_car.id] = StopIntersectionDriver(navigator=RouteFollowingIDM(route=route),
                                                            intersection=intersection,
                                                            intersection_entrances = intersection_entrances,
                                                            intersection_exits = intersection_exits,

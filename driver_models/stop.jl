@@ -35,3 +35,13 @@ function stop_at_dist(model::DriverModel, veh::Vehicle, headway::Float64)
     end
     return acc
 end
+
+"""
+set the state stop! to true if veh is stopped at the intersection
+"""
+function update_stop!(model::DriverModel, veh::Vehicle, roadway::Roadway)
+    dist_to_end = get_dist_to_end(veh, roadway)
+    if veh.state.v ≈ 0. && isapprox(dist_to_end - model.stop_delta, 0, atol=0.5) # parameterize rtol?
+        model.stop = true
+    end
+end
