@@ -65,13 +65,13 @@ class FrameStack(gym.Wrapper):
         self.action_space = env.action_space
         self.observation_space = spaces.Box(low=-10., high=10., shape=(shp[0], shp[1], shp[2] * k))
 
-    def _reset(self):
+    def reset(self):
         ob = self.env.reset()
         for _ in range(self.k):
             self.frames.append(ob)
         return self._get_ob()
 
-    def _step(self, action):
+    def step(self, action):
         ob, reward, done, info = self.env.step(action)
         self.frames.append(ob)
         return self._get_ob(), reward, done, info
@@ -127,7 +127,7 @@ class OccludedCrosswalk(gym.Env):
         self._num_vnc_updates = 0
         self._last_episode_id = -1
 
-    def _step(self, action):
+    def step(self, action):
         data = self._conn.sendreq({"cmd": "step", "args": int(action + 1)})
         assert 'obs' in data
         assert 'rew' in data
@@ -170,7 +170,7 @@ class OccludedCrosswalk(gym.Env):
             self._episode_length = 0
             self._all_rewards = []
 
-    def _reset(self):
+    def reset(self):
         data = self._conn.sendreq({"cmd": "reset"})
         assert 'obs' in data
         return np.reshape(data['obs'], self.observation_space.shape)

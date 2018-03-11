@@ -10,16 +10,16 @@ s = ArgParseSettings()
     "--port"
         help = "set port for zmq communication"
         arg_type = Int
-        default=9393
+        default=9394
 end
 parsed_args = parse_args(ARGS, s)
 
 rng = MersenneTwister(1)
-pomdp = OCPOMDP(max_ped=1, no_ped_prob=0.1)
+pomdp = OCPOMDP(max_peds=3, no_ped_prob=0.1)
 
 ip = "127.0.0.1"
 port = parsed_args["port"]
 
-env = KMarkovEnvironment(pomdp, k=4)
-DeepRL.run_env_server(ip, port, env)
-# DeepRL.run_env_server(ip, port, pomdp)
+# env = KMarkovEnvironment(pomdp, k=4)
+# DeepRL.run_env_server(ip, port, env)
+DeepRL.run_env_server(ip, port, pomdp)
