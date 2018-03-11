@@ -15,7 +15,7 @@ Container type for the environment parameters
     nlanes::Int64 = 1
     # crosswalk
     crosswalk_pos::Vector{VecSE2} = [VecSE2(6, 0., pi/2), VecSE2(-6, 0., pi/2), VecSE2(0., -8., 0.)]
-    crosswalk_length::Vector{Float64}  = [20.0, 20., 10.0]
+    crosswalk_length::Vector{Float64}  = [20.0, 20., 20.0]
     crosswalk_width::Vector{Float64} = [4.0, 4.0, 3.1]
 
     stop_line::Float64 = 19. # in m along the ego car lane

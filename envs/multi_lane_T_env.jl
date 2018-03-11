@@ -78,12 +78,11 @@ function gen_T_roadway(params::TInterParams)
     add_line!(seg6, nlanes, length6, roadway)
 
     connections = [Connection(1,2), Connection(3,4)]
-    for i=1:nlanes_main
-        push!(connections, Connection(1, 5, 0, [(i, 1)]))
-        push!(connections, Connection(3, 5, 0, [(i, 1)]))
-        push!(connections, Connection(6, 2, 0, [(1, i)]))
-        push!(connections, Connection(6, 4, 0, [(1, i)]))
-    end
+    push!(connections, Connection(1, 5, 0, [(2, 1)]))
+    push!(connections, Connection(3, 5, 0, [(1, 1)]))
+    push!(connections, Connection(6, 2, 0, [(1, 2)]))
+    push!(connections, Connection(6, 4, 0, [(1, 1)]))
+
 
     add_junction!(Junction(connections), roadway)
     return roadway
@@ -125,38 +124,38 @@ function priority_map(roadway::Roadway)
     priorities[route] = true
     directions[:straight_from_right] = route
     route = (LaneTag(1,2),LaneTag(2,2))
-    priorities[route] = false
+    priorities[route] = true
     directions[:straight_from_right2] = route
 
     # straight from left
     route = (LaneTag(3,1),LaneTag(4,1))
-    priorities[route] = false
+    priorities[route] = true
     directions[:straight_from_left] = (LaneTag(1,1),LaneTag(2,1))
     route = (LaneTag(3,2),LaneTag(4,2))
-    priorities[route] = false
+    priorities[route] = true
     directions[:straight_from_left2] = (LaneTag(1,2),LaneTag(2,2))
 
     # right turns
     route = (LaneTag(3,1), LaneTag(5,1))
-    priorities[route] = false
+    priorities[route] = true
     directions[:right_from_left] = route
-    route = (LaneTag(3,2), LaneTag(5,1))
-    priorities[route] = false
-    directions[:right_from_left2] = route
+    # route = (LaneTag(3,2), LaneTag(5,1))
+    # priorities[route] = true
+    # directions[:right_from_left2] = route
     route = (LaneTag(6,1), LaneTag(4,1))
     priorities[route] = false
     directions[:right_from_bot] = route
-    route = (LaneTag(6,1), LaneTag(4,2))
-    priorities[route] = false
-    directions[:right_from_bot2] = route
+    # route = (LaneTag(6,1), LaneTag(4,2))
+    # priorities[route] = false
+    # directions[:right_from_bot2] = route
 
     # left turns
     route = (LaneTag(6,1), LaneTag(2,2))
     priorities[route] = false
-    route = (LaneTag(6,1), LaneTag(2,1))
-    priorities[route] = false
-    route = (LaneTag(1,1), LaneTag(5,1))
-    priorities[route] = false
+    # route = (LaneTag(6,1), LaneTag(2,1))
+    # priorities[route] = false
+    # route = (LaneTag(1,1), LaneTag(5,1))
+    # priorities[route] = false
     route = (LaneTag(1,2), LaneTag(5,1))
     priorities[route] = false
     return priorities, directions
