@@ -249,7 +249,8 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::Scene, a::UrbanAction, sp::Scen
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1))
-    ego = sp[findfirst(sp, EGO_ID)].state
+    ego_veh =sp[findfirst(sp, EGO_ID)]
+    ego = ego_veh.state
     o[1] = ego.posG.x
     o[2] = ego.posG.y
     o[3] = ego.posG.θ
@@ -267,7 +268,7 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::Scene, a::UrbanAction, sp::Scen
         end
         if veh.def.class == AgentClass.CAR
         # @assert veh.id <= pomdp.max_cars+1
-            if is_observable_fixed(ego, veh.state, pomdp.env)
+            if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
                 o[n_features*veh.id - 3] = veh.state.posG.x + pos_noise*randn(rng)
                 o[n_features*veh.id - 2] = veh.state.posG.y + pos_noise*randn(rng)
                 o[n_features*veh.id - 1] = veh.state.posG.θ
@@ -277,7 +278,7 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::Scene, a::UrbanAction, sp::Scen
         if veh.def.class == AgentClass.PEDESTRIAN
             # println(" veh id ", veh.id)
             # println(" index " , n_features*(veh.id - 100 + pomdp.max_cars + 1))
-            if is_observable_fixed(ego, veh.state, pomdp.env)
+            if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x + pos_noise*randn(rng)
                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y + pos_noise*randn(rng)
                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ

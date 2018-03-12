@@ -36,7 +36,7 @@ end
     obstacles::Bool = true
     max_acc::Float64 = 2.0
     ego_start::Float64 = UrbanEnv().params.stop_line - ego_type.length/2
-    ego_goal::LaneTag = LaneTag(2,1)
+    ego_goal::LaneTag = LaneTag(2,2)
     off_grid::VecSE2 = VecSE2(UrbanEnv().params.x_min+VehicleDef().length/2, UrbanEnv().params.y_min+VehicleDef().width/2, 0)
     ΔT::Float64 = 0.5 # decision frequency
     car_birth::Float64 = 0.3
