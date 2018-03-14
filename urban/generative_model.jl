@@ -306,7 +306,11 @@ end
 function rescale(o::UrbanObs, pomdp::UrbanPOMDP)
     # rescale
     n_features = 4
-    n_obstacles = 3
+    if pomdp.obstacles
+        n_obstacles = 3
+    else
+        n_obstacles = 0
+    end
     max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
     o[1] /= max_ego_dist
     o[2] /= max_ego_dist
@@ -331,7 +335,11 @@ end
 function unrescale(o::UrbanObs, pomdp::UrbanPOMDP)
     # unrescale
     n_features = 4
-    n_obstacles = 3
+    if pomdp.obstacles
+        n_obstacles = 3
+    else
+        n_obstacles = 0
+    end
     max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
     o[1] *= max_ego_dist
     o[2] *= max_ego_dist
