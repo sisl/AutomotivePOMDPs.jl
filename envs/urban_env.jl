@@ -79,7 +79,7 @@ end
 
 function left_obstacle_space(env::UrbanEnv; y_min=env.params.y_min/2)
     x_min = env.params.x_min
-    x_max = env.params.inter_x - env.params.nlanes*env.params.lane_width
+    x_max = env.params.inter_x - env.params.nlanes*env.params.lane_width - maximum(env.params.crosswalk_width/2)
     y_max = env.params.inter_y-env.params.nlanes_main*env.params.lane_width
     return x_min, x_max, y_min, y_max
 end
@@ -97,7 +97,7 @@ function get_height(poly::ConvexPolygon)
 end
 
 function right_obstacle_space(env::UrbanEnv; delta::Float64=1.0, y_min=env.params.y_min/2)
-    x_min = env.params.inter_x + env.params.nlanes*env.params.lane_width
+    x_min = env.params.inter_x + env.params.nlanes*env.params.lane_width + maximum(env.params.crosswalk_width/2)
     x_max = env.params.x_max
     y_max = env.params.inter_y-env.params.nlanes_main*env.params.lane_width
     return x_min, x_max, y_min, y_max

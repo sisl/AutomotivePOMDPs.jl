@@ -46,13 +46,18 @@ export
     get_lanes,
     get_start_lanes,
     get_exit_lanes,
+    get_ego,
     random_route,
     is_observable_fixed,
     off_the_grid,
     get_conflict_lanes,
+    get_colors,
+    next_car_id,
+    next_ped_id,
 
 
     # pomdp types
+    EGO_ID,
     OCPOMDP,
     OCAction,
     OCState,
@@ -84,7 +89,9 @@ export
     TwoCars,
     PedCar,
     ObsPed,
-    ObsCar
+    ObsCar,
+    rescale,
+    unrescale
 
 # helpers
 include("constants.jl")

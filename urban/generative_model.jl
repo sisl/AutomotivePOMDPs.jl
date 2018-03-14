@@ -243,7 +243,7 @@ end
 
 # uncomment for vector representation
 # TODO find a better way to implement this to switch more easily between representations
-function POMDPs.generate_o(pomdp::UrbanPOMDP, s::Scene, a::UrbanAction, sp::Scene, rng::AbstractRNG)
+function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
     n_features = 4
     n_obstacles = 3
     pos_noise = pomdp.pos_obs_noise
@@ -292,14 +292,14 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::Scene, a::UrbanAction, sp::Scen
         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 1] = get_center(obs).x
         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1)] = get_center(obs).y
     end
-    return o
+    return rescale(o, pomdp)
 end
 
 function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
     return generate_o(pomdp, s, UrbanAction(0.), s, rng::AbstractRNG)
 end
 
-function POMDPs.convert_o(::Type{Vector{Float64}}, o::UrbanObs, pomdp::UrbanPOMDP)
+function rescale(o::UrbanObs, pomdp::UrbanPOMDP)
     # rescale
     n_features = 4
     n_obstacles = 3
@@ -321,6 +321,35 @@ function POMDPs.convert_o(::Type{Vector{Float64}}, o::UrbanObs, pomdp::UrbanPOMD
         o[n_features*i] /= max_ego_dist
     end
 
+    return o
+end
+
+function unrescale(o::UrbanObs, pomdp::UrbanPOMDP)
+    # unrescale
+    n_features = 4
+    n_obstacles = 3
+    max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
+    o[1] *= max_ego_dist
+    o[2] *= max_ego_dist
+    o[3] *= pi/2
+    o[4] *= pomdp.env.params.speed_limit
+    for i=2:pomdp.max_cars + pomdp.max_peds + 1
+        o[n_features*i - 3] *= max_ego_dist
+        o[n_features*i - 2] *= max_ego_dist
+        o[n_features*i - 1] *= pi
+        o[n_features*i] *= pomdp.env.params.speed_limit # XXX parameterized
+    end
+    for i=pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + 1 + n_obstacles
+        o[n_features*i - 3] *= max_ego_dist
+        o[n_features*i - 2] *= max_ego_dist
+        o[n_features*i - 1] *= max_ego_dist
+        o[n_features*i] *= max_ego_dist
+    end
+
+    return o
+end
+
+function POMDPs.convert_o(::Type{Vector{Float64}}, o::UrbanObs, pomdp::UrbanPOMDP)
     return o
 end
 
@@ -362,6 +391,10 @@ return the off the grid state
 function get_off_the_grid(pomdp::UrbanPOMDP)
     posG = pomdp.off_grid
     return VehicleState(posG, pomdp.env.roadway, 0.)
+end
+
+function off_the_grid(veh::VehicleState, pomdp::UrbanPOMDP)
+    return veh.posG == pomdp.off_grid
 end
 
 """
@@ -411,6 +444,18 @@ function next_car_id(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG)
     return id
 end
 
+function next_car_id(pomdp::UrbanPOMDP, scene::Scene)
+    max_id = pomdp.max_cars+1
+    current_car_ids = []
+    for veh in scene
+        if veh.def.class == AgentClass.CAR
+            push!(current_car_ids, veh.id)
+        end
+    end
+    possible_ids = setdiff(2:max_id, current_car_ids)
+    return possible_ids[1]
+end
+
 """
 create a unique ID for a new pedestrian
 """
@@ -425,6 +470,17 @@ function next_ped_id(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG)
     possible_ids = setdiff(101:100+max_id, current_ped_ids)
     id = rand(rng, possible_ids)
     return id
+end
+function next_ped_id(pomdp::UrbanPOMDP, scene::Scene)
+    max_id = pomdp.max_peds
+    current_ped_ids = []
+    for veh in scene
+        if veh.def.class == AgentClass.PEDESTRIAN
+            push!(current_ped_ids, veh.id)
+        end
+    end
+    possible_ids = setdiff(101:100+max_id, current_ped_ids)
+    return possible_ids[1]
 end
 
 function n_cars(scene::Scene)
