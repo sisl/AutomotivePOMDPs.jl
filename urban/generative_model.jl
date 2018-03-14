@@ -245,7 +245,11 @@ end
 # TODO find a better way to implement this to switch more easily between representations
 function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
     n_features = 4
-    n_obstacles = 3
+    if pomdp.obstacles
+        n_obstacles = 3
+    else
+        n_obstacles = 0
+    end
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1))
