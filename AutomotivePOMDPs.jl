@@ -86,12 +86,22 @@ export
     initial_pedestrian,
     initial_ego,
     obs_weight,
+    rescale,
+    unrescale,
+    obs_to_scene,
+
+    # decomposition stuff
     TwoCars,
     PedCar,
     ObsPed,
     ObsCar,
-    rescale,
-    unrescale
+    TwoCarsScenario,
+    PedCarScenario,
+    ObsPedScenario,
+    ObsCarScenario,
+    decompose_input,
+    DecomposedPolicy
+
 
 # helpers
 include("constants.jl")
@@ -144,6 +154,7 @@ include("multi_lane_T_intersection/render_helpers.jl")
 include("urban/pomdp_types.jl")
 include("urban/generative_model.jl")
 include("decomposition/base_scenarios.jl")
+include("decomposition/decomposition_wrapper.jl")
 
 
 

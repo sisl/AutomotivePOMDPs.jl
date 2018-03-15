@@ -3,7 +3,7 @@
     navigator::RouteFollowingIDM = RouteFollowingIDM()
     intersection::Vector{Lane} = Lane[]
     intersection_pos::VecSE2 = VecE2(0., 0., 0.)
-    ttc_threshold::Float64 = 3.5
+    ttc_threshold::Float64 = 4.
     horizon::Float64 = 20.0 # distance from the intersection to start the logic
     stop_delta::Float64 = 0. # precision for stopping slightly before the line
     accel_tol::Float64 = 1e-2 # if |a| < accel_tol then a = 0.

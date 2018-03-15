@@ -66,6 +66,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
             #                                          accel_tol=0.,
             #                                          priorities = pomdp.env.priorities)
             crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
+            # println("adding veh ", new_car.id)
             for i=1:length(pomdp.env.crosswalks)
                 cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalks[i], pomdp.env.roadway)
                 crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
@@ -74,6 +75,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                                          intersection_entrances = intersection_entrances,
                                          yield=!isempty(intersect(cw_conflict_lanes, route))
                                          )
+                # println(" yield to cw ", i, " ", crosswalk_drivers[i].yield)
             end
             pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
                                                     intersection_driver=intersection_driver,
@@ -141,6 +143,7 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=
                                                          accel_tol=0.,
                                                          priorities = pomdp.env.priorities)
                 crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
+                # println("adding veh ", new_car.id)
                 for i=1:length(pomdp.env.crosswalks)
                     cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalks[i], pomdp.env.roadway)
                     crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
@@ -149,6 +152,7 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=
                                             intersection_entrances = intersection_entrances,
                                             yield=!isempty(intersect(cw_conflict_lanes, route))
                                             )
+                    # println(" yield to cw ", i, " ", crosswalk_drivers[i].yield)
                 end
                 pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
                                                        intersection_driver=intersection_driver,
@@ -513,4 +517,34 @@ function n_pedestrians(scene::Scene)
         end
     end
     return n
+end
+
+"""
+Create a scene that can be rendered from an observation
+"""
+function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
+    o = unrescale(obs, pomdp)
+    scene = Scene()
+    # extract
+    ego, car_map, ped_map, obs_map = split_o(o, pomdp)
+    ego_state = VehicleState(VecSE2(ego[1], ego[2], ego[3]), ego[4])
+    ego = Vehicle(ego_state, pomdp.ego_type, EGO_ID)
+    push!(scene, ego)
+    for (str_id, vec_state) in car_map
+        car_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), vec_state[4])
+        if !off_the_grid(car_state, pomdp)
+            id = next_car_id(pomdp, scene)
+            car = Vehicle(car_state, pomdp.car_type, id)
+            push!(scene, car)
+        end
+    end
+    for (str_id, vec_state) in ped_map
+        ped_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), vec_state[4])
+        if !off_the_grid(ped_state, pomdp)
+            id = next_ped_id(pomdp, scene)
+            ped = Vehicle(ped_state, pomdp.ped_type, id)
+            push!(scene, ped)
+        end
+    end
+    return scene
 end

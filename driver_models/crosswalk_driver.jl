@@ -34,6 +34,7 @@ function AutomotiveDrivingModels.observe!(model::CrosswalkDriver, scene::Scene, 
     dist_to_cw = get_distance_to_crosswalk(model, ego, roadway, -model.stop_delta)
     if !model.yield
         a_lon = a_lon_idm
+        # println("veh ", egoid, " not yielding to crosswalk ", model.crosswalk.tag)
     else
         if !model.priority && !model.stop # reach stop line
             a_lon = min(a_lon_idm, stop_at_dist(model, ego, dist_to_cw))
@@ -102,13 +103,13 @@ function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}
     # check if the pedestrian is in the conflict zone
     for lane in conflict_lanes
         ped_f = Frenet(ped.state.posG, lane, roadway)
-        if abs(ped_f.t) < lane.width/2
+        if abs(ped_f.t) < lane.width/2 && get_lane(roadway, ped).tag == crosswalk.tag
             return true
         end
     end
     # at this point, the pedestrian is not on the road
     # check if the pedestrian is going to cross or not
-    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0.
+    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0. && get_lane(roadway, ped).tag == crosswalk.tag
         return true
     end
     return false
@@ -124,7 +125,7 @@ function get_distance_to_crosswalk(model::CrosswalkDriver, veh::Vehicle, roadway
         cw_proj = Frenet(collision_point, lane, roadway)
         Δs = cw_proj.s - veh.state.posF.s + delta - model.crosswalk.width
     elseif lane ∈ model.intersection_entrances # stop before the intersection to not block traffic
-        Δs = get_end(lane) - veh.state.posF.s + delta
+        Δs = get_end(lane) - veh.state.posF.s + delta - model.crosswalk.width
     end
     return Δs
 end
