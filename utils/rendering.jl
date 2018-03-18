@@ -17,35 +17,42 @@ function animate_record(env, rec::SceneRecord; sim_dt::Float64=0.1, cam=FitToCon
     return duration, fps, render_rec
 end
 
-function animate_scenes(scenes::Vector{Scene}, env; cam=FitToContentCamera(0.), sim_dt=0.1, overlays = SceneOverlay[])
-    duration =length(scenes)*sim_dt
-    fps = Int(1/sim_dt)
-    cam = FitToContentCamera(0.)
-    function render_rec(t, dt)
-        frame_index = Int(floor(t/dt)) + 1
-        return AutoViz.render(scenes[frame_index], env, overlays, cam=cam)
-    end
-    return duration, fps, render_rec
-end
+# function animate_scenes(scenes::Vector{Scene}, env; cam=FitToContentCamera(0.), sim_dt=0.1, overlays = SceneOverlay[])
+#     duration =length(scenes)*sim_dt
+#     fps = Int(1/sim_dt)
+#     # cam = FitToContentCamera(0.)
+#     function render_rec(t, dt)
+#         frame_index = Int(floor(t/dt)) + 1
+#         return AutoViz.render(scenes[frame_index], env, overlays, cam=cam)
+#     end
+#     return duration, fps, render_rec
+# end
 
 function animate_scenes(scenes::Vector{Scene}, env; overlays::Vector{SceneOverlay} = SceneOverlay[], cam=FitToContentCamera(0.),  sim_dt=0.1)
     duration =length(scenes)*sim_dt
     fps = Int(1/sim_dt)
-    cam = FitToContentCamera(0.)
+    # cam = FitToContentCamera(0.)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
+
         return AutoViz.render(scenes[frame_index], env, overlays, cam=cam)
     end
     return duration, fps, render_rec
 end
 
-function animate_scenes(scenes::Vector{Scene}, actions::Vector{Float64}, env; cam=FitToContentCamera(0.), sim_dt=0.1)
+function animate_scenes(scenes::Vector{Scene},
+                        actions::Vector{Float64},
+                        env;
+                        overlays::Vector{SceneOverlay} = SceneOverlay[],
+                        cam=FitToContentCamera(0.),
+                        sim_dt=0.1)
     duration =length(scenes)*sim_dt
     fps = Int(1/sim_dt)
     cam = FitToContentCamera(0.)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
-        return AutoViz.render(scenes[frame_index], env, SceneOverlay[TextOverlay(text = ["Acc: $(actions[frame_index])"])], cam=cam)
+        push!(overlays, TextOverlay(text = ["Acc: $(actions[frame_index])"]))
+        return AutoViz.render(scenes[frame_index], env, overlays, cam=cam, car_colors=get_colors(scenes[frame_index]))
     end
     return duration, fps, render_rec
 end

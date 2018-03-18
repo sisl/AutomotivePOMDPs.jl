@@ -34,8 +34,8 @@ end
 
 
 # given a big observation vector, split to an entity-wise representation
-function split_o(obs::UrbanObs, pomdp::UrbanPOMDP, n_features=4, n_obstacles=3)
-    car_map, ped_map, obs_map = Dict(), Dict(), Dict()
+function split_o(obs::UrbanObs, pomdp::UrbanPOMDP, n_features::Int64=4, n_obstacles::Int64=3)
+    car_map, ped_map, obs_map = Dict{String, Vector{Float64}}(), Dict{String, Vector{Float64}}(), Dict{String, Vector{Float64}}() #XXX Dictionary creation is sloooooow
     ego = obs[1:n_features]
 #     println("ego idx ", 1, ":", n_features)
     for (j,i) in enumerate(1:pomdp.max_cars)
@@ -54,8 +54,11 @@ function split_o(obs::UrbanObs, pomdp::UrbanPOMDP, n_features=4, n_obstacles=3)
 end
 
 # return a list of tuple (pb_id, pb_input)
-function get_problem_input(ego, car_map, ped_map, obs_map)
-    inputs = []
+function get_problem_input(ego::Vector{Float64},
+                           car_map::Dict{String, Vector{Float64}},
+                           ped_map::Dict{String, Vector{Float64}},
+                           obs_map::Dict{String, Vector{Float64}})
+    inputs = Tuple{Symbol, Vector{Float64}}[]
     # build obs ped
     for (ped, ped_state) in ped_map
         obs_states = []
@@ -81,7 +84,7 @@ function get_problem_input(ego, car_map, ped_map, obs_map)
     for (ped, ped_state) in ped_map
         for (car, car_state) in car_map
             feature_vec = vcat(ego, car_state, ped_state)
-            push!(inputs, (:obscar, feature_vec))
+            push!(inputs, (:pedcar, feature_vec))
         end
     end
 
@@ -95,7 +98,7 @@ function get_problem_input(ego, car_map, ped_map, obs_map)
     return inputs
 end
 
-function decompose_input{O}(pomdp::UrbanPOMDP, o::O)
+function decompose_input(pomdp::UrbanPOMDP, o::Vector{Float64})
     ego, car_map, ped_map, obs_map = split_o(o, pomdp)
     inputs = get_problem_input(ego, car_map, ped_map, obs_map)
     return inputs

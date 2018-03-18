@@ -100,7 +100,9 @@ export
     ObsPedScenario,
     ObsCarScenario,
     decompose_input,
-    DecomposedPolicy
+    DecomposedPolicy,
+    DecUpdater,
+    initialize_dec_belief
 
 
 # helpers
