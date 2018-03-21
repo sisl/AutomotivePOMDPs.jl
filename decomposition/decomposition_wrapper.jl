@@ -1,11 +1,12 @@
-struct DecUpdater <: Updater
-    up::Updater
+
+struct KMarkovDecUpdater <: Updater
+    up::KMarkovUpdater
     problem::UrbanPOMDP
 end
 
-const DecBelief = Vector{Tuple{Symbol, Array{Float64, 2}}}
+const KMarkovDecBelief = Vector{Tuple{Symbol, Array{Float64, 2}}}
 
-function initialize_dec_belief(up::DecUpdater, pomdp::UrbanPOMDP, rng::AbstractRNG)
+function initialize_dec_belief(up::KMarkovDecUpdater, pomdp::UrbanPOMDP, rng::AbstractRNG)
     s = initial_state(pomdp, rng)
     o = generate_o(pomdp, s, rng)
     inputs = decompose_input(pomdp, o)
@@ -13,7 +14,14 @@ function initialize_dec_belief(up::DecUpdater, pomdp::UrbanPOMDP, rng::AbstractR
     return init_b
 end
 
-function initialize_dec_belief(up::DecUpdater, dec_o::Vector{Tuple{Symbol, Vector{Float64}}})
+function initialize_dec_belief(up::KMarkovDecUpdater, pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
+    o = generate_o(pomdp, s, rng)
+    inputs = decompose_input(pomdp, o)
+    init_b = initialize_dec_belief(up, inputs)
+    return init_b
+end
+
+function initialize_dec_belief(up::KMarkovDecUpdater, dec_o::Vector{Tuple{Symbol, Vector{Float64}}})
     init_b = Tuple{Symbol, Array{Float64,2}}[]
     for (prob_key, obs) in dec_o
         b_stacked = hcat(initialize_belief(up.up, obs)...)
@@ -22,13 +30,42 @@ function initialize_dec_belief(up::DecUpdater, dec_o::Vector{Tuple{Symbol, Vecto
     return init_b
 end
 
-function POMDPs.update(up::DecUpdater, b_old::DecBelief, a::UrbanAction, o::Array{Float64})
+function POMDPs.update(up::KMarkovDecUpdater, b_old::KMarkovDecBelief, a::UrbanAction, o::Array{Float64})
     b_new = Tuple{Symbol, Array{Float64, 2}}[]
     inputs = decompose_input(up.problem, o)
     for (i,(prob_key, b)) in enumerate(b_old)
         b_vec = [b[:,i] for i=1:up.up.k]
         b_stacked = hcat(update(up.up, b_vec, a, inputs[i][2][:])...)
         push!(b_new, (prob_key, b_stacked))
+    end
+    return b_new
+end
+
+struct PreviousObsDecUpdater <: Updater
+    up::FastPreviousObservationUpdater
+    problem::UrbanPOMDP
+end
+
+const PreviousObsDecBelief = Vector{Tuple{Symbol, Array{Float64, 1}}}
+
+function initialize_dec_belief(up::PreviousObsDecUpdater, pomdp::UrbanPOMDP, rng::AbstractRNG)
+    s = initial_state(pomdp, rng)
+    o = generate_o(pomdp, s, rng)
+    inputs = decompose_input(pomdp, o)
+    return inputs
+end
+function initialize_dec_belief(up::PreviousObsDecUpdater, pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
+    o = generate_o(pomdp, s, rng)
+    inputs = decompose_input(pomdp, o)
+    return inputs
+end
+
+
+function POMDPs.update(up::PreviousObsDecUpdater, b_old::PreviousObsDecBelief, a::UrbanAction, o::Array{Float64})
+    b_new = Tuple{Symbol, Array{Float64, 1}}[]
+    inputs = decompose_input(up.problem, o)
+    for (i,(prob_key, b)) in enumerate(b_old)
+        push!(b_new, (prob_key, update(up.up, b, a, inputs[i][2][:])))
     end
     return b_new
 end
@@ -45,13 +82,13 @@ end
 const SUM = x -> sum(x)
 const MIN = x -> minimum(hcat(l), 2)
 
-function POMDPs.action(policy::DecomposedPolicy, beliefs::DecBelief)
+function POMDPs.action{A}(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief})
     val = value(policy, beliefs)
     @assert length(val) == n_actions(policy.problem)
     return policy.action_map[indmax(val)]
 end
 
-function POMDPs.value(policy::DecomposedPolicy, beliefs::DecBelief)
+function POMDPs.value{A}(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief})
     n = length(beliefs)
     val = fill(zeros(n_actions(policy.problem),1), n)
     for (i, (prob_key, b)) in enumerate(beliefs)

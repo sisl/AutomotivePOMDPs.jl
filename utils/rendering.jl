@@ -48,11 +48,13 @@ function animate_scenes(scenes::Vector{Scene},
                         sim_dt=0.1)
     duration =length(scenes)*sim_dt
     fps = Int(1/sim_dt)
-    cam = FitToContentCamera(0.)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
-        push!(overlays, TextOverlay(text = ["Acc: $(actions[frame_index])"]))
-        return AutoViz.render(scenes[frame_index], env, overlays, cam=cam, car_colors=get_colors(scenes[frame_index]))
+        return AutoViz.render(scenes[frame_index],
+                              env,
+                              cat(1, overlays, TextOverlay(text = ["Acc: $(actions[frame_index])"])),
+                              cam=cam,
+                              car_colors=get_colors(scenes[frame_index]))
     end
     return duration, fps, render_rec
 end

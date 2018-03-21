@@ -182,7 +182,7 @@ function initial_car(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, first_sc
     env = pomdp.env
 
     #velocity
-    v0 = rand(rng, 4.0:1.0:8.0) #XXX parameterize!
+    v0 = rand(rng, 4.0:1.0:7.0) #XXX parameterize!
     s0 = 0.
     if first_scene
         lane = rand(rng, get_lanes(pomdp.env.roadway)) # could be precomputed
@@ -300,14 +300,14 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp:
         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 1] = get_center(obs).x
         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1)] = get_center(obs).y
     end
-    return rescale(o, pomdp)
+    return rescale!(o, pomdp)
 end
 
 function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
     return generate_o(pomdp, s, UrbanAction(0.), s, rng::AbstractRNG)
 end
 
-function rescale(o::UrbanObs, pomdp::UrbanPOMDP)
+function rescale!(o::UrbanObs, pomdp::UrbanPOMDP)
     # rescale
     n_features = 4
     if pomdp.obstacles
@@ -326,7 +326,7 @@ function rescale(o::UrbanObs, pomdp::UrbanPOMDP)
         o[n_features*i - 1] /= pi
         o[n_features*i] /= pomdp.env.params.speed_limit # XXX parameterized
     end
-    for i=pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + 1 + n_obstacles
+    for i=pomdp.max_cars + pomdp.max_peds + 2:pomdp.max_cars + pomdp.max_peds + 1 + n_obstacles
         o[n_features*i - 3] /= max_ego_dist
         o[n_features*i - 2] /= max_ego_dist
         o[n_features*i - 1] /= max_ego_dist
@@ -336,7 +336,7 @@ function rescale(o::UrbanObs, pomdp::UrbanPOMDP)
     return o
 end
 
-function unrescale(o::UrbanObs, pomdp::UrbanPOMDP)
+function unrescale!(o::UrbanObs, pomdp::UrbanPOMDP)
     # unrescale
     n_features = 4
     if pomdp.obstacles
@@ -358,7 +358,7 @@ function unrescale(o::UrbanObs, pomdp::UrbanPOMDP)
     for i=pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + 1 + n_obstacles
         o[n_features*i - 3] *= max_ego_dist
         o[n_features*i - 2] *= max_ego_dist
-        o[n_features*i - 1] *= max_ego_dist
+        o[n_features*i - 1] *= pi
         o[n_features*i] *= max_ego_dist
     end
 
@@ -413,24 +413,6 @@ function off_the_grid(veh::VehicleState, pomdp::UrbanPOMDP)
     return veh.posG == pomdp.off_grid
 end
 
-"""
-Reconstruct a scene object from an UrbanPOMDP observation
-"""
-function obs_to_scene(pomdp::UrbanPOMDP, o::UrbanObs)
-    # rebuild the scene from the observation
-    scene = Scene()
-    for id=1:pomdp.max_cars+1
-        x, y, θ, v = o[4*id-3], o[4*id-2], o[4*id-1], o[4*id]
-        if VecSE2(x, y, θ) == pomdp.off_grid
-            continue
-        end
-        state = car_state(pomdp, x, y, θ, v)
-        car_type = id == 1 ? pomdp.ego_type : pomdp.car_type
-        veh = Vehicle(state, pomdp.car_type, id)
-        push!(scene, veh)
-    end
-    return scene
-end
 
 """
 return the list of lanes the ego car should take
@@ -523,7 +505,8 @@ end
 Create a scene that can be rendered from an observation
 """
 function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
-    o = unrescale(obs, pomdp)
+    o = deepcopy(obs)
+    o = unrescale!(o, pomdp)
     scene = Scene()
     # extract
     ego, car_map, ped_map, obs_map = split_o(o, pomdp)

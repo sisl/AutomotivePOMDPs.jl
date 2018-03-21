@@ -86,8 +86,8 @@ export
     initial_pedestrian,
     initial_ego,
     obs_weight,
-    rescale,
-    unrescale,
+    rescale!,
+    unrescale!,
     obs_to_scene,
 
     # decomposition stuff
@@ -101,7 +101,8 @@ export
     ObsCarScenario,
     decompose_input,
     DecomposedPolicy,
-    DecUpdater,
+    KMarkovDecUpdater,
+    PreviousObsDecUpdater,
     initialize_dec_belief
 
 
