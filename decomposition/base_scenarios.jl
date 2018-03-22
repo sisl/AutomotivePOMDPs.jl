@@ -1,16 +1,16 @@
 # Define several base scenarios derived from the large urban environment
 using DataStructures
 # ego + 2 cars
-const TwoCars = UrbanPOMDP(max_cars=2, max_peds=0, obstacles=false)
+const TwoCars = UrbanPOMDP(max_cars=2, max_peds=0, obstacles=false, car_birth=0.9, ped_birth=0.9)
 
 # ego + 1 ped + 1 car
-const PedCar = UrbanPOMDP(max_cars=1, max_peds=1, obstacles=false)
+const PedCar = UrbanPOMDP(max_cars=1, max_peds=1, obstacles=false, car_birth=0.9, ped_birth=0.9)
 
 # ego + 1 ped + 1 obstacle
-const ObsPed = UrbanPOMDP(max_cars=0, max_peds=1, obstacles=true)
+const ObsPed = UrbanPOMDP(max_cars=0, max_peds=1, obstacles=true, car_birth=0.9, ped_birth=0.9)
 
 # ego + 1 car + 1 obstacle
-const ObsCar = UrbanPOMDP(max_cars=1, max_peds=0, obstacles=true)
+const ObsCar = UrbanPOMDP(max_cars=1, max_peds=0, obstacles=true, car_birth=0.9, ped_birth=0.9)
 
 # Wrappers
 @with_kw struct TwoCarsScenario

@@ -109,7 +109,7 @@ end
 
 ### INITIAL STATES ################################################################################
 
-function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, burn_in::Int64=20)
+function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, burn_in::Int64=1)
     scene = initial_scene(pomdp, rng, true)
     for t = 1:burn_in
         scene = generate_s(pomdp, scene, UrbanAction(0.), rng)
