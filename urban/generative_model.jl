@@ -34,8 +34,9 @@ end
 function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
+    is_ego_here = clamp(findfirst(s, EGO_ID),0, 1)
     sp = deepcopy(s) #XXX bad
-    if rand(rng) < pomdp.car_birth && n_cars(s) < pomdp.max_cars + 1
+    if rand(rng) < pomdp.car_birth && n_cars(s) < pomdp.max_cars + is_ego_here
         new_car = initial_car(pomdp, sp, rng)
         if can_push(pomdp.env, sp, new_car)
             lane = get_lane(pomdp.env.roadway, new_car)
@@ -108,7 +109,19 @@ end
 
 ### INITIAL STATES ################################################################################
 
-function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
+function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, burn_in::Int64=20)
+    scene = initial_scene(pomdp, rng, true)
+    for t = 1:burn_in
+        scene = generate_s(pomdp, scene, UrbanAction(0.), rng)
+    end
+    # push! ego after traffic is steady
+    ego = initial_ego(pomdp, rng)
+    push!(scene, ego)
+    return scene
+end
+
+
+function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
     if pomdp.obstacles
         sample_obstacles!(pomdp.env, pomdp.obs_dist, rng)
     end
@@ -120,7 +133,7 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=
 
     # add cars
     for i=1:pomdp.max_cars
-        if rand(rng) < pomdp.car_birth
+        if rand(rng) < pomdp.car_birth && n_cars(scene) < pomdp.max_cars + 1-Int(no_ego)
             new_car = initial_car(pomdp, scene, rng, true)
             if can_push(pomdp.env, scene, new_car)
                 push!(scene, new_car)
@@ -168,7 +181,7 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=
 
     # add pedestrians
     for i=1:pomdp.max_peds
-        if rand(rng) < pomdp.ped_birth # pedestrian appear
+        if rand(rng) < pomdp.ped_birth && n_pedestrians(scene) < pomdp.max_peds # pedestrian appear
             new_ped = initial_pedestrian(pomdp, scene, rng, true)
             pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)
             push!(scene, new_ped)
@@ -185,10 +198,14 @@ function initial_car(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, first_sc
     v0 = rand(rng, 4.0:1.0:7.0) #XXX parameterize!
     s0 = 0.
     if first_scene
-        lane = rand(rng, get_lanes(pomdp.env.roadway)) # could be precomputed
+        lanes = get_lanes(pomdp.env.roadway)
+        lanes = delete!(Set(lanes),pomdp.env.roadway[LaneTag(6,1)])
+        lane = rand(rng, lanes) # could be precomputed
         s0 = rand(rng, 0.:0.5:get_end(lane))
     else
-        lane = rand(rng, get_start_lanes(pomdp.env.roadway)) # could be precomputed
+        lanes = get_start_lanes(pomdp.env.roadway)
+        lanes = delete!(Set(lanes),pomdp.env.roadway[LaneTag(6,1)])
+        lane = rand(rng, lanes) # could be precomputed
     end
     initial_posF = Frenet(lane, s0)
     initial_state = VehicleState(initial_posF, env.roadway, v0)
@@ -355,10 +372,10 @@ function unrescale!(o::UrbanObs, pomdp::UrbanPOMDP)
         o[n_features*i - 1] *= pi
         o[n_features*i] *= pomdp.env.params.speed_limit # XXX parameterized
     end
-    for i=pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + 1 + n_obstacles
+    for i=pomdp.max_cars + pomdp.max_peds + 2:pomdp.max_cars + pomdp.max_peds + 1 + n_obstacles
         o[n_features*i - 3] *= max_ego_dist
         o[n_features*i - 2] *= max_ego_dist
-        o[n_features*i - 1] *= pi
+        o[n_features*i - 1] *= max_ego_dist
         o[n_features*i] *= max_ego_dist
     end
 
@@ -424,6 +441,22 @@ function get_ego_route(pomdp::UrbanPOMDP)
         lanes[i] = pomdp.env.roadway[tag]
     end
     lanes
+end
+
+"""
+Generate a random route starting from start_lane to a random end node
+"""
+function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
+    lanes = Lane[start_lane]
+    cur_lane = start_lane
+    while !isempty(cur_lane.exits)
+        rand_exit = rand(rng, cur_lane.exits)
+        next_lane_tag = rand_exit.target.tag
+        next_lane = roadway[next_lane_tag]
+        push!(lanes, next_lane)
+        cur_lane = next_lane
+    end
+    return lanes
 end
 
 """

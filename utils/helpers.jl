@@ -128,22 +128,6 @@ end
 
 
 """
-Generate a random route starting from start_lane to a random end node
-"""
-function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
-    lanes = Lane[start_lane]
-    cur_lane = start_lane
-    while !isempty(cur_lane.exits)
-        rand_exit = rand(rng, cur_lane.exits)
-        next_lane_tag = rand_exit.target.tag
-        next_lane = roadway[next_lane_tag]
-        push!(lanes, next_lane)
-        cur_lane = next_lane
-    end
-    return lanes
-end
-
-"""
 return the list of entrance lanes, i.e. the one that does not have any entrances
 """
 function get_start_lanes(roadway::Roadway)

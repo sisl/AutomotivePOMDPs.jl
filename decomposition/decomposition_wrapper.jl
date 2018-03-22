@@ -21,10 +21,16 @@ function initialize_dec_belief(up::KMarkovDecUpdater, pomdp::UrbanPOMDP, s::Urba
     return init_b
 end
 
+function initialize_dec_belief(up::KMarkovDecUpdater, pomdp::UrbanPOMDP, o::UrbanObs)
+    inputs = decompose_input(pomdp, o)
+    init_b = initialize_dec_belief(up, inputs)
+    return init_b
+end
+
 function initialize_dec_belief(up::KMarkovDecUpdater, dec_o::Vector{Tuple{Symbol, Vector{Float64}}})
     init_b = Tuple{Symbol, Array{Float64,2}}[]
     for (prob_key, obs) in dec_o
-        b_stacked = hcat(initialize_belief(up.up, obs)...)
+        b_stacked = hcat(initialize_belief(up.up, fill(obs, up.up.k))...)
         push!(init_b, (prob_key, b_stacked))
     end
     return init_b

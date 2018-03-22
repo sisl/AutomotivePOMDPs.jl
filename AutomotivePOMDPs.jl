@@ -102,8 +102,11 @@ export
     decompose_input,
     DecomposedPolicy,
     KMarkovDecUpdater,
+    KMarkovDecBelief,
     PreviousObsDecUpdater,
-    initialize_dec_belief
+    PreviousObsDecBelief,
+    initialize_dec_belief,
+    BeliefOverlay
 
 
 # helpers
@@ -158,6 +161,7 @@ include("urban/pomdp_types.jl")
 include("urban/generative_model.jl")
 include("decomposition/base_scenarios.jl")
 include("decomposition/decomposition_wrapper.jl")
+include("decomposition/rendering.jl")
 
 
 
