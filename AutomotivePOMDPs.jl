@@ -4,8 +4,37 @@ using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations
 using AutomotiveDrivingModels, AutoUrban, AutoViz
 using Reel
 
+# helpers
 export
-    # env types
+        # for rendering
+        animate_hist,
+        animate_record,
+        animate_scenes,
+        IDOverlay,
+
+        # helpers
+        get_lane,
+        get_end,
+        get_lanes,
+        get_start_lanes,
+        get_exit_lanes,
+        get_ego,
+        random_route,
+        is_observable_fixed,
+        off_the_grid,
+        get_conflict_lanes,
+        get_colors,
+        next_car_id,
+        next_ped_id,
+        EGO_ID
+
+include("constants.jl")
+include("utils/helpers.jl")
+include("utils/occlusions.jl")
+include("utils/rendering.jl")
+
+# envs
+export
     OccludedEnv,
     CrosswalkParams,
     CrosswalkEnv,
@@ -19,10 +48,16 @@ export
     ObstacleDistribution,
     sample_obstacles!,
     empty_obstacles!,
-    add_obstacle!,
+    add_obstacle!
 
+include("envs/occluded_crosswalk_env.jl")
+include("envs/multi_lane_T_env.jl")
+include("envs/urban_env.jl")
+include("envs/obstacles.jl")
+include("envs/rendering.jl")
 
-    # driver models and action types
+# driver models and action types
+export
     ConstantPedestrian,
     ConstantSpeedDawdling,
     IntelligentDriverModel2D,
@@ -32,32 +67,18 @@ export
     CrosswalkDriver,
     StopIntersectionDriver,
     TTCIntersectionDriver,
-    UrbanDriver,
+    UrbanDriver
 
-    # for rendering
-    animate_hist,
-    animate_record,
-    animate_scenes,
-    IDOverlay,
+include("driver_models/route_following_idm.jl")
+include("driver_models/stop.jl")
+include("driver_models/stop_intersection_driver.jl")
+include("driver_models/ttc_intersection_driver.jl")
+include("driver_models/constant_pedestrian.jl")
+include("driver_models/crosswalk_driver.jl")
+include("driver_models/urban_driver.jl")
 
-    # helpers
-    get_lane,
-    get_end,
-    get_lanes,
-    get_start_lanes,
-    get_exit_lanes,
-    get_ego,
-    random_route,
-    is_observable_fixed,
-    off_the_grid,
-    get_conflict_lanes,
-    get_colors,
-    next_car_id,
-    next_ped_id,
-
-
+export
     # pomdp types
-    EGO_ID,
     OCPOMDP,
     OCAction,
     OCState,
@@ -88,45 +109,7 @@ export
     obs_weight,
     rescale!,
     unrescale!,
-    obs_to_scene,
-
-    # decomposition stuff
-    TwoCars,
-    PedCar,
-    ObsPed,
-    ObsCar,
-    TwoCarsScenario,
-    PedCarScenario,
-    ObsPedScenario,
-    ObsCarScenario,
-    decompose_input,
-    DecomposedPolicy,
-    KMarkovDecUpdater,
-    KMarkovDecBelief,
-    PreviousObsDecUpdater,
-    PreviousObsDecBelief,
-    initialize_dec_belief,
-    BeliefOverlay
-
-
-# helpers
-include("constants.jl")
-include("utils/helpers.jl")
-include("utils/occlusions.jl")
-include("utils/rendering.jl")
-# envs
-include("envs/occluded_crosswalk_env.jl")
-include("envs/multi_lane_T_env.jl")
-include("envs/urban_env.jl")
-include("envs/rendering.jl")
-# driver models
-include("driver_models/route_following_idm.jl")
-include("driver_models/stop.jl")
-include("driver_models/stop_intersection_driver.jl")
-include("driver_models/ttc_intersection_driver.jl")
-include("driver_models/constant_pedestrian.jl")
-include("driver_models/crosswalk_driver.jl")
-include("driver_models/urban_driver.jl")
+    obs_to_scene
 
 # single crosswalk
 include("single_crosswalk/pomdp_types.jl")
@@ -159,6 +142,27 @@ include("multi_lane_T_intersection/render_helpers.jl")
 #urban
 include("urban/pomdp_types.jl")
 include("urban/generative_model.jl")
+include("urban/render_helpers.jl")
+
+export
+    # decomposition stuff
+    TwoCars,
+    PedCar,
+    ObsPed,
+    ObsCar,
+    TwoCarsScenario,
+    PedCarScenario,
+    ObsPedScenario,
+    ObsCarScenario,
+    decompose_input,
+    DecomposedPolicy,
+    KMarkovDecUpdater,
+    KMarkovDecBelief,
+    PreviousObsDecUpdater,
+    PreviousObsDecBelief,
+    initialize_dec_belief,
+    BeliefOverlay
+
 include("decomposition/base_scenarios.jl")
 include("decomposition/decomposition_wrapper.jl")
 include("decomposition/rendering.jl")

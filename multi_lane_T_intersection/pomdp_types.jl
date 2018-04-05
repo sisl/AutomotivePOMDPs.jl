@@ -56,7 +56,7 @@ mutable struct OIPOMDP <: POMDP{OIState, OIAction, OIObs}
     γ::Float64 # discount factor
 end
 
-function OIPOMDP(; env::IntersectionEnv = IntersectionEnv(),
+function OIPOMDP(; env::IntersectionEnv = IntersectionEnv(TInterParams(nlanes_main=1)),
                    sensor::LidarSensor = LidarSensor(50, max_range=30., angle_spread=float(pi)),
                    models::Dict{Int64, DriverModel} = Dict{Int64, DriverModel}(1=>EgoDriver(OIAction(0.))),
                    ego_type::VehicleDef = VehicleDef(),

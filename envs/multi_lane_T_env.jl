@@ -78,9 +78,10 @@ function gen_T_roadway(params::TInterParams)
     add_line!(seg6, nlanes, length6, roadway)
 
     connections = [Connection(1,2), Connection(3,4)]
-    push!(connections, Connection(1, 5, 0, [(2, 1)]))
+    push!(connections, Connection(1, 5, 0, [(nlanes_main, 1)]))
     push!(connections, Connection(3, 5, 0, [(1, 1)]))
-    push!(connections, Connection(6, 2, 0, [(1, 2)]))
+    # what follows is the ego car left turn
+    push!(connections, Connection(6, 2, 0, [(1, nlanes_main)]))
     push!(connections, Connection(6, 4, 0, [(1, 1)]))
 
 
@@ -89,8 +90,25 @@ function gen_T_roadway(params::TInterParams)
 end
 
 
-function build_obstacles(params::TInterParams)
-    return
+function build_obstacles(params::TInterParams)#TODO
+    # HEIGHT = 6
+    # WIDTH = 6
+    #
+    # #Left Building
+    # left_building = ConvexPolygon(4)
+    # top_right = VecSE2(3*params.lane_width/4, -params.lane_width/2 - 1.5, 0.)
+    # left_building.pts = [top_right, top_right + VecSE2(-WIDTH, 0., 0.),
+    #                 top_right + VecSE2(-WIDTH, -HEIGHT, 0.), top_right + VecSE2(0., -HEIGHT, 0.)]
+    # left_building.npts = 4; # a rectangle
+    #
+    # #Right Building
+    # right_building = ConvexPolygon(4)
+    # top_right = top_right + VecSE2(top_right.x + 2*params.lane_width + WIDTH, 0., 0.)
+    # right_building.pts = [top_right, top_right + VecSE2(-WIDTH, 0., 0.),
+    #                 top_right + VecSE2(-WIDTH, -HEIGHT, 0.), top_right + VecSE2(0., -HEIGHT, 0.)]
+    # right_building.npts = 4; # a rectangle
+    # return [left_building, right_building]
+    return Vector{ConvexPolygon}[]
 end
 
 """
@@ -109,7 +127,7 @@ end
 function IntersectionEnv(params::TInterParams = TInterParams())
     roadway = gen_T_roadway(params)
     lane_map = Dict{String, Lane}()
-    obstacles = Vector{ConvexPolygon}[]
+    obstacles = build_obstacles(params)
     priorities, directions = priority_map(roadway)
     return IntersectionEnv(roadway, obstacles, params, lane_map, priorities, directions)
 end
@@ -152,10 +170,10 @@ function priority_map(roadway::Roadway)
     # left turns
     route = (LaneTag(6,1), LaneTag(2,2))
     priorities[route] = false
-    # route = (LaneTag(6,1), LaneTag(2,1))
-    # priorities[route] = false
-    # route = (LaneTag(1,1), LaneTag(5,1))
-    # priorities[route] = false
+    route = (LaneTag(6,1), LaneTag(2,1))
+    priorities[route] = false
+    route = (LaneTag(1,1), LaneTag(5,1))
+    priorities[route] = false
     route = (LaneTag(1,2), LaneTag(5,1))
     priorities[route] = false
     return priorities, directions
