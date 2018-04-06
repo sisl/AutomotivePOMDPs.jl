@@ -16,6 +16,9 @@ This package export the following POMDP Models:
 These models are defined according to the [POMDPs.jl]() interface. To see how they are parameterized, toggle the documentation using `?` or
 use the function `fieldnames` if documentation is not yet written.
 
+Snapshot of the `UrbanPOMDP` scenario. The ego vehicle in blue receives LIDAR measurements and must execute a left turn through the intersection.
+![urban_lidar](urban_lidar.png)
+
 ## Sensor Models
 
 - Gaussian noise with ray tracing occlusion checker
