@@ -67,7 +67,8 @@ export
     CrosswalkDriver,
     StopIntersectionDriver,
     TTCIntersectionDriver,
-    UrbanDriver
+    UrbanDriver,
+    LidarOverlay
 
 include("driver_models/route_following_idm.jl")
 include("driver_models/stop.jl")
@@ -76,6 +77,7 @@ include("driver_models/ttc_intersection_driver.jl")
 include("driver_models/constant_pedestrian.jl")
 include("driver_models/crosswalk_driver.jl")
 include("driver_models/urban_driver.jl")
+include("driver_models/lidar_sensor.jl")
 
 export
     # pomdp types

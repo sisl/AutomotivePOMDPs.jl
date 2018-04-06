@@ -26,6 +26,7 @@ end
 @with_kw mutable struct UrbanPOMDP <: POMDP{UrbanState, UrbanAction, UrbanObs}
     env::UrbanEnv = UrbanEnv()
     obs_dist::ObstacleDistribution = ObstacleDistribution(UrbanEnv())
+    lidar::Bool = false
     sensor::LidarSensor = LidarSensor(50, max_range=30., angle_spread=float(pi))
     models::Dict{Int64, DriverModel} = Dict{Int64, DriverModel}(1=>EgoDriver(UrbanAction(0.)))
     ego_type::VehicleDef = VehicleDef()

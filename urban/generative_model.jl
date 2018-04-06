@@ -262,9 +262,16 @@ end
 
 ### Observations ##################################################################################
 
-# uncomment for vector representation
-# TODO find a better way to implement this to switch more easily between representations
 function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
+    if pomdp.lidar
+        return measure_lidar(pomdp, s, a, sp, rng)
+    else
+        return measure_gaussian(pomdp, s, a, sp, rng)
+    end
+end
+
+# TODO find a better way to implement this to switch more easily between representations
+function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
     n_features = 4
     if pomdp.obstacles
         n_obstacles = 3
@@ -382,9 +389,36 @@ function unrescale!(o::UrbanObs, pomdp::UrbanPOMDP)
     return o
 end
 
+function measure_lidar(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
+    observe!(pomdp.sensor, sp, pomdp.env.roadway, EGO_ID)
+    return vcat(pomdp.sensor.ranges/pomdp.sensor.max_range, pomdp.sensor.range_rates/pomdp.env.params.speed_limit)
+end
+
 function POMDPs.convert_o(::Type{Vector{Float64}}, o::UrbanObs, pomdp::UrbanPOMDP)
     return o
 end
+
+function POMDPToolbox.generate_sori(p::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
+    if p.lidar
+        return generate_sor(p, s, a, rng)..., p.sensor
+    else
+        return generate_sor(p, a, s, rng)..., nothing
+    end
+end
+
+# uncomment for Lidar
+# uncomment for LIDAR observation
+
+#
+# function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, rng::AbstractRNG)
+#     observe!(pomdp.sensor, s, pomdp.env.roadway, EGO_INDEX)
+#     return pomdp.sensor
+# end
+#
+# function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
+#     return [o.ranges/pomdp.sensor.max_range, o.range_rates/pomdp.env.params.speed_limit]
+# end
+
 
 #### Helpers
 # """

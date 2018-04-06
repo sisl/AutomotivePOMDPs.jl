@@ -16,10 +16,15 @@ This package export the following POMDP Models:
 These models are defined according to the [POMDPs.jl]() interface. To see how they are parameterized, toggle the documentation using `?` or
 use the function `fieldnames` if documentation is not yet written.
 
+## Sensor Models
+
+- Gaussian noise with ray tracing occlusion checker
+- Simple Lidar
+
 ## TODOs
 
-- Rename the scenarios, some scenarios have the same type name ` IntersectionEnv`, `CrosswalkEnv`. Reorganise the code structure.
-- Move geometry and road topology to AutoUrban
+- [ ] Move geometry and road topology to AutoUrban
+- [ ] Discretizer: build an approximate explicit POMDP formulation by sampling from the continuous state formulation.
 
 ## Dependencies
 
