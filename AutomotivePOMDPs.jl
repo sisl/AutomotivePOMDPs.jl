@@ -60,11 +60,14 @@ include("envs/rendering.jl")
 
 # driver models and action types
 export
+    action_space,
+    get_distribution,
     ConstantPedestrian,
     ConstantSpeedDawdling,
     IntelligentDriverModel2D,
     KeepLaneAcc,
     RouteFollowingIDM,
+    set_direction!,
     LonAccelDirection,
     CrosswalkDriver,
     StopIntersectionDriver,
