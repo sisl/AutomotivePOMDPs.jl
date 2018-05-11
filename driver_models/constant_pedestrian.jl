@@ -42,17 +42,16 @@ function AutomotiveDrivingModels.observe!(model::ConstantPedestrian,
     model.tick += 1
 end
 
-
-function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDawdling, roadway::Roadway, ΔT::Float64)
-    lane_tag_orig = veh.state.posF.roadind.tag
+function AutomotiveDrivingModels.propagate(veh::VehicleState, action::ConstantSpeedDawdling, roadway::Roadway, ΔT::Float64)
+    lane_tag_orig = veh.posF.roadind.tag
 
     # update value in Frenet coordinates
-    v = veh.state.v
+    v = veh.v
     lat = action.lat
-    ϕ = veh.state.posF.ϕ
-    s = veh.state.posF.s
+    ϕ = veh.posF.ϕ
+    s = veh.posF.s
     Δs = v*cos(ϕ)*ΔT + lat*sin(ϕ)
-    t = veh.state.posF.t
+    t = veh.posF.t
     Δt = v*sin(ϕ)*ΔT + lat*cos(ϕ)
     # cannot go offroad
     if t + Δt > get_lane(roadway, veh).width/2
@@ -64,7 +63,7 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDa
     speed = action.v
 
     #XXX what exactly is happening here, ask Tim ?
-    roadind = move_along(veh.state.posF.roadind, roadway, Δs)
+    roadind = move_along(veh.posF.roadind, roadway, Δs)
     footpoint = roadway[roadind]
 
     posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
@@ -76,4 +75,21 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDa
     roadproj = proj(state.posG, roadway[lane_tag_orig], roadway, move_along_curves=false)
     retval = VehicleState(Frenet(roadproj, roadway), roadway, state.v)
     return retval
+end
+
+function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDawdling, roadway::Roadway, ΔT::Float64)
+    return propagate(veh.state, action, roadway, ΔT)
+end
+
+## Discrete distribution
+# P(a | s)
+
+function action_space(model::ConstantPedestrian)
+    return (ConstantSpeedDawdling(-1., 0.), ConstantSpeedDawdling(0., 0.), ConstantSpeedDawdling(+1., 0.))
+end
+
+function get_distribution(model::ConstantPedestrian)
+    actions = action_space(model)
+    probs = (1/3, 1/3, 1/3)
+    return actions, probs
 end
