@@ -31,10 +31,9 @@ function animate_record(rec::SceneRecord, env, overlays::Vector{SceneOverlay} = 
     return duration, fps, render_rec
 end
 
-function animate_hist(pomdp::OIPOMDP, hist, overlays = SceneOverlay[])
+function animate_hist(pomdp::OIPOMDP, hist; overlays = SceneOverlay[], cam = FitToContentCamera(0.))
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
-    cam = FitToContentCamera(0.)
     function render_hist(t, dt)
         state_index = Int(floor(t/dt)) + 1
         scene = state_hist(hist)[state_index]

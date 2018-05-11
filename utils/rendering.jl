@@ -52,7 +52,10 @@ function animate_scenes(scenes::Vector{Scene},
         frame_index = Int(floor(t/dt)) + 1
         return AutoViz.render(scenes[frame_index],
                               env,
-                              cat(1, overlays, TextOverlay(text = ["Acc: $(actions[frame_index])"])),
+                              cat(1, overlays, TextOverlay(text = ["Acc: $(actions[frame_index])"],
+                                                           font_size=20,
+                                                           pos=VecE2(-15,-10),
+                                                           incameraframe=true)),
                               cam=cam,
                               car_colors=get_colors(scenes[frame_index]))
     end

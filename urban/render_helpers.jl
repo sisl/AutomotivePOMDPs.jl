@@ -1,4 +1,4 @@
-function animate_hist(pomdp::UrbanPOMDP, hist, overlays = SceneOverlay[IDOverlay()], cam = FitToContentCamera(0.))
+function animate_hist(pomdp::UrbanPOMDP, hist, overlays::Vector{SceneOverlay} = SceneOverlay[IDOverlay()], cam = FitToContentCamera(0.))
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     function render_hist(t, dt)
@@ -9,7 +9,7 @@ function animate_hist(pomdp::UrbanPOMDP, hist, overlays = SceneOverlay[IDOverlay
     return duration, fps, render_hist
 end
 
-function animate_hist(pomdp::UrbanPOMDP, state_hist, lidar_hist, overlays = SceneOverlay[IDOverlay()], cam = FitToContentCamera(0.))
+function animate_hist(pomdp::UrbanPOMDP, state_hist, lidar_hist, overlays::Vector{SceneOverlay} = SceneOverlay[IDOverlay()], cam = FitToContentCamera(0.))
     duration = length(state_hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     function render_hist(t, dt)
