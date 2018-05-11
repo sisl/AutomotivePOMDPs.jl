@@ -117,6 +117,7 @@ function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, burn_in::Int6
     # push! ego after traffic is steady
     ego = initial_ego(pomdp, rng)
     push!(scene, ego)
+    clean_scene!(pomdp.env, scene)
     return scene
 end
 
@@ -477,21 +478,6 @@ function get_ego_route(pomdp::UrbanPOMDP)
     lanes
 end
 
-"""
-Generate a random route starting from start_lane to a random end node
-"""
-function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
-    lanes = Lane[start_lane]
-    cur_lane = start_lane
-    while !isempty(cur_lane.exits)
-        rand_exit = rand(rng, cur_lane.exits)
-        next_lane_tag = rand_exit.target.tag
-        next_lane = roadway[next_lane_tag]
-        push!(lanes, next_lane)
-        cur_lane = next_lane
-    end
-    return lanes
-end
 
 """
 create a unique ID for a new car
