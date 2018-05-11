@@ -211,6 +211,23 @@ function  get_conflict_lanes(crosswalk::Lane, roadway::Roadway)
     return conflict_lanes
 end
 
+
+"""
+Generate a random route starting from start_lane to a random end node
+"""
+function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
+    lanes = Lane[start_lane]
+    cur_lane = start_lane
+    while !isempty(cur_lane.exits)
+        rand_exit = rand(rng, cur_lane.exits)
+        next_lane_tag = rand_exit.target.tag
+        next_lane = roadway[next_lane_tag]
+        push!(lanes, next_lane)
+        cur_lane = next_lane
+    end
+    return lanes
+end
+
 # return +1 if going toward, -1 if going away
 function direction_from_center(ped::Vehicle, crosswalk::Lane)
     s_ped = ped.state.posF.s
@@ -250,6 +267,41 @@ function AutomotiveDrivingModels.propagate{D<:Union{VehicleDef, BicycleModel}}(v
       v₂ = sign(ds₂)*speed₂
       ϕ₂ = atan2(dt₂, ds₂) + (v₂ < 0.0)*π # handle negative speeds
       roadind = AutoUrban.move_along_with_direction(veh.state.posF.roadind, roadway, Δs, direction = action.direction)
+      footpoint = roadway[roadind]
+      posF = Frenet(roadind, roadway, t=t+Δt, ϕ = ϕ₂)
+      # posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
+      # posG = VecSE2(posG.x, posG.y, footpoint.pos.θ + ϕ₂)
+
+    state = VehicleState(posF, roadway, v₂)
+    # state = VehicleState(posG, roadway[roadind.tag], roadway, v₂)
+    return state
+end
+
+function AutomotiveDrivingModels.propagate(veh::VehicleState, action::LonAccelDirection,  roadway::Roadway, Δt::Float64)
+    previousInd = veh.posF.roadind
+    a_lon = action.a_lon
+    v = veh.v
+    a_lat = 0.
+
+    v = veh.v
+       ϕ = veh.posF.ϕ
+      ds = v*cos(ϕ)
+       t = veh.posF.t
+      dt = v*sin(ϕ)
+
+      ΔT = Δt
+      ΔT² = ΔT*ΔT
+      Δs = ds*ΔT + 0.5*a_lon*ΔT²
+      Δs = max(0, Δs) # no backup
+      Δt = dt*ΔT + 0.5*a_lat*ΔT²
+
+      ds₂ = ds + a_lon*ΔT
+    ds₂ = max(0, ds₂) # no backup
+      dt₂ = dt + a_lat*ΔT
+      speed₂ = sqrt(dt₂*dt₂ + ds₂*ds₂)
+      v₂ = sign(ds₂)*speed₂
+      ϕ₂ = atan2(dt₂, ds₂) + (v₂ < 0.0)*π # handle negative speeds
+      roadind = AutoUrban.move_along_with_direction(veh.posF.roadind, roadway, Δs, direction = action.direction)
       footpoint = roadway[roadind]
       posF = Frenet(roadind, roadway, t=t+Δt, ϕ = ϕ₂)
       # posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
