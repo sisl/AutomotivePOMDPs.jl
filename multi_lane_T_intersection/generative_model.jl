@@ -35,6 +35,7 @@ end
 function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::AbstractRNG)
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
+    is_ego_here = clamp(findfirst(s, EGO_ID),0, 1)
     sp = deepcopy(s) #XXX bad
     max_id = 0
     for veh in sp
@@ -42,7 +43,7 @@ function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::Abstrac
             max_id = veh.id
         end
     end
-    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_cars+1
+    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_cars +  is_ego_here
         new_car = initial_car(pomdp, sp, rng)
         if can_push(pomdp.env, sp, new_car)
             lane = get_lane(pomdp.env.roadway, new_car)
@@ -83,13 +84,23 @@ end
 
 ### INITIAL STATES ################################################################################
 
-function POMDPs.initial_state(pomdp::OIPOMDP, rng::AbstractRNG)
+function POMDPs.initial_state(pomdp::OIPOMDP, rng::AbstractRNG, burn_in::Int64=1)
+    scene = initial_scene(pomdp, rng)
+    # clean_scene!(pomdp.env, scene)
+    for t = 1:burn_in
+        scene = generate_s(pomdp, scene, OIAction(0.), rng)
+    end
+    return scene
+end
 
+function initial_scene(pomdp::OIPOMDP, rng::AbstractRNG, no_ego::Bool=false)
     scene = Scene()
-    ego = initial_ego(pomdp, rng)
-    push!(scene, ego)
+    if !no_ego
+        ego = initial_ego(pomdp, rng)
+        push!(scene, ego)
+    end
     for i=1:pomdp.max_cars
-        if rand(rng) < pomdp.p_birth
+        if rand(rng) < pomdp.p_birth && n_cars(scene) < pomdp.max_cars + 1-Int(no_ego)
             new_car = initial_car(pomdp, scene, rng, true)
             if can_push(pomdp.env, scene, new_car)
                 push!(scene, new_car)
