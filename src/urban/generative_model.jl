@@ -84,14 +84,14 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                                                     )
             push!(sp, new_car)
         end
-        if rand(rng) < pomdp.ped_birth && n_pedestrians(s) < pomdp.max_peds
-            # println("Spawning new pedestrians")
-            new_ped = initial_pedestrian(pomdp, sp, rng)
-            pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
-            push!(sp, new_ped)
-        end
-        actions = Array{Any}(length(sp))
     end
+    if rand(rng) < pomdp.ped_birth && n_pedestrians(s) < pomdp.max_peds
+        # println("Spawning new pedestrians")
+        new_ped = initial_pedestrian(pomdp, sp, rng)
+        pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
+        push!(sp, new_ped)
+    end
+    actions = Array{Any}(length(sp))
     get_actions!(actions, sp, pomdp.env.roadway, pomdp.models)
     tick!(sp, pomdp.env.roadway, actions, pomdp.ΔT)
     clean_scene!(pomdp.env, sp)
@@ -234,7 +234,7 @@ function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, f
     crosswalk_pos = env.params.crosswalk_pos[cw_ind]
 
     # position along the crosswalk
-    t0 = rand(rng, Uniform(-env.params.crosswalk_width[cw_ind]/2, env.params.crosswalk_width[cw_ind]/2))
+    t0 = rand(rng, Uniform(-env.params.crosswalk_width[cw_ind]/2 + 1., env.params.crosswalk_width[cw_ind]/2 - 1.))
     s0 = rand(rng, [0., get_end(env.crosswalks[cw_ind])])
     ϕ0 = float(π)
     if s0 == 0.
@@ -403,7 +403,7 @@ function POMDPToolbox.generate_sori(p::UrbanPOMDP, s::UrbanState, a::UrbanAction
     if p.lidar
         return generate_sor(p, s, a, rng)..., p.sensor
     else
-        return generate_sor(p, a, s, rng)..., nothing
+        return generate_sor(p, s, a, rng)..., nothing
     end
 end
 
@@ -562,12 +562,13 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
     o = unrescale!(o, pomdp)
     scene = Scene()
     # extract
-    ego, car_map, ped_map, obs_map = split_o(o, pomdp)
-    ego_state = VehicleState(VecSE2(ego[1], ego[2], ego[3]), ego[4])
+    n_obstacles = pomdp.obstacles ? 3 : 0
+    ego, car_map, ped_map, obs_map = split_o(o, pomdp,  n_obstacles=n_obstacles)
+    ego_state = VehicleState(VecSE2(ego[1], ego[2], ego[3]),  pomdp.env.roadway, ego[4])
     ego = Vehicle(ego_state, pomdp.ego_type, EGO_ID)
     push!(scene, ego)
     for (str_id, vec_state) in car_map
-        car_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), vec_state[4])
+        car_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), pomdp.env.roadway, vec_state[4])
         if !off_the_grid(car_state, pomdp)
             id = next_car_id(pomdp, scene)
             car = Vehicle(car_state, pomdp.car_type, id)
@@ -575,7 +576,7 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
         end
     end
     for (str_id, vec_state) in ped_map
-        ped_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), vec_state[4])
+        ped_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), pomdp.env.ped_roadway, vec_state[4])
         if !off_the_grid(ped_state, pomdp)
             id = next_ped_id(pomdp, scene)
             ped = Vehicle(ped_state, pomdp.ped_type, id)

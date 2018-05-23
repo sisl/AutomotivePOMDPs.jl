@@ -64,8 +64,6 @@ export
     get_distribution,
     ConstantPedestrian,
     ConstantSpeedDawdling,
-    IntelligentDriverModel2D,
-    KeepLaneAcc,
     RouteFollowingIDM,
     set_direction!,
     LonAccelDirection,

@@ -34,6 +34,7 @@ Urban Environment with intersections and crosswalk
 """
 mutable struct UrbanEnv <: OccludedEnv
     roadway::Roadway
+    ped_roadway::Roadway
     crosswalks::Vector{Lane}
     obstacles::Vector{ConvexPolygon}
     params::UrbanParams
@@ -47,6 +48,7 @@ function UrbanEnv(;params=UrbanParams())
                                        params. lane_width, params.nlanes_main, params.nlanes,
                                        params. stop_line, params.speed_limit, params.car_rate)
     roadway = gen_T_roadway(intersection_params)
+    ped_roadway = Roadway()
     crosswalks = Lane[]
     cw_id = length(roadway.segments)+1
     for i =1:length(params.crosswalk_pos)
@@ -58,9 +60,10 @@ function UrbanEnv(;params=UrbanParams())
         cw_segment = RoadSegment(length(roadway.segments)+1, [crosswalk])
         push!(crosswalks, crosswalk)
         push!(roadway.segments, cw_segment)
+        push!(ped_roadway.segments, cw_segment)
         cw_id += 1
     end
     obstacles = Vector{ConvexPolygon}[]
     priorities, directions = priority_map(roadway)
-    return UrbanEnv(roadway, crosswalks, obstacles, params, priorities, directions)
+    return UrbanEnv(roadway, ped_roadway, crosswalks, obstacles, params, priorities, directions)
 end

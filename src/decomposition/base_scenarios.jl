@@ -34,7 +34,7 @@ end
 
 
 # given a big observation vector, split to an entity-wise representation
-function split_o(obs::UrbanObs, pomdp::UrbanPOMDP, n_features::Int64=4, n_obstacles::Int64=3)
+function split_o(obs::UrbanObs, pomdp::UrbanPOMDP; n_features::Int64=4, n_obstacles::Int64=3)
     car_map, ped_map, obs_map = OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}() #XXX Dictionary creation is sloooooow
     ego = obs[1:n_features]
 #     println("ego idx ", 1, ":", n_features)
