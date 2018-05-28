@@ -49,7 +49,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                 intersection_exits = get_exit_lanes(pomdp.env.roadway)
                 intersection=Lane[route[1], route[2]]
             end
-            navigator = RouteFollowingIDM(route=route)
+            navigator = RouteFollowingIDM(route=route, a_max=2.)
             intersection_driver = TTCIntersectionDriver(navigator = navigator,
                                                         intersection = intersection,
                                                         intersection_pos = VecSE2(pomdp.env.params.inter_x,
@@ -148,7 +148,7 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
                     intersection_exits = get_exit_lanes(pomdp.env.roadway)
                     intersection=Lane[route[1], route[2]]
                 end
-                navigator = RouteFollowingIDM(route=route)
+                navigator = RouteFollowingIDM(route=route, a_max=2.)
                 intersection_driver = StopIntersectionDriver(navigator= navigator,
                                                          intersection=intersection,
                                                          intersection_entrances = intersection_entrances,
@@ -248,7 +248,7 @@ function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, f
     v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
     posF = Frenet(env.crosswalks[cw_ind], s0, t0, ϕ0)
 
-    ped_initial_state = VehicleState(posF, env.roadway, v0);
+    ped_initial_state = VehicleState(posF, env.ped_roadway, v0);
 
     id = next_ped_id(pomdp, scene, rng)
 
@@ -564,11 +564,20 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
     # extract
     n_obstacles = pomdp.obstacles ? 3 : 0
     ego, car_map, ped_map, obs_map = split_o(o, pomdp,  n_obstacles=n_obstacles)
-    ego_state = VehicleState(VecSE2(ego[1], ego[2], ego[3]),  pomdp.env.roadway, ego[4])
+
+    # project to roadway
+    params = pomdp.env.params
+    intersection_params = TInterParams(params.x_min, params.x_max, params.y_min, params.inter_x,
+                                    params.inter_y, params.inter_width, params.inter_height,
+                                    params. lane_width, params.nlanes_main, params.nlanes,
+                                    params. stop_line, params.speed_limit, params.car_rate)
+    car_roadway = gen_T_roadway(intersection_params)
+    ego_state = VehicleState(VecSE2(ego[1], ego[2], ego[3]),  car_roadway, ego[4])
     ego = Vehicle(ego_state, pomdp.ego_type, EGO_ID)
     push!(scene, ego)
     for (str_id, vec_state) in car_map
-        car_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), pomdp.env.roadway, vec_state[4])
+        # make sure to not project it on a crosswalk
+        car_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), car_roadway, vec_state[4])
         if !off_the_grid(car_state, pomdp)
             id = next_car_id(pomdp, scene)
             car = Vehicle(car_state, pomdp.car_type, id)

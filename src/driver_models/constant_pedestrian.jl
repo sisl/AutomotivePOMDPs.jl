@@ -21,7 +21,7 @@ end
     tick::Int64 = 0.
     a::ConstantSpeedDawdling = ConstantSpeedDawdling(0., 0.)
     dawdling_amp::Float64 = 0.
-    v_noise::Float64 = 1.0
+    v_noise::Float64 = 0.5
     v_desired::Float64 = 1.0
     dt::Float64 = 0.1
 end
@@ -85,7 +85,7 @@ end
 # P(a | s)
 
 function action_space(model::ConstantPedestrian)
-    return (ConstantSpeedDawdling(-1., 0.), ConstantSpeedDawdling(0., 0.), ConstantSpeedDawdling(+1., 0.))
+    return (ConstantSpeedDawdling(0., 0.), ConstantSpeedDawdling(1., 0.), ConstantSpeedDawdling(2., 0.))
 end
 
 function get_distribution(model::ConstantPedestrian)
