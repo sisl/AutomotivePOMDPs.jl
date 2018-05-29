@@ -67,3 +67,13 @@ function UrbanEnv(;params=UrbanParams())
     priorities, directions = priority_map(roadway)
     return UrbanEnv(roadway, ped_roadway, crosswalks, obstacles, params, priorities, directions)
 end
+
+function car_roadway(env::UrbanEnv)
+    params = env.params
+    intersection_params = TInterParams(params.x_min, params.x_max, params.y_min, params.inter_x,
+                                    params.inter_y, params.inter_width, params.inter_height,
+                                    params. lane_width, params.nlanes_main, params.nlanes,
+                                    params. stop_line, params.speed_limit, params.car_rate)
+    car_roadway = gen_T_roadway(intersection_params)
+    return car_roadway
+end

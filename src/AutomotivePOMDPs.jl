@@ -1,6 +1,6 @@
 module AutomotivePOMDPs
 
-using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations
+using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations, StaticArrays
 using AutomotiveDrivingModels, AutoUrban, AutoViz
 using Reel
 
@@ -56,7 +56,8 @@ export
     ObstacleDistribution,
     sample_obstacles!,
     empty_obstacles!,
-    add_obstacle!
+    add_obstacle!,
+    car_roadway
 
 include("envs/occluded_crosswalk_env.jl")
 include("envs/multi_lane_T_env.jl")
@@ -154,6 +155,37 @@ include("generative_pomdps/multi_lane_T_intersection/render_helpers.jl")
 include("generative_pomdps/urban/pomdp_types.jl")
 include("generative_pomdps/urban/generative_model.jl")
 include("generative_pomdps/urban/render_helpers.jl")
+
+export 
+    CarMDP,
+    CarMDPState,
+    CarMDPAction,
+    PedMDP,
+    PedMDPState,
+    PedMDPAction,
+    labeling,
+    get_mdp_state,
+    state2scene,
+    interpolate_state,
+    get_car_vspace,
+    get_ped_vspace,
+    interpolate_pedestrian
+
+# more discrete POMDPs
+include("explicit_pomdps/discretization.jl")
+include("explicit_pomdps/rendering.jl")
+include("explicit_pomdps/car_mdp/pomdp_types.jl")
+include("explicit_pomdps/car_mdp/state_space.jl")
+include("explicit_pomdps/car_mdp/transition.jl")
+include("explicit_pomdps/car_mdp/render_helpers.jl")
+include("explicit_pomdps/car_mdp/high_fidelity.jl")
+include("explicit_pomdps/pedestrian_mdp/pomdp_types.jl")
+include("explicit_pomdps/pedestrian_mdp/state_space.jl")
+include("explicit_pomdps/pedestrian_mdp/transition.jl")
+include("explicit_pomdps/pedestrian_mdp/render_helpers.jl")
+include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
+include("explicit_pomdps/interpolation.jl")
+
 
 export
     # decomposition stuff
