@@ -1,8 +1,14 @@
 module AutomotivePOMDPs
 
-using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations
+using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations, StaticArrays
 using AutomotiveDrivingModels, AutoUrban, AutoViz
 using Reel
+
+"""
+Abstract type to define driving environment with occlusion 
+"""
+abstract type OccludedEnv end
+
 
 # helpers
 export
@@ -50,7 +56,8 @@ export
     ObstacleDistribution,
     sample_obstacles!,
     empty_obstacles!,
-    add_obstacle!
+    add_obstacle!,
+    car_roadway
 
 include("envs/occluded_crosswalk_env.jl")
 include("envs/multi_lane_T_env.jl")
@@ -117,37 +124,68 @@ export
     obs_to_scene
 
 # single crosswalk
-include("single_crosswalk/pomdp_types.jl")
-include("single_crosswalk/spaces.jl")
-include("single_crosswalk/transition.jl")
-include("single_crosswalk/observation.jl")
-include("single_crosswalk/belief.jl")
-include("single_crosswalk/adm_helpers.jl")
-include("single_crosswalk/render_helpers.jl")
+include("explicit_pomdps/single_crosswalk/pomdp_types.jl")
+include("explicit_pomdps/single_crosswalk/spaces.jl")
+include("explicit_pomdps/single_crosswalk/transition.jl")
+include("explicit_pomdps/single_crosswalk/observation.jl")
+include("explicit_pomdps/single_crosswalk/belief.jl")
+include("explicit_pomdps/single_crosswalk/adm_helpers.jl")
+include("explicit_pomdps/single_crosswalk/render_helpers.jl")
 
 # multi crowsswalk
-include("multi_crosswalk/pomdp_types.jl")
-include("multi_crosswalk/generative_model.jl")
-include("multi_crosswalk/render_helpers.jl")
+include("generative_pomdps/multi_crosswalk/pomdp_types.jl")
+include("generative_pomdps/multi_crosswalk/generative_model.jl")
+include("generative_pomdps/multi_crosswalk/render_helpers.jl")
 
 # single intersection
-include("single_intersection/occluded_intersection_env.jl")
-include("single_intersection/pomdp_types.jl")
-include("single_intersection/spaces.jl")
-include("single_intersection/transition.jl")
-include("single_intersection/observation.jl")
-include("single_intersection/belief.jl")
-include("single_intersection/render_helpers.jl")
+include("explicit_pomdps/single_intersection/occluded_intersection_env.jl")
+include("explicit_pomdps/single_intersection/pomdp_types.jl")
+include("explicit_pomdps/single_intersection/spaces.jl")
+include("explicit_pomdps/single_intersection/transition.jl")
+include("explicit_pomdps/single_intersection/observation.jl")
+include("explicit_pomdps/single_intersection/belief.jl")
+include("explicit_pomdps/single_intersection/render_helpers.jl")
 
 # multi intersection
-include("multi_lane_T_intersection/pomdp_types.jl")
-include("multi_lane_T_intersection/generative_model.jl")
-include("multi_lane_T_intersection/render_helpers.jl")
+include("generative_pomdps/multi_lane_T_intersection/pomdp_types.jl")
+include("generative_pomdps/multi_lane_T_intersection/generative_model.jl")
+include("generative_pomdps/multi_lane_T_intersection/render_helpers.jl")
 
 #urban
-include("urban/pomdp_types.jl")
-include("urban/generative_model.jl")
-include("urban/render_helpers.jl")
+include("generative_pomdps/urban/pomdp_types.jl")
+include("generative_pomdps/urban/generative_model.jl")
+include("generative_pomdps/urban/render_helpers.jl")
+
+export 
+    CarMDP,
+    CarMDPState,
+    CarMDPAction,
+    PedMDP,
+    PedMDPState,
+    PedMDPAction,
+    labeling,
+    get_mdp_state,
+    state2scene,
+    interpolate_state,
+    get_car_vspace,
+    get_ped_vspace,
+    interpolate_pedestrian
+
+# more discrete POMDPs
+include("explicit_pomdps/discretization.jl")
+include("explicit_pomdps/rendering.jl")
+include("explicit_pomdps/car_mdp/pomdp_types.jl")
+include("explicit_pomdps/car_mdp/state_space.jl")
+include("explicit_pomdps/car_mdp/transition.jl")
+include("explicit_pomdps/car_mdp/render_helpers.jl")
+include("explicit_pomdps/car_mdp/high_fidelity.jl")
+include("explicit_pomdps/pedestrian_mdp/pomdp_types.jl")
+include("explicit_pomdps/pedestrian_mdp/state_space.jl")
+include("explicit_pomdps/pedestrian_mdp/transition.jl")
+include("explicit_pomdps/pedestrian_mdp/render_helpers.jl")
+include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
+include("explicit_pomdps/interpolation.jl")
+
 
 export
     # decomposition stuff
