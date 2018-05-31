@@ -286,3 +286,17 @@ function get_possible_routes(lane::Lane, env::UrbanEnv)
     end
     return possible_routes
 end
+
+
+# return the first full route in the environment which end matches with route
+function find_route(env::UrbanEnv, route::Vector{Lane})
+    routes = get_car_routes(env)
+    for full_route in routes 
+        if full_route[end].tag == route[end].tag 
+            return full_route
+        end
+    end
+    # should never reach this point 
+    @assert false
+    return routes[1]
+end

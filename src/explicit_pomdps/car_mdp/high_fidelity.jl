@@ -26,13 +26,12 @@ function get_mdp_state(mdp::CarMDP, pomdp::UrbanPOMDP, s::Scene, car_id = 2)
         car = s[car_i]
     end
     ego = get_ego(s)
-    route = SVector{0, Lane}()
+    sroute = SVector{0, Lane}()
     if haskey(pomdp.models, car_id)
-        route = SVector(pomdp.models[car_id].navigator.route...)
+        # find the exact route from the list of routes
+        sroute = find_route(mdp.env, pomdp.models[car_id].navigator.route)        
     end
     e_state = VehicleState(ego.state.posG, car_roadway(mdp.env), ego.state.v)
     c_state = VehicleState(car.state.posG, mdp.env.roadway, car.state.v)
-    return CarMDPState(is_colliding(ego, car), e_state, c_state, route)
+    return CarMDPState(is_colliding(ego, car), e_state, c_state, sroute)
 end
-
-

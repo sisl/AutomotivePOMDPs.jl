@@ -27,7 +27,7 @@ function is_crash(scene::Scene)
     ego = scene[findfirst(scene, EGO_ID)]
     for veh in scene
         if veh.id != 1
-            if is_colliding(ego, veh)
+            if is_colliding(ego, veh) #&& !(ego.state.v == 0. && veh.def.class == AgentClass.PEDESTRIAN)
                 return true
             end
         end

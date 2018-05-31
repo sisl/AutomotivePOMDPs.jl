@@ -26,6 +26,7 @@ export
         get_exit_lanes,
         get_ego,
         is_crash,
+        direction_from_center,
         random_route,
         is_observable_dyna,
         is_observable_fixed,
@@ -78,6 +79,7 @@ export
     StopIntersectionDriver,
     TTCIntersectionDriver,
     UrbanDriver,
+    IntelligentPedestrian,
     LidarOverlay
 
 include("driver_models/route_following_idm.jl")
@@ -88,6 +90,7 @@ include("driver_models/constant_pedestrian.jl")
 include("driver_models/crosswalk_driver.jl")
 include("driver_models/urban_driver.jl")
 include("driver_models/lidar_sensor.jl")
+include("driver_models/intelligent_pedestrian_model.jl")
 
 export
     # pomdp types

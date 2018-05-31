@@ -6,7 +6,7 @@
     intersection_entrances::Vector{Lane} = Lane[]
     ped_model::ConstantPedestrian = ConstantPedestrian()
     ped_start::Float64 = 4.0 # assume a 5meter buffer before a pedestrian reaches the road
-    stop_delta::Float64 = 0.5
+    stop_delta::Float64 = 0.7
     accel_tol::Float64 = 0.1
     d_tol::Float64 = 0.5
 
@@ -101,6 +101,10 @@ end
 
 function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}, roadway::Roadway)
     # check if the pedestrian is in the conflict zone
+    ped_lane = get_lane(roadway, ped)
+    if ped_lane.tag != crosswalk.tag
+        return false 
+    end
     for lane in conflict_lanes
         ped_f = Frenet(ped.state.posG, lane, roadway)
         if abs(ped_f.t) < lane.width/2 && get_lane(roadway, ped).tag == crosswalk.tag
