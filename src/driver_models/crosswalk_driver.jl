@@ -66,7 +66,7 @@ function update_priority!(model::CrosswalkDriver, scene::Scene, roadway::Roadway
     cw_length = get_end(model.crosswalk)
     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
     collision_point = VecSE2(cw_center.x+model.crosswalk.width/2, ego.state.posG.y)
-    collision_point_posF = Frenet(collision_point, lane, roadway)
+    collision_point_posF = Frenet(proj(collision_point, lane, roadway, move_along_curves=false), roadway)
     has_passed = lane ∈ model.conflict_lanes && (ego.state.posF.s > collision_point_posF.s)
     model.priority = isempty(model.wait_list) || has_passed
 end
