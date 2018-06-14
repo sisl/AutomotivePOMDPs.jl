@@ -62,19 +62,23 @@ Check if all the pedestrian have crossed
 """
 function update_priority!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
-    lane = get_lane(roadway, ego)
     cw_length = get_end(model.crosswalk)
     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
-    collision_point = VecSE2(cw_center.x+model.crosswalk.width/2, ego.state.posG.y)
-    collision_point_posF = Frenet(proj(collision_point, lane, roadway, move_along_curves=false), roadway)
-    has_passed = lane ∈ model.conflict_lanes && (ego.state.posF.s > collision_point_posF.s)
+    # lane = get_lane(roadway, ego)
+    # collision_point = VecSE2(cw_center.x+model.crosswalk.width/2, ego.state.posG.y)
+    # collision_point_posF = Frenet(proj(collision_point, lane, roadway, move_along_curves=false), roadway)
+    # has_passed = lane ∈ model.conflict_lanes && (ego.state.posF.s > collision_point_posF.s)
+    #XXX fix has_passed: draw vector from the center of the crosswalk to the car, check the sign of the dot product 
+    cw_to_car = ego.state.posG - cw_center 
+    car_vec = get_front(ego) - ego.state.posG
+    has_passed = dot(cw_to_car, car_vec) > 0.
     model.priority = isempty(model.wait_list) || has_passed
 end
 
 function grow_wait_list!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
     for veh in scene
         if veh.def.class == AgentClass.PEDESTRIAN &&
-           is_crossing(veh, model.crosswalk, model.conflict_lanes, roadway) &&
+           is_crossing(veh, model.crosswalk, model.conflict_lanes, scene, roadway) &&
            !(veh.id ∈ model.wait_list)
             push!(model.wait_list, veh.id)
         end
@@ -92,14 +96,14 @@ function ungrow_wait_list!(model::CrosswalkDriver, scene::Scene, roadway::Roadwa
             continue
         end
         ped = scene[ped_ind]
-        if !is_crossing(ped, model.crosswalk, model.conflict_lanes, roadway)
+        if !is_crossing(ped, model.crosswalk, model.conflict_lanes, scene, roadway)
             push!(to_remove, i)
         end
     end
     deleteat!(model.wait_list, to_remove)
 end
 
-function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}, roadway::Roadway)
+function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}, scene::Scene, roadway::Roadway)
     # check if the pedestrian is in the conflict zone
     ped_lane = get_lane(roadway, ped)
     if ped_lane.tag != crosswalk.tag
@@ -113,10 +117,27 @@ function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}
     end
     # at this point, the pedestrian is not on the road
     # check if the pedestrian is going to cross or not
-    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0. && get_lane(roadway, ped).tag == crosswalk.tag
+    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0. && get_lane(roadway, ped).tag == crosswalk.tag && is_free(crosswalk, scene, roadway)
         return true
     end
     return false
+end
+
+function is_free(crosswalk::Lane, scene::Scene, roadway::Roadway)
+    #check that no vehicle is stopped on the crosswalk
+    for veh in scene 
+        if veh.def.class == AgentClass.PEDESTRIAN
+            continue 
+        end
+        posG = veh.state.posG 
+        cw_posF = Frenet(posG, crosswalk, roadway)
+        lane = get_lane(roadway, veh)
+        t_car = cw_posF.t 
+        if abs(cw_posF.t) < crosswalk.width/2 + veh.def.length/2*sin(cw_posF.ϕ)
+            return false 
+        end
+    end
+    return true
 end
 
 function get_distance_to_crosswalk(model::CrosswalkDriver, veh::Vehicle, roadway::Roadway, delta::Float64 = 0.)

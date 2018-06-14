@@ -41,12 +41,15 @@ function POMDPs.transition(mdp::PedMDP, s::PedMDPState, a::PedMDPAction)
             itp_ped_ps, itp_ped_weights = interpolate_pedestrian(mdp, ped_p, ped_v_space)
             for (j, ped_pss) in enumerate(itp_ped_ps)
                 index_itp_state = find(x -> x==ped_pss, ped_ps)
-                if isempty(index_itp_state)
-                    push!(ped_ps, ped_pss)
-                    push!(ped_probs, itp_ped_weights[j]*p_a)
-                else
-                    ped_probs[index_itp_state] += itp_ped_weights[j]*p_a
-                end
+                w = itp_ped_weights[j]*p_a
+                # if !(w ≈  0.)
+                    if isempty(index_itp_state)
+                        push!(ped_ps, ped_pss)
+                        push!(ped_probs, w)
+                    else
+                        ped_probs[index_itp_state] += w
+                    end
+                # end
             end
         end
         @assert length(ped_probs) == length(ped_ps)
@@ -59,7 +62,7 @@ function POMDPs.transition(mdp::PedMDP, s::PedMDPState, a::PedMDPAction)
     k = 1
     for (i, e) in enumerate(ego_ps)
         for (j, p) in enumerate(ped_ps)
-            crash =  is_colliding(Vehicle(e, mdp.ego_type, 1), Vehicle(p, mdp.ped_type, 2))
+            crash =  is_colliding(Vehicle(e, mdp.ego_type, EGO_ID), Vehicle(p, mdp.ped_type, PED_ID))
             states_p[k] = PedMDPState(crash, e, p)
             probs_p[k] = ego_probs[i]*ped_probs[j]
             k += 1
@@ -67,5 +70,7 @@ function POMDPs.transition(mdp::PedMDP, s::PedMDPState, a::PedMDPAction)
     end
     normalize!(probs_p, 1)
     # remove duplicates
-    return SparseCat(states_p, probs_p)
+    # sort by si 
+    p = sortperm(states_p, by=s->state_index(mdp, s))
+    return SparseCat(states_p[p], probs_p[p])
 end

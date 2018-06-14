@@ -14,7 +14,7 @@ function POMDPs.states(mdp::PedMDP)
     ped_states = get_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
     for ego in ego_states
         for ped in ped_states
-            crash =  is_colliding(Vehicle(ego, mdp.ego_type, 1), Vehicle(ped, mdp.ped_type, 2))
+            crash =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID))
             push!(state_space, PedMDPState(crash, ego, ped))
         end
         # add absent states
@@ -45,7 +45,7 @@ function POMDPs.initial_state_distribution(mdp::PedMDP)
     init_states = Vector{PedMDPState}(length(init_ped_states))
     for i=1:length(init_ped_states)
         ped = init_ped_states[i]
-        crash = is_colliding(Vehicle(ego, mdp.ego_type, 1), Vehicle(ped, mdp.ped_type, 2))
+        crash = is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID))
         init_states[i] = PedMDPState(crash, ego, ped)
     end
     return SparseCat(init_states, init_ped_dist.probs)

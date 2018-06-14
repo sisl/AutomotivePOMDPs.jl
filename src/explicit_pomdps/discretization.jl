@@ -241,7 +241,7 @@ function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_r
 end
 
 function find_range_index(r::Range{Float64}, s::Float64)
-    return round(Int, ((s - first(r))/step(r) + 1))
+    return clamp(round(Int, ((s - first(r))/step(r) + 1)), 1, length(r))
 end
 
 
@@ -273,6 +273,15 @@ function get_car_routes(env::UrbanEnv)
                                        env.roadway[LaneTag(5, 1)])
     return SVector(straight_from_left, left_from_left, straight_from_right, right_from_right)
 end
+
+
+# function get_car_routes(env::UrbanEnv)
+#     return [[LaneTag(1,1), LaneTag(7,1), LaneTag(2,1)],
+#               [LaneTag(9,1), LaneTag(10, 1), LaneTag(5, 1)],
+#               [LaneTag(3,1), LaneTag(8, 1), LaneTag(4, 1)],
+#               [LaneTag(3, 1), LaneTag(11, 1), LaneTag(12, 1), LaneTag(5, 1)]]
+# end
+
 
 function get_possible_routes(lane::Lane, env::UrbanEnv)
     possible_routes = Int64[]

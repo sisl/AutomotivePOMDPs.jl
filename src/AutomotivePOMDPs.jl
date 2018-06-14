@@ -166,12 +166,19 @@ export
     PedMDP,
     PedMDPState,
     PedMDPAction,
+    PedCarMDP,
+    PedCarMDPState,
+    PedCarMDPAction,
     labeling,
     get_mdp_state,
     state2scene,
     interpolate_state,
     get_car_vspace,
     get_ped_vspace,
+    n_ego_states,
+    n_car_states,
+    n_ped_states,
+    get_off_the_grid,
     interpolate_pedestrian
 
 # more discrete POMDPs
@@ -187,6 +194,10 @@ include("explicit_pomdps/pedestrian_mdp/state_space.jl")
 include("explicit_pomdps/pedestrian_mdp/transition.jl")
 include("explicit_pomdps/pedestrian_mdp/render_helpers.jl")
 include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
+include("explicit_pomdps/pedcar_mdp/pomdp_types.jl")
+include("explicit_pomdps/pedcar_mdp/state_space.jl")
+include("explicit_pomdps/pedcar_mdp/transition.jl")
+include("explicit_pomdps/pedcar_mdp/render_helpers.jl")
 include("explicit_pomdps/interpolation.jl")
 
 

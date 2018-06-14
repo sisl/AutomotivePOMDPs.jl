@@ -30,7 +30,6 @@ end
 # Action type
 const CarMDPAction = UrbanAction
 
-
 @with_kw mutable struct CarMDP <: MDP{CarMDPState, CarMDPAction}
     env::UrbanEnv = UrbanEnv(params=UrbanParams(nlanes_main=1,
                      crosswalk_pos =  [VecSE2(6, 0., pi/2), VecSE2(-6, 0., pi/2), VecSE2(0., -5., 0.)],

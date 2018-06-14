@@ -1,14 +1,15 @@
 """
 convert to AutomotiveDrivingModels.Scene
 """
-function state2scene(mdp::PedMDP, s::PedMDPState, ped_type::VehicleDef = mdp.ped_type)
+function state2scene(mdp::PedCarMDP, s::PedCarMDPState, ped_type::VehicleDef = mdp.ped_type)
     scene = Scene()
     push!(scene, Vehicle(s.ego, mdp.ego_type, EGO_ID))
+    push!(scene, Vehicle(s.car, mdp.ego_type, CAR_ID))
     push!(scene, Vehicle(s.ped, mdp.ped_type, PED_ID))
     return scene
 end
 
-function animate_states(mdp::PedMDP, states::Vector{PedMDPState}, actions::Vector{PedMDPAction};
+function animate_states(mdp::PedCarMDP, states::Vector{PedCarMDPState}, actions::Vector{PedCarMDPAction};
                         overlays=SceneOverlay[IDOverlay()],
                         cam=StaticCamera(VecE2(0, -5.), 17.))
     duration = length(states)*mdp.ΔT

@@ -1,5 +1,5 @@
 # a bunch of interpolation helpers
-function interpolate_state(mdp::Union{CarMDP, PedMDP}, state::VehicleState, v_space::StepRangeLen)
+function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState, v_space::StepRangeLen)
     # interpolate longitudinal position and velocity
     if state.posG == mdp.off_grid
         return (state,), (1.0,)
@@ -21,7 +21,7 @@ function interpolate_state(mdp::Union{CarMDP, PedMDP}, state::VehicleState, v_sp
 end
 
 # take into account heading as well
-function interpolate_pedestrian(mdp::PedMDP, state::VehicleState, v_space::StepRangeLen)
+function interpolate_pedestrian(mdp::Union{PedMDP, PedCarMDP}, state::VehicleState, v_space::StepRangeLen)
     # interpolate longitudinal position and velocity
     if state.posG == mdp.off_grid
         return (state,), (1.0,)

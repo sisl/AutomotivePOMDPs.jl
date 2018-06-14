@@ -38,3 +38,14 @@ end
 
 get_name(::UrbanDriver) = "UrbanDriver"
 Base.rand(model::UrbanDriver) = model.a
+
+
+function action_space(model::UrbanDriver)
+    return (LonAccelDirection(model.a.a_lon-model.navigator.σ, model.navigator.dir), LonAccelDirection(model.a.a_lon, model.navigator.dir), LonAccelDirection(model.a.a_lon + model.navigator.σ, model.navigator.dir))
+end
+
+function get_distribution(model::UrbanDriver)
+    actions = action_space(model)
+    probs = (1/3, 1/3, 1/3)
+    return actions, probs
+end
