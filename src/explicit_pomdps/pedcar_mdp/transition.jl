@@ -7,17 +7,23 @@ function POMDPs.transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction
     ego_ps, ego_probs = ego_transition(mdp, s, a)
     ped_ps, ped_probs = ped_transition(mdp, s, a)
     car_ps, car_routes, car_probs = car_transition(mdp, s, a)
-    states_p = Vector{PedCarMDPState}()
-    states_probs = Vector{Float64}()
+    nps = length(car_ps)*length(ped_ps)*length(ego_ps)
+    states_p = Vector{PedCarMDPState}(nps)
+    states_probs = Vector{Float64}(nps)
+    idx = 1
     for ie=1:length(ego_ps)
         for ip=1:length(ped_ps)
             for ic=1:length(car_ps)
                 weight = ego_probs[ie]*ped_probs[ip]*car_probs[ic]
-                if !(weight ≈ 0.)
-                    crash = is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(car_ps[ic], mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(ped_ps[ip], mdp.ped_type, PED_ID))
-                    push!(states_p, PedCarMDPState(crash, ego_ps[ie], ped_ps[ip], car_ps[ic], SVector(car_routes[ic]...)))
-                    push!(states_probs, weight)
-                end
+                # if !(weight ≈ 0.)
+                    collision = crash(mdp, ego_ps[ie], car_ps[ic], ped_ps[ip])
+                    # crash = is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(car_ps[ic], mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(ped_ps[ip], mdp.ped_type, PED_ID))
+                    states_p[idx] = PedCarMDPState(collision, ego_ps[ie], ped_ps[ip], car_ps[ic], car_routes[ic])
+                    states_probs[idx] = weight
+                    idx += 1
+                    # push!(states_p, PedCarMDPState(collision, ego_ps[ie], ped_ps[ip], car_ps[ic], car_routes[ic]))
+                    # push!(states_probs, weight)
+                # end
             end
         end
     end
@@ -68,11 +74,13 @@ function ped_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
             itp_ped_ps, itp_ped_weights = interpolate_pedestrian(mdp, ped_p, ped_v_space)
             for (j, ped_pss) in enumerate(itp_ped_ps)
                 index_itp_state = find(x -> x==ped_pss, ped_ps)
-                if isempty(index_itp_state)
-                    push!(ped_ps, ped_pss)
-                    push!(ped_probs, itp_ped_weights[j]*p_a)
-                else
-                    ped_probs[index_itp_state] += itp_ped_weights[j]*p_a
+                if !(itp_ped_weights[j] ≈ 0.)
+                    if isempty(index_itp_state)
+                        push!(ped_ps, ped_pss)
+                        push!(ped_probs, itp_ped_weights[j]*p_a)
+                    else
+                        ped_probs[index_itp_state] += itp_ped_weights[j]*p_a
+                    end
                 end
             end
         end
@@ -85,7 +93,7 @@ end
 function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     # car transition
     car_probs = Float64[]
-    car_routes = Vector{Lane}[]
+    car_routes = Vector{LaneTag}[]
     if s.car.posG == mdp.off_grid
         car_ps, car_routes = car_starting_states(mdp)
         push!(car_ps, get_off_the_grid(mdp))
@@ -120,11 +128,13 @@ function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
             itp_car_ps, itp_car_weights = interpolate_state(mdp, car_p, car_v_space)
             for (j, car_pss) in enumerate(itp_car_ps)
                 index_itp_state = find(x -> x==car_pss, car_ps)
-                if isempty(index_itp_state)
-                    push!(car_ps, car_pss)
-                    push!(car_probs, itp_car_weights[j]*p_a)
-                else
-                    car_probs[index_itp_state] += itp_car_weights[j]*p_a
+                if !(itp_car_weights[j] ≈ 0.)
+                    if isempty(index_itp_state)
+                        push!(car_ps, car_pss)
+                        push!(car_probs, itp_car_weights[j]*p_a)
+                    else
+                        car_probs[index_itp_state] += itp_car_weights[j]*p_a
+                    end
                 end
             end
             car_routes = fill(s.route, length(car_ps))
@@ -139,7 +149,7 @@ end
 function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     car = s.car
     lane = get_lane(mdp.env.roadway, car)
-    route = s.route
+    route = [mdp.env.roadway[l] for l in s.route]
     intersection_entrances = get_start_lanes(mdp.env.roadway)
     if !(route[1] ∈ intersection_entrances)
         intersection = Lane[]
@@ -177,7 +187,7 @@ function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     push!(scene, Vehicle(s.car, mdp.car_type, CAR_ID))
     push!(scene, Vehicle(s.ped, mdp.ped_type, PED_ID))
     # fill in hiddent state
-    observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
+    # observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
     # set the decision
     observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
 end

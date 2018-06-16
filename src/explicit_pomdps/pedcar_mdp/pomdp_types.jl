@@ -102,14 +102,15 @@ function POMDPs.action_index(mdp::PedCarMDP, action::PedCarMDPAction)
 end
 
 function get_off_the_grid(mdp::PedCarMDP)
-    return VehicleState(mdp.off_grid, mdp.env.roadway, 0.)
+    return VehicleState(mdp.off_grid, Frenet(mdp.env.roadway[LaneTag(5,1)], 25.1, -26.5, pi/2), 0.)
+    # return VehicleState(mdp.off_grid, mdp.env.roadway, 0.)
 end
 
 # create labels for model checking
 function labeling(mdp::PedCarMDP)
     labels = Dict{PedCarMDPState, Vector{String}}()
     for s in ordered_states(mdp)
-        if s.crash
+        if crash(mdp, s)
             labels[s] = ["crash"]
         elseif s.ego.posF.s >= get_end(mdp.env.roadway[mdp.ego_goal]) &&
             get_lane(mdp.env.roadway, s.ego).tag == mdp.ego_goal
@@ -117,4 +118,15 @@ function labeling(mdp::PedCarMDP)
         end
     end
     return labels
+end
+
+function crash(mdp::PedCarMDP, s::PedCarMDPState)
+    return crash(mdp, s.ego, s.car, s.ped)
+end
+
+function crash(mdp::PedCarMDP, ego::VehicleState, car::VehicleState, ped::VehicleState)
+    ego_veh = Vehicle(ego, mdp.ego_type, EGO_ID)
+    car_veh = Vehicle(car, mdp.car_type, CAR_ID)
+    ped_veh = Vehicle(ped, mdp.ped_type, PED_ID)
+    return is_colliding(ego_veh, car_veh) || is_colliding(ego_veh, ped_veh)
 end

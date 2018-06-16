@@ -36,7 +36,7 @@ function POMDPs.states(mdp::PedCarMDP)
         for ped in ped_states
             # add absent states
             crash = is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID))
-            push!(state_space, PedCarMDPState(crash, ego, ped, get_off_the_grid(mdp), SVector{0, Lane}()))
+            push!(state_space, PedCarMDPState(crash, ego, ped, get_off_the_grid(mdp), Vector{LaneTag}()))
         end
     end
     return state_space
@@ -60,9 +60,12 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
     # step 3 find route index 
     route_i = 0
     for (i, route) in enumerate(routes)
-        if [l.tag for l in route] == [l.tag for l in s.route]
+        if route == s.route
             route_i = i
         end
+        # if [l.tag for l in route] == [l.tag for l in s.route]
+            # route_i = i
+        # end
     end
 
 
@@ -77,9 +80,12 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
         # step 2: find route_index
         route_i = 0
         for (i, route) in enumerate(routes)
-            if [l.tag for l in route] == [l.tag for l in s.route]
+            if route == s.route
                 route_i = i
             end
+            # if [l.tag for l in route] == [l.tag for l in s.route]
+            #     route_i = i
+            # end
         end
         # step 3: find car_index in car states
         car_i = car_state_index(mdp.env, s.car, s.route, mdp.pos_res, mdp.vel_res)
@@ -162,10 +168,10 @@ function car_starting_states(mdp::PedCarMDP, min_speed::Float64 = 6.0)
         N_states += length(v_space)
     end
     car_states = Vector{VehicleState}(N_states)
-    start_routes = Vector{Vector{Lane}}(N_states)
+    start_routes = Vector{Vector{LaneTag}}(N_states)
     i = 1
     for route in routes
-        lane = route[1]
+        lane = mdp.env.roadway[route[1]]
         for v in v_space
             car_states[i] = VehicleState(Frenet(lane, 0.), mdp.env.roadway, v)
             start_routes[i] = route
@@ -206,3 +212,4 @@ function pedestrian_starting_states(mdp::PedCarMDP)
     end
     return ped_states
 end
+

@@ -2,7 +2,7 @@
 function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState, v_space::StepRangeLen)
     # interpolate longitudinal position and velocity
     if state.posG == mdp.off_grid
-        return (state,), (1.0,)
+        return VehicleState[state], Float64[1.0]
     end
     lane = get_lane(mdp.env.roadway, state)
     l_space = get_discretized_lane(lane.tag, mdp.env.roadway, mdp.pos_res)
