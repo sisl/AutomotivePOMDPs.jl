@@ -27,7 +27,7 @@ function POMDPs.states(mdp::PedCarMDP)
                     crash =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
                     # enumerate all possible routes
                     lane = get_lane(mdp.env.roadway, car)
-                    push!(state_space, PedCarMDPState(crash, ego, ped, car, route))
+                    push!(state_space, PedCarMDPState(crash, ego, ped, car, SVector{2, LaneTag}(route[1], route[end])))
                 end
             end
         end
@@ -36,7 +36,7 @@ function POMDPs.states(mdp::PedCarMDP)
         for ped in ped_states
             # add absent states
             crash = is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID))
-            push!(state_space, PedCarMDPState(crash, ego, ped, get_off_the_grid(mdp), Vector{LaneTag}()))
+            push!(state_space, PedCarMDPState(crash, ego, ped, get_off_the_grid(mdp), SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0))))
         end
     end
     return state_space
@@ -60,12 +60,9 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
     # step 3 find route index 
     route_i = 0
     for (i, route) in enumerate(routes)
-        if route == s.route
+        if  s.route[end] == route[end]
             route_i = i
         end
-        # if [l.tag for l in route] == [l.tag for l in s.route]
-            # route_i = i
-        # end
     end
 
 
@@ -80,12 +77,9 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
         # step 2: find route_index
         route_i = 0
         for (i, route) in enumerate(routes)
-            if route == s.route
+            if  s.route[end] == route[end]
                 route_i = i
             end
-            # if [l.tag for l in route] == [l.tag for l in s.route]
-            #     route_i = i
-            # end
         end
         # step 3: find car_index in car states
         car_i = car_state_index(mdp.env, s.car, s.route, mdp.pos_res, mdp.vel_res)
@@ -113,7 +107,7 @@ function POMDPs.initial_state_distribution(mdp::PedCarMDP)
             car = init_car_states[i]
             route = init_car_routes[i]
             crash = is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID))
-            push!(init_states, PedCarMDPState(crash, ego, ped, car, route))
+            push!(init_states, PedCarMDPState(crash, ego, ped, car, SVector{2, LaneTag}(route[1], route[end])))
         end
     end
     # uniform
@@ -141,7 +135,7 @@ function initial_car_state_distribution(mdp::PedCarMDP)
         end
     end
     push!(init_car_states, get_off_the_grid(mdp))
-    push!(init_car_routes, SVector{0, Lane}())
+    push!(init_car_routes, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0,0)))
     return init_car_states, init_car_routes
 end
 
@@ -168,13 +162,13 @@ function car_starting_states(mdp::PedCarMDP, min_speed::Float64 = 6.0)
         N_states += length(v_space)
     end
     car_states = Vector{VehicleState}(N_states)
-    start_routes = Vector{Vector{LaneTag}}(N_states)
+    start_routes = Vector{SVector{2, LaneTag}}(N_states)
     i = 1
     for route in routes
-        lane = mdp.env.roadway[route[1]]
+        lane = route[1]
         for v in v_space
-            car_states[i] = VehicleState(Frenet(lane, 0.), mdp.env.roadway, v)
-            start_routes[i] = route
+            car_states[i] = VehicleState(Frenet(mdp.env.roadway[lane], 0.), mdp.env.roadway, v)
+            start_routes[i] = SVector{2, LaneTag}(route[1], route[end])
             i += 1
         end
     end
@@ -212,4 +206,3 @@ function pedestrian_starting_states(mdp::PedCarMDP)
     end
     return ped_states
 end
-

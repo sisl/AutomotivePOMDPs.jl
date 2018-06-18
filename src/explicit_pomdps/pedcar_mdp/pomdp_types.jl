@@ -6,7 +6,7 @@ struct PedCarMDPState
     ego::VehicleState
     ped::VehicleState
     car::VehicleState
-    route::Vector{LaneTag}
+    route::SVector{2, LaneTag}
 end
 
 # copy b to a

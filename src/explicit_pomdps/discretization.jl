@@ -282,7 +282,6 @@ function get_car_routes(env::UrbanEnv)
               [LaneTag(3, 1), LaneTag(11, 1), LaneTag(12, 1), LaneTag(5, 1)]]
 end
 
-
 function get_possible_routes(lane::Lane, env::UrbanEnv)
     possible_routes = Int64[]
     sizehint!(possible_routes, 2)
@@ -298,7 +297,7 @@ end
 
 
 # return the first full route in the environment which end matches with route
-function find_route(env::UrbanEnv, route::Vector{LaneTag})
+function find_route(env::UrbanEnv, route::SVector{2, LaneTag})
     routes = get_car_routes(env)
     for full_route in routes 
         if full_route[end] == route[end] 

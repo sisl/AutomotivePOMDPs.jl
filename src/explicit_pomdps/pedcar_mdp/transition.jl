@@ -93,11 +93,11 @@ end
 function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     # car transition
     car_probs = Float64[]
-    car_routes = Vector{LaneTag}[]
+    car_routes = SVector{2, LaneTag}[]
     if s.car.posG == mdp.off_grid
         car_ps, car_routes = car_starting_states(mdp)
         push!(car_ps, get_off_the_grid(mdp))
-        push!(car_routes, SVector{0, Lane}())
+        push!(car_routes, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0,0)))
         car_probs = ones(length(car_ps))
         car_probs[end] = 1-mdp.car_birth
         car_probs[1:end-1] = mdp.car_birth/(length(car_ps)-1)
@@ -149,7 +149,7 @@ end
 function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     car = s.car
     lane = get_lane(mdp.env.roadway, car)
-    route = [mdp.env.roadway[l] for l in s.route]
+    route = [mdp.env.roadway[tag] for tag in find_route(mdp.env, s.route)]
     intersection_entrances = get_start_lanes(mdp.env.roadway)
     if !(route[1] ∈ intersection_entrances)
         intersection = Lane[]
