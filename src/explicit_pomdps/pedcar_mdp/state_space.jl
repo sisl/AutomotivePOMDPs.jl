@@ -45,7 +45,6 @@ end
 
 function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
     n_ego = n_ego_states(mdp.env, mdp.pos_res, mdp.vel_res)
-    n_car = n_car_states(mdp.env, s.route, mdp.pos_res, mdp.vel_res)
     n_ped = n_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
     routes = get_car_routes(mdp.env)
     # step 1: find ego_index
@@ -60,11 +59,10 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
     # step 3 find route index 
     route_i = 0
     for (i, route) in enumerate(routes)
-        if  s.route[end] == route[end]
+        if s.route[end] == route[end] && s.route[1] == route[1]
             route_i = i
         end
     end
-
 
     # handle off the grid case
     if s.car.posG == mdp.off_grid
@@ -74,15 +72,16 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
         end
         si += sub2ind((n_ped + 1, n_ego), ped_i, ego_i)
     else
+        n_car = n_car_states(mdp.env, find_route(mdp.env, s.route), mdp.pos_res, mdp.vel_res)
         # step 2: find route_index
         route_i = 0
         for (i, route) in enumerate(routes)
-            if  s.route[end] == route[end]
+            if  s.route[end] == route[end] && s.route[1] == route[1]
                 route_i = i
             end
         end
         # step 3: find car_index in car states
-        car_i = car_state_index(mdp.env, s.car, s.route, mdp.pos_res, mdp.vel_res)
+        car_i = car_state_index(mdp.env, s.car, find_route(mdp.env, s.route), mdp.pos_res, mdp.vel_res)
         # sub2ind magic
         si = sub2ind((n_car, n_ped + 1, n_ego), car_i, ped_i, ego_i)
 

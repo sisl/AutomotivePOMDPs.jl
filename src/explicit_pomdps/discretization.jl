@@ -300,7 +300,7 @@ end
 function find_route(env::UrbanEnv, route::SVector{2, LaneTag})
     routes = get_car_routes(env)
     for full_route in routes 
-        if full_route[end] == route[end] 
+        if full_route[end] == route[end] && full_route[1] == route[1]
             return full_route
         end
     end
