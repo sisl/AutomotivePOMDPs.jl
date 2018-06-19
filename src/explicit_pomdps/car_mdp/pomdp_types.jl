@@ -8,7 +8,7 @@ struct CarMDPState
     crash::Bool
     ego::VehicleState
     car::VehicleState
-    route::StaticVector
+    route::SVector{2, LaneTag}
 end
 
 # copy b to a
