@@ -187,7 +187,7 @@ function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     push!(scene, Vehicle(s.car, mdp.car_type, CAR_ID))
     push!(scene, Vehicle(s.ped, mdp.ped_type, PED_ID))
     # fill in hiddent state
-    # observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
+    observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
     # set the decision
     observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
 end
