@@ -26,6 +26,7 @@ export
         get_exit_lanes,
         get_ego,
         is_crash,
+        collision_checker,
         direction_from_center,
         random_route,
         is_observable_dyna,
@@ -41,6 +42,7 @@ export
 
 include("constants.jl")
 include("utils/helpers.jl")
+include("utils/collision_checker.jl")
 include("utils/occlusions.jl")
 include("utils/rendering.jl")
 
@@ -175,6 +177,7 @@ export
     get_mdp_state,
     state2scene,
     interpolate_state,
+    conservative_interpolation,
     get_car_vspace,
     get_ped_vspace,
     n_ego_states,
