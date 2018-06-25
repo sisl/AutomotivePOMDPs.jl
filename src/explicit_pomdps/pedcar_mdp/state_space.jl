@@ -24,10 +24,11 @@ function POMDPs.states(mdp::PedCarMDP)
             for ped in ped_states
                 car_states = get_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
                 for car in car_states
-                    crash =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
+                    collision =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
+                    # collision = crash(mdp, ego, car, ped)
                     # enumerate all possible routes
                     lane = get_lane(mdp.env.roadway, car)
-                    push!(state_space, PedCarMDPState(crash, ego, ped, car, SVector{2, LaneTag}(route[1], route[end])))
+                    push!(state_space, PedCarMDPState(collision, ego, ped, car, SVector{2, LaneTag}(route[1], route[end])))
                 end
             end
         end
@@ -35,8 +36,9 @@ function POMDPs.states(mdp::PedCarMDP)
     for ego in ego_states
         for ped in ped_states
             # add absent states
-            crash = is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID))
-            push!(state_space, PedCarMDPState(crash, ego, ped, get_off_the_grid(mdp), SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0))))
+            collision = is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID))
+            # collision = collision_checker(ego, ped, mdp.ego_type, mdp.ped_type)
+            push!(state_space, PedCarMDPState(collision, ego, ped, get_off_the_grid(mdp), SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0))))
         end
     end
     return state_space

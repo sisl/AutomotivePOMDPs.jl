@@ -4,7 +4,7 @@ function interpolate_state(mdp::PedCarMDP, s::PedCarMDPState)
     v_ped_space = get_ped_vspace(mdp.env, mdp.vel_ped_res)
     itp_ped, itp_ped_w = interpolate_pedestrian(get_ped_mdp(mdp), s.ped, v_ped_space)
     itp_car, itp_car_w = interpolate_state(get_car_mdp(mdp), s.car, vspace)
-    itp_ego, itp_ego_w = interpolate_state(mdp, s.ego, vspace)
+    itp_ego, itp_ego_w = conservative_interpolation(mdp, s.ego, vspace)
     itp_states = Vector{PedCarMDPState}(length(itp_ego)*length(itp_car)*length(itp_ped))
     itp_w = Vector{Float64}(length(itp_states))
     l = 1
@@ -20,7 +20,6 @@ function interpolate_state(mdp::PedCarMDP, s::PedCarMDPState)
     @assert sum(itp_w) ≈ 1.
     return itp_states, itp_w
 end
-
 
 function get_mdp_state(mdp::PedCarMDP, pomdp::UrbanPOMDP, s::Scene, ped_id, car_id)
     car_i = findfirst(s, car_id)
@@ -40,9 +39,15 @@ function get_mdp_state(mdp::PedCarMDP, pomdp::UrbanPOMDP, s::Scene, ped_id, car_
         # find the exact route from the list of routes
         curr_route = [l.tag for l in pomdp.models[car_id].navigator.route]
         for route in get_car_routes(mdp.env)
-            if length(intersect(Set(curr_route), Set(route))) >= 2
+            tags = intersect(Set(curr_route), Set(route))
+            if length(tags) >= 2
                 sroute = SVector{2, LaneTag}(route[1], route[end])
+            elseif length(curr_route) == 1 && curr_route[1] ∈ route
+                sroute = SVector{2, LaneTag}(route[1], route[end])                
             end
+        end
+        if sroute == nothing
+            println(curr_route)
         end       
     else 
         sroute = SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0,0))

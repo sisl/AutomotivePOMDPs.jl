@@ -16,8 +16,8 @@ function POMDPs.transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction
             for ic=1:length(car_ps)
                 weight = ego_probs[ie]*ped_probs[ip]*car_probs[ic]
                 # if !(weight ≈ 0.)
-                    collision = crash(mdp, ego_ps[ie], car_ps[ic], ped_ps[ip])
-                    # crash = is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(car_ps[ic], mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(ped_ps[ip], mdp.ped_type, PED_ID))
+                    # collision = crash(mdp, ego_ps[ie], car_ps[ic], ped_ps[ip])
+                    collision = is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(car_ps[ic], mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(ped_ps[ip], mdp.ped_type, PED_ID))
                     states_p[idx] = PedCarMDPState(collision, ego_ps[ie], ped_ps[ip], car_ps[ic], car_routes[ic])
                     states_probs[idx] = weight
                     idx += 1

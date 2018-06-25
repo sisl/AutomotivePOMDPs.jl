@@ -153,8 +153,5 @@ function crash(mdp::PedCarMDP, s::PedCarMDPState)
 end
 
 function crash(mdp::PedCarMDP, ego::VehicleState, car::VehicleState, ped::VehicleState)
-    ego_veh = Vehicle(ego, mdp.ego_type, EGO_ID)
-    car_veh = Vehicle(car, mdp.car_type, CAR_ID)
-    ped_veh = Vehicle(ped, mdp.ped_type, PED_ID)
-    return is_colliding(ego_veh, car_veh) || is_colliding(ego_veh, ped_veh)
+    return collision_checker(ego, car, mdp.ego_type, mdp.car_type) || collision_checker(ego, ped, mdp.ego_type, mdp.ped_type)
 end
