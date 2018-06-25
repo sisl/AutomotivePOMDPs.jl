@@ -27,7 +27,7 @@ function AutomotiveDrivingModels.observe!(model::IntelligentPedestrian,
     model.crossing = update_crossing(ped, model.crosswalk, model.conflict_lanes, roadway)
     model.done = update_done(ped, model.crossing, model.crosswalk)
     model.wait = update_wait(ped, scene, model, roadway)
-    if !model.wait || model.done# if engaged, keep going
+    if model.crossing || !model.wait || model.done# if engaged, keep going
         model.a = model.motion.a 
     else 
         if model.wait
@@ -93,7 +93,7 @@ function update_wait(ped::Vehicle,
             Δs = get_distance_to_crosswalk(veh, model.crosswalk, roadway)
             ttc = Δs/veh.state.v
             if 0. < ttc < model.ttc_threshold 
-                # println("vehicle $(veh.id) ttc: $ttc")
+                # println("vehicle $(veh.id) ttc: $ttc, Δs: $Δs")
                 return true
             end
         end

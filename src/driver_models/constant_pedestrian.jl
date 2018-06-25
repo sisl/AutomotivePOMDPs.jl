@@ -62,7 +62,9 @@ function AutomotiveDrivingModels.propagate(veh::VehicleState, action::ConstantSp
     end
 
     speed = action.v
-
+    # println(s + Δs)
+    s_ = clamp(s + Δs, 0., get_end(lane))
+    # println(s_)
     
     #XXX what exactly is happening here, ask Tim ?
     # roadind = move_along(veh.posF.roadind, roadway, Δs)
@@ -77,7 +79,7 @@ function AutomotiveDrivingModels.propagate(veh::VehicleState, action::ConstantSp
     # roadproj = proj(state.posG, roadway[lane_tag_orig], roadway, move_along_curves=false)
     # retval = VehicleState(Frenet(roadproj, roadway), roadway, state.v)
     # return retval
-    return VehicleState(Frenet(lane, s + Δs, t + Δt, ϕ), roadway, speed)
+    return VehicleState(Frenet(lane, s_, t + Δt, ϕ), roadway, speed)
 end
 
 function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDawdling, roadway::Roadway, ΔT::Float64)

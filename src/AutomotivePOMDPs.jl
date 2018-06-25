@@ -26,6 +26,7 @@ export
         get_exit_lanes,
         get_ego,
         is_crash,
+        collision_checker,
         direction_from_center,
         random_route,
         is_observable_dyna,
@@ -35,10 +36,13 @@ export
         get_colors,
         next_car_id,
         next_ped_id,
-        EGO_ID
+        EGO_ID,
+        CAR_ID,
+        PED_ID
 
 include("constants.jl")
 include("utils/helpers.jl")
+include("utils/collision_checker.jl")
 include("utils/occlusions.jl")
 include("utils/rendering.jl")
 
@@ -173,13 +177,16 @@ export
     get_mdp_state,
     state2scene,
     interpolate_state,
+    conservative_interpolation,
     get_car_vspace,
     get_ped_vspace,
     n_ego_states,
     n_car_states,
     n_ped_states,
     get_off_the_grid,
-    interpolate_pedestrian
+    interpolate_pedestrian,
+    get_ped_mdp,
+    get_car_mdp
 
 # more discrete POMDPs
 include("explicit_pomdps/discretization.jl")
@@ -197,6 +204,7 @@ include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
 include("explicit_pomdps/pedcar_mdp/pomdp_types.jl")
 include("explicit_pomdps/pedcar_mdp/state_space.jl")
 include("explicit_pomdps/pedcar_mdp/transition.jl")
+include("explicit_pomdps/pedcar_mdp/high_fidelity.jl")
 include("explicit_pomdps/pedcar_mdp/render_helpers.jl")
 include("explicit_pomdps/interpolation.jl")
 

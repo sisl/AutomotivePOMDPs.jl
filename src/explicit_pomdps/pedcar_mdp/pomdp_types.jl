@@ -101,6 +101,34 @@ function POMDPs.action_index(mdp::PedCarMDP, action::PedCarMDPAction)
     end
 end
 
+
+function POMDPs.convert_s(::Type{V}, s::PedCarMDPState, mdp::PedCarMDP) where V<:AbstractArray
+    n_routes = 4
+    n_features = 4
+    z = zeros(n_features*3 + n_routes + 1)
+    z[1] = s.ego.posG.x / abs(mdp.env.params.x_min)
+    z[2] = s.ego.posG.y / abs(mdp.env.params.y_min)
+    z[3] = s.ego.posG.θ / π
+    z[4] = s.ego.v / abs(mdp.env.params.speed_limit)
+    z[5] = s.ped.posG.x / abs(mdp.env.params.x_min)
+    z[6] = s.ped.posG.y / abs(mdp.env.params.y_min)
+    z[7] = s.ped.posG.θ / π
+    z[8] = s.ped.v / abs(mdp.env.params.speed_limit)
+    z[9] = s.car.posG.x / abs(mdp.env.params.x_min)
+    z[10] = s.car.posG.y / abs(mdp.env.params.y_min)
+    z[11] = s.car.posG.θ / π
+    z[12] = s.car.v / abs(mdp.env.params.speed_limit)
+    # one hot encoding for the route
+    routes = get_car_routes(mdp.env)
+    for (i, r) in enumerate(routes)
+        if r[1] == s.route[1] && r[end] == s.route[end]
+            z[12+i] = 1.
+        end
+    end
+    z[17] = float(s.crash)
+    return z
+end
+
 function get_off_the_grid(mdp::PedCarMDP)
     return VehicleState(mdp.off_grid, Frenet(mdp.env.roadway[LaneTag(5,1)], 25.1, -26.5, pi/2), 0.)
     # return VehicleState(mdp.off_grid, mdp.env.roadway, 0.)
@@ -125,8 +153,5 @@ function crash(mdp::PedCarMDP, s::PedCarMDPState)
 end
 
 function crash(mdp::PedCarMDP, ego::VehicleState, car::VehicleState, ped::VehicleState)
-    ego_veh = Vehicle(ego, mdp.ego_type, EGO_ID)
-    car_veh = Vehicle(car, mdp.car_type, CAR_ID)
-    ped_veh = Vehicle(ped, mdp.ped_type, PED_ID)
-    return is_colliding(ego_veh, car_veh) || is_colliding(ego_veh, ped_veh)
+    return collision_checker(ego, car, mdp.ego_type, mdp.car_type) || collision_checker(ego, ped, mdp.ego_type, mdp.ped_type)
 end
