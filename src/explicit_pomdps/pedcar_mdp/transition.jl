@@ -158,7 +158,7 @@ function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
         intersection_exits = get_exit_lanes(mdp.env.roadway)
         intersection=Lane[route[1], route[2]]
     end
-    navigator = RouteFollowingIDM(route=route, a_max=2., σ=0.5)
+    navigator = RouteFollowingIDM(route=route, a_max=2., σ=1.)
     intersection_driver = StopIntersectionDriver(navigator= navigator,
                                                 intersection=intersection,
                                                 intersection_entrances = intersection_entrances,
