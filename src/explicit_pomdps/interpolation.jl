@@ -21,7 +21,7 @@ function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::Vehicle
 end
 
 
-function conservative_interpolation(mdp::PedCarMDP, state::VehicleState, v_space::StepRangeLen)
+function conservative_interpolation(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState, v_space::StepRangeLen)
     # interpolate position and velocity separately
     if state.posG == mdp.off_grid
         return VehicleState[state], Float64[1.0]

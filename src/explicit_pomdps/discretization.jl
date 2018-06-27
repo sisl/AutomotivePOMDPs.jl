@@ -40,6 +40,7 @@ end
 function get_ped_lanes(env::UrbanEnv)
     # TODO do not hard code it, get it form the environment structure
     return (LaneTag(17, 1), LaneTag(18, 1), LaneTag(19, 1))
+    # return (LaneTag(17, 1), LaneTag(18, 1))
 end
 
 function get_ped_states(env::UrbanEnv, pos_res::Float64, v_res::Float64)
@@ -169,6 +170,34 @@ function ego_state_index(env::UrbanEnv, ego::VehicleState, pos_res::Float64, v_r
     return egoi
 end
 
+function ind2ego(env::UrbanEnv, ei::Int64, pos_res::Float64, v_res::Float64)
+    lanes = get_ego_route(env)
+    v_space = get_car_vspace(env, v_res)
+    size_v = length(v_space)
+    # find lane first 
+    ns = 0 
+    lane_ind = 0
+    lane_shift = 0 
+    for (i, lane) in enumerate(lanes)
+        lane_shift = ns
+        ns += size_v*length(get_discretized_lane(lane, env.roadway, pos_res))
+        if ns >= ei 
+            lane_ind = i
+            break
+        end
+    end
+    # find s, v 
+    lane = env.roadway[lanes[lane_ind]]
+    ei_ = ei - lane_shift
+    size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
+    si, vi = ind2sub((size_s, size_v), ei_)
+    s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
+    v = v_space[vi]
+    posF = Frenet(lane, s)
+    return VehicleState(posF, env.roadway, v)
+end
+
+
 function car_state_index(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_res::Float64)
     # find lane index
     lanes = get_car_lanes(env)
@@ -214,6 +243,33 @@ function car_state_index(env::UrbanEnv, car::VehicleState, route::Vector{LaneTag
     return cari
 end
 
+function ind2car(env::UrbanEnv, ci::Int64, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64) 
+    v_space = get_car_vspace(env, v_res)
+    size_v = length(v_space)
+    # find lane first
+    ns = 0 
+    lane_ind = 0
+    lane_shift = 0 
+    for (i, lane) in enumerate(route)
+        lane_shift = ns
+        ns += size_v*length(get_discretized_lane(lane, env.roadway, pos_res))
+        if ns >= ci 
+            lane_ind = i
+            break
+        end
+    end
+    # find s, v 
+    lane = env.roadway[route[lane_ind]]
+    ci_ = ci - lane_shift
+    size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
+    si, vi = ind2sub((size_s, size_v), ci_)
+    s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
+    v = v_space[vi]
+    posF = Frenet(lane, s)
+    return VehicleState(posF, env.roadway, v)
+
+end
+
 function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_res::Float64)
     # find lane index
     lanes = get_ped_lanes(env)
@@ -238,6 +294,34 @@ function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_r
         pedi += size_s*size_v*n_headings
     end
     return pedi
+end
+
+function ind2ped(env::UrbanEnv, pedi::Int64, pos_res::Float64, v_res::Float64)
+    v_space = get_ped_vspace(env, v_res)
+    size_v = length(v_space)
+    lanes = get_ped_lanes(env)
+    # find lane first 
+    ns = 0 
+    lane_ind = 0
+    lane_shift = 0 
+    for (i, lane) in enumerate(lanes)
+        lane_shift = ns
+        ns += 2*size_v*length(get_discretized_lane(lane, env.roadway, pos_res))
+        if ns >= pedi 
+            lane_ind = i
+            break
+        end
+    end
+    # find s, v 
+    lane = env.roadway[lanes[lane_ind]]
+    pi_ = pedi - lane_shift
+    size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
+    phii, si, vi = ind2sub((2, size_s, size_v), pi_)
+    s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
+    v = v_space[vi]
+    phi = phii == 1 ? 0. : float(pi)
+    posF = Frenet(lane, s, 0., phi)
+    return VehicleState(posF, env.roadway, v)
 end
 
 function find_range_index(r::Range{Float64}, s::Float64)

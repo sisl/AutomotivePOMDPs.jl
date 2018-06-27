@@ -49,7 +49,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                 intersection_exits = get_exit_lanes(pomdp.env.roadway)
                 intersection=Lane[route[1], route[2]]
             end
-            navigator = RouteFollowingIDM(route=route, a_max=3.)
+            navigator = RouteFollowingIDM(route=route, a_max=2.)
             intersection_driver = TTCIntersectionDriver(navigator = navigator,
                                                         intersection = intersection,
                                                         intersection_pos = VecSE2(pomdp.env.params.inter_x,
@@ -88,10 +88,10 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
     if rand(rng) < pomdp.ped_birth && n_pedestrians(s) < pomdp.max_peds
         # println("Spawning new pedestrians")
         new_ped = initial_pedestrian(pomdp, sp, rng)
-        # pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
-        new_ped_cw = get_lane(pomdp.env.roadway, new_ped)
-        new_ped_conflict_lanes = get_conflict_lanes(new_ped_cw, pomdp.env.roadway)
-        pomdp.models[new_ped.id] = IntelligentPedestrian(dt = pomdp.ΔT, crosswalk=new_ped_cw, conflict_lanes=new_ped_conflict_lanes)
+        pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
+        # new_ped_cw = get_lane(pomdp.env.roadway, new_ped)
+        # new_ped_conflict_lanes = get_conflict_lanes(new_ped_cw, pomdp.env.roadway)
+        # pomdp.models[new_ped.id] = IntelligentPedestrian(dt = pomdp.ΔT, crosswalk=new_ped_cw, conflict_lanes=new_ped_conflict_lanes)
         push!(sp, new_ped)
     end
     actions = Array{Any}(length(sp))
@@ -151,7 +151,7 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
                     intersection_exits = get_exit_lanes(pomdp.env.roadway)
                     intersection=Lane[route[1], route[2]]
                 end
-                navigator = RouteFollowingIDM(route=route, a_max=3.)
+                navigator = RouteFollowingIDM(route=route, a_max=2.)
                 intersection_driver = StopIntersectionDriver(navigator= navigator,
                                                          intersection=intersection,
                                                          intersection_entrances = intersection_entrances,
@@ -187,10 +187,10 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
     for i=1:pomdp.max_peds
         if rand(rng) < pomdp.ped_birth && n_pedestrians(scene) < pomdp.max_peds # pedestrian appear
             new_ped = initial_pedestrian(pomdp, scene, rng, true)
-            # pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
-        new_ped_cw = get_lane(pomdp.env.roadway, new_ped)
-        new_ped_conflict_lanes = get_conflict_lanes(new_ped_cw, pomdp.env.roadway)
-        pomdp.models[new_ped.id] = IntelligentPedestrian(dt = pomdp.ΔT, crosswalk=new_ped_cw, conflict_lanes=new_ped_conflict_lanes)
+            pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
+            # new_ped_cw = get_lane(pomdp.env.roadway, new_ped)
+            # new_ped_conflict_lanes = get_conflict_lanes(new_ped_cw, pomdp.env.roadway)
+            # pomdp.models[new_ped.id] = IntelligentPedestrian(dt = pomdp.ΔT, crosswalk=new_ped_cw, conflict_lanes=new_ped_conflict_lanes)
             push!(scene, new_ped)
         end
     end

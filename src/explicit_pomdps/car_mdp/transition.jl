@@ -8,7 +8,7 @@ function POMDPs.transition(mdp::CarMDP, s::CarMDPState, a::CarMDPAction)
     ego_p = propagate(s.ego, acc, mdp.env.roadway, mdp.ΔT)
     # interpolate ego_p in discrete space
     ego_v_space = get_car_vspace(mdp.env, mdp.vel_res)
-    ego_ps, ego_probs = conservative_interpolation(mdp, ego_p, ego_v_space)
+    ego_ps, ego_probs = interpolate_state(mdp, ego_p, ego_v_space)
     # car transition
     car_probs = Float64[]
     car_routes = Vector{Lane}[]

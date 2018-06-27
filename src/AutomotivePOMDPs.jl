@@ -1,6 +1,7 @@
 module AutomotivePOMDPs
 
 using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations, StaticArrays
+using DiscreteValueIteration
 using AutomotiveDrivingModels, AutoUrban, AutoViz
 using Reel
 
@@ -173,6 +174,7 @@ export
     PedCarMDP,
     PedCarMDPState,
     PedCarMDPAction,
+    ind2state,
     labeling,
     get_mdp_state,
     state2scene,
@@ -180,6 +182,15 @@ export
     conservative_interpolation,
     get_car_vspace,
     get_ped_vspace,
+    get_ego_states,
+    get_car_states,
+    get_ped_states,
+    ind2ego,
+    ind2ped,
+    ind2car,
+    ego_state_index,
+    ped_state_index,
+    car_state_index,
     n_ego_states,
     n_car_states,
     n_ped_states,
