@@ -51,9 +51,13 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     if !model.stop
         update_stop!(model, ego, roadway)
     end
-    if !model.priority && model.stop
-        model.priority =  ttc_check(model, scene, roadway, egoid)
+    # if model.stop
+    model.priority =  ttc_check(model, scene, roadway, egoid)
+    lane = get_lane(roadway, ego)
+    if !model.priority && !(lane ∈ get_exit_lanes(roadway))
+        a_lon =  -model.navigator.d_max
     end
+    # end
     # println(" ID ", egoid, " stop ", model.stop, " priority ", model.priority)
     model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
     model
@@ -64,20 +68,25 @@ Check if the time to collision is above some threshold
 """
 function ttc_check(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     min_ttc = Inf
+    inter_width = 6.0 #todo parameterized
     for veh in scene
         if veh.id != egoid
             posF = veh.state.posF
             int_x, int_y, int_θ = model.intersection_pos
             lane = get_lane(roadway, veh)
             int_proj = Frenet(model.intersection_pos, lane, roadway)
-            ttc = (int_proj.s - posF.s)/veh.state.v
-            if 0 < ttc < min_ttc
+            if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width # vehicle is in the middle
+                ttc = 0.
+            else
+                ttc = (int_proj.s - posF.s)/veh.state.v
+            end
+            if 0 <= ttc < min_ttc
                 min_ttc = ttc
             end
         end
     end
     # println("veh id ", egoid, "min_ttc ", min_ttc, " threshold ", model.ttc_threshold)
-    if 0 < min_ttc < model.ttc_threshold
+    if 0 <= min_ttc < model.ttc_threshold
         return false
     else
         return true
