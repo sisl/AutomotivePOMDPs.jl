@@ -53,14 +53,22 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     end
     # if model.stop
     model.priority =  ttc_check(model, scene, roadway, egoid)
-    lane = get_lane(roadway, ego)
-    if !model.priority && !(lane ∈ get_exit_lanes(roadway))
+    if !model.priority && !has_passed(model, scene, roadway, egoid)
         a_lon =  -model.navigator.d_max
     end
     # end
     # println(" ID ", egoid, " stop ", model.stop, " priority ", model.priority)
     model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
     model
+end
+
+function has_passed(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+    ego = scene[findfirst(scene, egoid)]
+    lane = get_lane(roadway, ego)
+    inter_to_car = ego.state.posG - model.intersection_pos
+    car_vec = get_front(ego) - ego.state.posG
+    has_passed = dot(inter_to_car, car_vec) > 0. || lane ∈ get_exit_lanes(roadway)
+    return has_passed
 end
 
 """
@@ -70,12 +78,12 @@ function ttc_check(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway,
     min_ttc = Inf
     inter_width = 6.0 #todo parameterized
     for veh in scene
-        if veh.id != egoid
+        if veh.id != egoid && veh.def.class != AgentClass.PEDESTRIAN
             posF = veh.state.posF
             int_x, int_y, int_θ = model.intersection_pos
             lane = get_lane(roadway, veh)
             int_proj = Frenet(model.intersection_pos, lane, roadway)
-            if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width # vehicle is in the middle
+            if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width^2 # vehicle is in the middle
                 ttc = 0.
             else
                 ttc = (int_proj.s - posF.s)/veh.state.v

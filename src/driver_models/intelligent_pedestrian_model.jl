@@ -27,7 +27,7 @@ function AutomotiveDrivingModels.observe!(model::IntelligentPedestrian,
     model.crossing = update_crossing(ped, model.crosswalk, model.conflict_lanes, roadway)
     model.done = update_done(ped, model.crossing, model.crosswalk)
     model.wait = update_wait(ped, scene, model, roadway)
-    if model.crossing || !model.wait || model.done# if engaged, keep going
+    if !model.wait || model.done# if engaged, keep going
         model.a = model.motion.a 
     else 
         if model.wait
