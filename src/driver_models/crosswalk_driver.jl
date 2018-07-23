@@ -22,6 +22,7 @@
     debug::Bool = false
 end
 
+
 AutomotiveDrivingModels.get_name(::CrosswalkDriver) = "CrosswalkDriver"
 Base.rand(model::CrosswalkDriver) = model.a
 

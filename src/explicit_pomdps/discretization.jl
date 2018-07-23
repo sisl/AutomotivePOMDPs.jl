@@ -40,6 +40,7 @@ end
 function get_ped_lanes(env::UrbanEnv)
     # TODO do not hard code it, get it form the environment structure
     return (LaneTag(17, 1), LaneTag(18, 1), LaneTag(19, 1))
+    # return (LaneTag(17, 1), LaneTag(18, 1))
 end
 
 function get_ped_states(env::UrbanEnv, pos_res::Float64, v_res::Float64)
@@ -91,14 +92,14 @@ function get_car_states(env::UrbanEnv, pos_res::Float64, v_res::Float64)
     return states_vec
 end
 
-function get_car_states(env::UrbanEnv, route::StaticVector, pos_res::Float64, v_res::Float64)
+function get_car_states(env::UrbanEnv, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64)
     states_vec = VehicleState[]
-    for lane in route
-        discrete_lane = get_discretized_lane(lane.tag, env.roadway, pos_res)
+    for lane_tag in route
+        discrete_lane = get_discretized_lane(lane_tag, env.roadway, pos_res)
         v_space = get_car_vspace(env, v_res)
         for v in v_space
             for s in discrete_lane
-                car = VehicleState(Frenet(lane, s), env.roadway, v)
+                car = VehicleState(Frenet(env.roadway[lane_tag], s), env.roadway, v)
                 push!(states_vec, car)
             end
         end
@@ -136,11 +137,11 @@ function n_car_states(env::UrbanEnv, pos_res::Float64, v_res::Float64)
     return N
 end
 
-function n_car_states(env::UrbanEnv, route::AbstractVector, pos_res::Float64, v_res::Float64)
+function n_car_states(env::UrbanEnv, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64)
     N = 0
     nv = length(get_car_vspace(env, v_res))
-    for lane in route
-        N += nv * length(get_discretized_lane(lane.tag, env.roadway, pos_res))
+    for lane_tag in route
+        N += nv * length(get_discretized_lane(lane_tag, env.roadway, pos_res))
     end
     return N
 end
@@ -169,6 +170,34 @@ function ego_state_index(env::UrbanEnv, ego::VehicleState, pos_res::Float64, v_r
     return egoi
 end
 
+function ind2ego(env::UrbanEnv, ei::Int64, pos_res::Float64, v_res::Float64)
+    lanes = get_ego_route(env)
+    v_space = get_car_vspace(env, v_res)
+    size_v = length(v_space)
+    # find lane first 
+    ns = 0 
+    lane_ind = 0
+    lane_shift = 0 
+    for (i, lane) in enumerate(lanes)
+        lane_shift = ns
+        ns += size_v*length(get_discretized_lane(lane, env.roadway, pos_res))
+        if ns >= ei 
+            lane_ind = i
+            break
+        end
+    end
+    # find s, v 
+    lane = env.roadway[lanes[lane_ind]]
+    ei_ = ei - lane_shift
+    size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
+    si, vi = ind2sub((size_s, size_v), ei_)
+    s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
+    v = v_space[vi]
+    posF = Frenet(lane, s)
+    return VehicleState(posF, env.roadway, v)
+end
+
+
 function car_state_index(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_res::Float64)
     # find lane index
     lanes = get_car_lanes(env)
@@ -192,9 +221,9 @@ function car_state_index(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_r
     return cari
 end
 
-function car_state_index(env::UrbanEnv, car::VehicleState, route::StaticVector, pos_res::Float64, v_res::Float64)
+function car_state_index(env::UrbanEnv, car::VehicleState, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64)
     lane = get_lane(env.roadway, car)
-    li = findfirst(route, lane)
+    li = findfirst(route, lane.tag)
     # position index
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
@@ -208,10 +237,37 @@ function car_state_index(env::UrbanEnv, car::VehicleState, route::StaticVector, 
     cari = sub2ind((length(s_space), length(v_space)), si, vi)
     # Lanes have different lengths
     for i=2:li
-        size_s = length(get_discretized_lane(route[i-1].tag, env.roadway, pos_res))
+        size_s = length(get_discretized_lane(route[i-1], env.roadway, pos_res))
         cari += size_s*size_v
     end
     return cari
+end
+
+function ind2car(env::UrbanEnv, ci::Int64, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64) 
+    v_space = get_car_vspace(env, v_res)
+    size_v = length(v_space)
+    # find lane first
+    ns = 0 
+    lane_ind = 0
+    lane_shift = 0 
+    for (i, lane) in enumerate(route)
+        lane_shift = ns
+        ns += size_v*length(get_discretized_lane(lane, env.roadway, pos_res))
+        if ns >= ci 
+            lane_ind = i
+            break
+        end
+    end
+    # find s, v 
+    lane = env.roadway[route[lane_ind]]
+    ci_ = ci - lane_shift
+    size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
+    si, vi = ind2sub((size_s, size_v), ci_)
+    s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
+    v = v_space[vi]
+    posF = Frenet(lane, s)
+    return VehicleState(posF, env.roadway, v)
+
 end
 
 function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_res::Float64)
@@ -240,6 +296,34 @@ function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_r
     return pedi
 end
 
+function ind2ped(env::UrbanEnv, pedi::Int64, pos_res::Float64, v_res::Float64)
+    v_space = get_ped_vspace(env, v_res)
+    size_v = length(v_space)
+    lanes = get_ped_lanes(env)
+    # find lane first 
+    ns = 0 
+    lane_ind = 0
+    lane_shift = 0 
+    for (i, lane) in enumerate(lanes)
+        lane_shift = ns
+        ns += 2*size_v*length(get_discretized_lane(lane, env.roadway, pos_res))
+        if ns >= pedi 
+            lane_ind = i
+            break
+        end
+    end
+    # find s, v 
+    lane = env.roadway[lanes[lane_ind]]
+    pi_ = pedi - lane_shift
+    size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
+    phii, si, vi = ind2sub((2, size_s, size_v), pi_)
+    s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
+    v = v_space[vi]
+    phi = phii == 1 ? 0. : float(pi)
+    posF = Frenet(lane, s, 0., phi)
+    return VehicleState(posF, env.roadway, v)
+end
+
 function find_range_index(r::Range{Float64}, s::Float64)
     return clamp(round(Int, ((s - first(r))/step(r) + 1)), 1, length(r))
 end
@@ -252,36 +336,35 @@ end
 
 
 # enumerate all the possible car routes
-function get_car_routes(env::UrbanEnv)
-    #TODO implement a routing algorithm
-    straight_from_left = SVector(env.roadway[LaneTag(1, 1)],
-                                       env.roadway[LaneTag(7, 1)],
-                                       env.roadway[LaneTag(2, 1)])
-
-    left_from_left = SVector(env.roadway[LaneTag(1, 1)],
-                                      env.roadway[LaneTag(9, 1)],
-                                      env.roadway[LaneTag(10, 1)],
-                                      env.roadway[LaneTag(5, 1)])
-
-    straight_from_right = SVector(env.roadway[LaneTag(3, 1)],
-                                       env.roadway[LaneTag(8, 1)],
-                                       env.roadway[LaneTag(4, 1)])
-
-    right_from_right = SVector(env.roadway[LaneTag(3, 1)],
-                                       env.roadway[LaneTag(11, 1)],
-                                       env.roadway[LaneTag(12, 1)],
-                                       env.roadway[LaneTag(5, 1)])
-    return SVector(straight_from_left, left_from_left, straight_from_right, right_from_right)
-end
-
-
 # function get_car_routes(env::UrbanEnv)
-#     return [[LaneTag(1,1), LaneTag(7,1), LaneTag(2,1)],
-#               [LaneTag(9,1), LaneTag(10, 1), LaneTag(5, 1)],
-#               [LaneTag(3,1), LaneTag(8, 1), LaneTag(4, 1)],
-#               [LaneTag(3, 1), LaneTag(11, 1), LaneTag(12, 1), LaneTag(5, 1)]]
+#     #TODO implement a routing algorithm
+#     straight_from_left = SVector(env.roadway[LaneTag(1, 1)],
+#                                        env.roadway[LaneTag(7, 1)],
+#                                        env.roadway[LaneTag(2, 1)])
+
+#     left_from_left = SVector(env.roadway[LaneTag(1, 1)],
+#                                       env.roadway[LaneTag(9, 1)],
+#                                       env.roadway[LaneTag(10, 1)],
+#                                       env.roadway[LaneTag(5, 1)])
+
+#     straight_from_right = SVector(env.roadway[LaneTag(3, 1)],
+#                                        env.roadway[LaneTag(8, 1)],
+#                                        env.roadway[LaneTag(4, 1)])
+
+#     right_from_right = SVector(env.roadway[LaneTag(3, 1)],
+#                                        env.roadway[LaneTag(11, 1)],
+#                                        env.roadway[LaneTag(12, 1)],
+#                                        env.roadway[LaneTag(5, 1)])
+#     return SVector(straight_from_left, left_from_left, straight_from_right, right_from_right)
 # end
 
+
+function get_car_routes(env::UrbanEnv)
+    return [[LaneTag(1,1), LaneTag(7,1), LaneTag(2,1)],
+              [LaneTag(1,1), LaneTag(9,1), LaneTag(10, 1), LaneTag(5, 1)],
+              [LaneTag(3,1), LaneTag(8, 1), LaneTag(4, 1)],
+              [LaneTag(3, 1), LaneTag(11, 1), LaneTag(12, 1), LaneTag(5, 1)]]
+end
 
 function get_possible_routes(lane::Lane, env::UrbanEnv)
     possible_routes = Int64[]
@@ -298,14 +381,14 @@ end
 
 
 # return the first full route in the environment which end matches with route
-function find_route(env::UrbanEnv, route::Vector{Lane})
+function find_route(env::UrbanEnv, route::SVector{2, LaneTag})
     routes = get_car_routes(env)
     for full_route in routes 
-        if full_route[end].tag == route[end].tag 
+        if full_route[end] == route[end] && full_route[1] == route[1]
             return full_route
         end
     end
     # should never reach this point 
-    @assert false
+    @assert false "RouteNotFound for route=$route"
     return routes[1]
 end

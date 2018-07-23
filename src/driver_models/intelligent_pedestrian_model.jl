@@ -93,7 +93,7 @@ function update_wait(ped::Vehicle,
             Δs = get_distance_to_crosswalk(veh, model.crosswalk, roadway)
             ttc = Δs/veh.state.v
             if 0. < ttc < model.ttc_threshold 
-                # println("vehicle $(veh.id) ttc: $ttc")
+                # println("vehicle $(veh.id) ttc: $ttc, Δs: $Δs")
                 return true
             end
         end

@@ -53,28 +53,33 @@ function AutomotiveDrivingModels.propagate(veh::VehicleState, action::ConstantSp
     Δs = v*cos(ϕ)*ΔT + lat*sin(ϕ)
     t = veh.posF.t
     Δt = v*sin(ϕ)*ΔT + lat*cos(ϕ)
+    lane = get_lane(roadway, veh)
     # cannot go offroad
-    if t + Δt > get_lane(roadway, veh).width/2
+    if t + Δt > lane.width/2
         Δt = 0.
-    elseif t - Δt < -get_lane(roadway, veh).width/2
+    elseif t - Δt < -lane.width/2
         Δt = 0.
     end
 
     speed = action.v
-
+    # println(s + Δs)
+    s_ = clamp(s + Δs, 0., get_end(lane))
+    # println(s_)
+    
     #XXX what exactly is happening here, ask Tim ?
-    roadind = move_along(veh.posF.roadind, roadway, Δs)
-    footpoint = roadway[roadind]
-
-    posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
-
-    posG = VecSE2(posG.x, posG.y, footpoint.pos.θ + ϕ)
-
-    state = VehicleState(posG, roadway, action.v)
-
-    roadproj = proj(state.posG, roadway[lane_tag_orig], roadway, move_along_curves=false)
-    retval = VehicleState(Frenet(roadproj, roadway), roadway, state.v)
-    return retval
+    # roadind = move_along(veh.posF.roadind, roadway, Δs)
+    # footpoint = roadway[roadind]
+    
+    # posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
+    
+    # posG = VecSE2(posG.x, posG.y, footpoint.pos.θ + ϕ)
+    
+    # state = VehicleState(posG, roadway, action.v)
+    
+    # roadproj = proj(state.posG, roadway[lane_tag_orig], roadway, move_along_curves=false)
+    # retval = VehicleState(Frenet(roadproj, roadway), roadway, state.v)
+    # return retval
+    return VehicleState(Frenet(lane, s_, t + Δt, ϕ), roadway, speed)
 end
 
 function AutomotiveDrivingModels.propagate(veh::Vehicle, action::ConstantSpeedDawdling, roadway::Roadway, ΔT::Float64)

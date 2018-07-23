@@ -3,7 +3,7 @@ function interpolate_state(mdp::PedMDP, s::PedMDPState)
     ped_v = get_ped_vspace(mdp.env, mdp.vel_ped_res) 
     itp_ped, itp_ped_w = interpolate_pedestrian(mdp, s.ped, ped_v)
     ego_v = get_car_vspace(mdp.env, mdp.vel_res)
-    itp_ego, itp_ego_w = interpolate_state(mdp, s.ego, ego_v)
+    itp_ego, itp_ego_w = conservative_interpolation(mdp, s.ego, ego_v)
     itp_states = Vector{PedMDPState}(length(itp_ego)*length(itp_ped))
     itp_w = Vector{Float64}(length(itp_states))
     k = 1

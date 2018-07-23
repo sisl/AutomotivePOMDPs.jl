@@ -15,14 +15,14 @@ function POMDPs.transition(mdp::CarMDP, s::CarMDPState, a::CarMDPAction)
     if s.car.posG == mdp.off_grid
         car_ps, car_routes = car_starting_states(mdp)
         push!(car_ps, get_off_the_grid(mdp))
-        push!(car_routes, SVector{0, Lane}())
+        push!(car_routes, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0,0)))
         car_probs = ones(length(car_ps))
         car_probs[end] = 1-mdp.car_birth
         car_probs[1:end-1] = mdp.car_birth/(length(car_ps)-1)
         @assert sum(car_probs) ≈ 1.0
     else
         # update model
-        mdp.car_model.route = s.route # s.route is a static vector but not car_model.route
+        mdp.car_model.route = [mdp.env.roadway[tag] for tag in find_route(mdp.env, s.route)] # s.route is a static vector but not car_model.route
         lane = get_lane(mdp.env.roadway, s.car)
         set_direction!(mdp.car_model, lane, mdp.env.roadway)
         car_actions, car_actions_probs = get_distribution(mdp.car_model)

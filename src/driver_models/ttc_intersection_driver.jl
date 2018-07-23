@@ -51,12 +51,24 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     if !model.stop
         update_stop!(model, ego, roadway)
     end
-    if !model.priority && model.stop
-        model.priority =  ttc_check(model, scene, roadway, egoid)
+    # if model.stop
+    model.priority =  ttc_check(model, scene, roadway, egoid)
+    if !model.priority && !has_passed(model, scene, roadway, egoid)
+        a_lon =  -model.navigator.d_max
     end
+    # end
     # println(" ID ", egoid, " stop ", model.stop, " priority ", model.priority)
     model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
     model
+end
+
+function has_passed(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+    ego = scene[findfirst(scene, egoid)]
+    lane = get_lane(roadway, ego)
+    inter_to_car = ego.state.posG - model.intersection_pos
+    car_vec = get_front(ego) - ego.state.posG
+    has_passed = dot(inter_to_car, car_vec) > 0. || lane ∈ get_exit_lanes(roadway)
+    return has_passed
 end
 
 """
@@ -64,20 +76,25 @@ Check if the time to collision is above some threshold
 """
 function ttc_check(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     min_ttc = Inf
+    inter_width = 6.0 #todo parameterized
     for veh in scene
-        if veh.id != egoid
+        if veh.id != egoid && veh.def.class != AgentClass.PEDESTRIAN
             posF = veh.state.posF
             int_x, int_y, int_θ = model.intersection_pos
             lane = get_lane(roadway, veh)
             int_proj = Frenet(model.intersection_pos, lane, roadway)
-            ttc = (int_proj.s - posF.s)/veh.state.v
-            if 0 < ttc < min_ttc
+            if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width^2 # vehicle is in the middle
+                ttc = 0.
+            else
+                ttc = (int_proj.s - posF.s)/veh.state.v
+            end
+            if 0 <= ttc < min_ttc
                 min_ttc = ttc
             end
         end
     end
     # println("veh id ", egoid, "min_ttc ", min_ttc, " threshold ", model.ttc_threshold)
-    if 0 < min_ttc < model.ttc_threshold
+    if 0 <= min_ttc < model.ttc_threshold
         return false
     else
         return true

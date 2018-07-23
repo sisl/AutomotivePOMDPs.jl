@@ -18,14 +18,13 @@ function stop_at_dist(model::DriverModel, veh::Vehicle, headway::Float64)
     v_des = 0.
     v = veh.state.v
     idm = model.navigator
-
     if headway > 0.0
         Δv = v_des - v
         s_des = s_min + v*idm.T - v*Δv / (2*sqrt(idm.a_max*idm.d_cmf))
         v_ratio = idm.v_des > 0.0 ? (v/idm.v_des) : 1.0
         acc = idm.a_max * (1.0 - v_ratio^idm.δ - (s_des/headway)^2)
     else # probably unnecessary
-        Δv = idm.v_des - v
+        Δv = v_des - v
         acc = Δv*idm.k_spd
     end
 

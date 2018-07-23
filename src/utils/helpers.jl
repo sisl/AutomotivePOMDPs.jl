@@ -134,7 +134,7 @@ function get_start_lanes(roadway::Roadway)
     lanes = Lane[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
-            if isempty(lane.entrances) && !is_crosswalk(lane)
+            if isempty(lane.entrances) && !is_crosswalk(lane) && !(lane.tag ∈ [LaneTag(15,1), LaneTag(16, 1), LaneTag(6,1), LaneTag(13, 1), LaneTag(14,1)])
                 push!(lanes, lane)
             end
         end
@@ -148,7 +148,7 @@ function get_lanes(roadway::Roadway)
     lanes = Lane[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
-            if !is_crosswalk(lane)
+            if !is_crosswalk(lane) && !(lane.tag ∈ [LaneTag(15,1), LaneTag(16, 1), LaneTag(6,1), LaneTag(13, 1), LaneTag(14,1)])
                 push!(lanes, lane)
             end
         end
@@ -192,8 +192,8 @@ end
 
 function lane_to_segment(lane::Lane, roadway::Roadway)
     # only works for straight lanes
-    lane_a = get_posG(Frenet(lane, 0.), roadway)
-    lane_b = get_posG(Frenet(lane, get_end(lane)), roadway)
+    lane_a = lane.curve[1].pos #get_posG(Frenet(lane, 0.), roadway)
+    lane_b = lane.curve[end].pos #get_posG(Frenet(lane, get_end(lane)), roadway)
     return LineSegment(lane_a, lane_b)
 end
 
