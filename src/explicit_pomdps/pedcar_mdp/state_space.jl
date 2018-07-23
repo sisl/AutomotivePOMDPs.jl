@@ -95,57 +95,57 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
     return si
 end
 
-function DiscreteValueIteration.ind2state(mdp::PedCarMDP, si::Int64)
-    n_ego = n_ego_states(mdp.env, mdp.pos_res, mdp.vel_res)
-    n_ped = n_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
-    routes = get_car_routes(mdp.env)
-    n_routes = length(routes)
-    car, ped, ego = nothing, nothing, nothing
-    # find route first
-    ns = 0 
-    route_ind = 0
-    route_shift = 0
-    for (i, route) in enumerate(routes)
-        n_cars = n_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
-        route_shift = ns
-        ns += n_cars*n_ego*(n_ped + 1)
-        if ns >= si 
-            route_ind = i
-            break
-        end
-    end
-    # find car, ped, ego
-    if route_ind == 0 # route was not found, car is off the grid
-        si_ = si - ns # shift by all the states that were added before
-        car = get_off_the_grid(mdp)
-        # retrieve ped and ego
-        ped_i, ego_i = ind2sub((n_ped + 1, n_ego), si_)
-        ego = ind2ego(mdp.env, ego_i, mdp.pos_res, mdp.vel_res)
-        if ped_i > n_ped
-            ped = get_off_the_grid(mdp)
-        else
-            ped = ind2ped(mdp.env, ped_i, mdp.pos_res, mdp.vel_ped_res)
-        end
-        collision = collision =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
-        return PedCarMDPState(collision, ego, ped, car, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0)))
-    else
-        si_ = si - route_shift
-        route = routes[route_ind]
-        sroute = SVector{2, LaneTag}(route[1], route[end])
-        n_cars = n_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
-        # use ind2sub magic
-        car_i, ped_i, ego_i = ind2sub((n_cars, n_ped + 1, n_ego), si_)
-        car = ind2car(mdp.env, car_i, route, mdp.pos_res, mdp.vel_res)
-        ego = ind2ego(mdp.env, ego_i, mdp.pos_res, mdp.vel_res)
-        if ped_i > n_ped
-            ped = get_off_the_grid(mdp)
-        else
-            ped = ind2ped(mdp.env, ped_i, mdp.pos_res, mdp.vel_ped_res)
-        end
-        collision =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
-        return PedCarMDPState(collision, ego, ped, car, sroute)
-    end
-end
+# function DiscreteValueIteration.ind2state(mdp::PedCarMDP, si::Int64)
+#     n_ego = n_ego_states(mdp.env, mdp.pos_res, mdp.vel_res)
+#     n_ped = n_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
+#     routes = get_car_routes(mdp.env)
+#     n_routes = length(routes)
+#     car, ped, ego = nothing, nothing, nothing
+#     # find route first
+#     ns = 0 
+#     route_ind = 0
+#     route_shift = 0
+#     for (i, route) in enumerate(routes)
+#         n_cars = n_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
+#         route_shift = ns
+#         ns += n_cars*n_ego*(n_ped + 1)
+#         if ns >= si 
+#             route_ind = i
+#             break
+#         end
+#     end
+#     # find car, ped, ego
+#     if route_ind == 0 # route was not found, car is off the grid
+#         si_ = si - ns # shift by all the states that were added before
+#         car = get_off_the_grid(mdp)
+#         # retrieve ped and ego
+#         ped_i, ego_i = ind2sub((n_ped + 1, n_ego), si_)
+#         ego = ind2ego(mdp.env, ego_i, mdp.pos_res, mdp.vel_res)
+#         if ped_i > n_ped
+#             ped = get_off_the_grid(mdp)
+#         else
+#             ped = ind2ped(mdp.env, ped_i, mdp.pos_res, mdp.vel_ped_res)
+#         end
+#         collision = collision =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
+#         return PedCarMDPState(collision, ego, ped, car, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0)))
+#     else
+#         si_ = si - route_shift
+#         route = routes[route_ind]
+#         sroute = SVector{2, LaneTag}(route[1], route[end])
+#         n_cars = n_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
+#         # use ind2sub magic
+#         car_i, ped_i, ego_i = ind2sub((n_cars, n_ped + 1, n_ego), si_)
+#         car = ind2car(mdp.env, car_i, route, mdp.pos_res, mdp.vel_res)
+#         ego = ind2ego(mdp.env, ego_i, mdp.pos_res, mdp.vel_res)
+#         if ped_i > n_ped
+#             ped = get_off_the_grid(mdp)
+#         else
+#             ped = ind2ped(mdp.env, ped_i, mdp.pos_res, mdp.vel_ped_res)
+#         end
+#         collision =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
+#         return PedCarMDPState(collision, ego, ped, car, sroute)
+#     end
+# end
 
 
 #### INITIAL STATES 
