@@ -389,6 +389,6 @@ function find_route(env::UrbanEnv, route::SVector{2, LaneTag})
         end
     end
     # should never reach this point 
-    @assert false
+    @assert false "RouteNotFound for route=$route"
     return routes[1]
 end

@@ -32,6 +32,14 @@ end
 ### TRANSITION MODEL ##############################################################################
 
 function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
+    # clean dict 
+    ids = [veh.id for veh in s]
+    key_ = deepcopy(keys(pomdp.models))
+    for k in key_
+        if !(k ∈ ids) && k!=1
+            delete!(pomdp.models, k)
+        end
+    end
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
     is_ego_here = clamp(findfirst(s, EGO_ID),0, 1)
@@ -57,7 +65,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                                                         stop_delta = maximum(pomdp.env.params.crosswalk_width),
                                                         accel_tol = 0.,
                                                         priorities = pomdp.env.priorities,
-                                                        # ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
+                                                        ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
                                                         )
             # intersection_driver = StopIntersectionDriver(navigator= navigator,
             #                                          intersection=intersection,
@@ -151,14 +159,23 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
                     intersection_exits = get_exit_lanes(pomdp.env.roadway)
                     intersection=Lane[route[1], route[2]]
                 end
-                navigator = RouteFollowingIDM(route=route, a_max=2.)
-                intersection_driver = StopIntersectionDriver(navigator= navigator,
-                                                         intersection=intersection,
-                                                         intersection_entrances = intersection_entrances,
-                                                         intersection_exits = intersection_exits,
-                                                         stop_delta=maximum(pomdp.env.params.crosswalk_width),
-                                                         accel_tol=0.,
-                                                         priorities = pomdp.env.priorities)
+                navigator = RouteFollowingIDM(route=route, a_max=1.)
+                # intersection_driver = StopIntersectionDriver(navigator= navigator,
+                #                                          intersection=intersection,
+                #                                          intersection_entrances = intersection_entrances,
+                #                                          intersection_exits = intersection_exits,
+                #                                          stop_delta=maximum(pomdp.env.params.crosswalk_width),
+                #                                          accel_tol=0.,
+                #                                          priorities = pomdp.env.priorities)
+                intersection_driver = TTCIntersectionDriver(navigator = navigator,
+                                            intersection = intersection,
+                                            intersection_pos = VecSE2(pomdp.env.params.inter_x,
+                                                                        pomdp.env.params.inter_y),
+                                            stop_delta = maximum(pomdp.env.params.crosswalk_width),
+                                            accel_tol = 0.,
+                                            priorities = pomdp.env.priorities,
+                                            ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
+                                            )
                 crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
                 # println("adding veh ", new_car.id)
                 for i=1:length(pomdp.env.crosswalks)
@@ -217,7 +234,7 @@ function initial_car(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, first_sc
     initial_posF = Frenet(lane, s0)
     initial_state = VehicleState(initial_posF, env.roadway, v0)
 
-    id = next_car_id(pomdp, scene, rng)
+    id = next_car_id(pomdp, scene)
 
     return Vehicle(initial_state, pomdp.car_type, id)
 end
@@ -256,7 +273,7 @@ function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, f
 
     ped_initial_state = VehicleState(posF, env.ped_roadway, v0);
 
-    id = next_ped_id(pomdp, scene, rng)
+    id = next_ped_id(pomdp, scene)
 
     return Vehicle(ped_initial_state, PEDESTRIAN_DEF, id)
 end
