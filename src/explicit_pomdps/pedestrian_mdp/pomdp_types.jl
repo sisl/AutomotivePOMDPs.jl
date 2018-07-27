@@ -131,3 +131,20 @@ function POMDPs.convert_s(::Type{Vector{Float64}}, s::PedMDPState, mdp::PedMDP)
     z[9] = float(s.crash)
     return z
 end
+
+function POMDPs.convert_s(::Type{PedMDPState}, z::V, mdp::PedMDP) where V<:AbstractArray{Float64}
+    n_features = 4
+    @assert length(z) == n_features*2 + 1 
+    ego_x = z[1]*abs(mdp.env.params.x_min)
+    ego_y = z[2]*abs(mdp.env.params.y_min)
+    ego_θ = z[3]*π
+    ego_v = z[4]*abs(mdp.env.params.speed_limit)
+    ego = VehicleState(VecSE2(ego_x, ego_y, ego_θ), mdp.env.roadway, ego_v)
+    ped_x = z[5]*abs(mdp.env.params.x_min)
+    ped_y = z[6]*abs(mdp.env.params.y_min)
+    ped_θ = z[7]*π
+    ped_v = z[8]*abs(mdp.env.params.speed_limit)
+    ped = VehicleState(VecSE2(ped_x, ped_y, ped_θ), mdp.env.ped_roadway, ped_v)
+    collision = Bool(z[9])
+    return PedMDPState(collision, ego, ped)
+end
