@@ -67,7 +67,7 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
     end
 
     # handle off the grid case
-    if s.car.posG == mdp.off_grid
+    if s.car.posG == mdp.off_grid || s.route == [LaneTag(0, 0), LaneTag(0, 0)]
         si = 0
         for route in routes
             si += n_ego * (n_ped + 1) * n_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
@@ -95,7 +95,7 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
     return si
 end
 
-function DiscreteValueIteration.ind2state(mdp::PedCarMDP, si::Int64)
+function ind2state(mdp::PedCarMDP, si::Int64)
     n_ego = n_ego_states(mdp.env, mdp.pos_res, mdp.vel_res)
     n_ped = n_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
     routes = get_car_routes(mdp.env)
