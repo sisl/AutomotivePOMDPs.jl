@@ -57,7 +57,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                 intersection_exits = get_exit_lanes(pomdp.env.roadway)
                 intersection=Lane[route[1], route[2]]
             end
-            navigator = RouteFollowingIDM(route=route, a_max=2.)
+            navigator = RouteFollowingIDM(route=route, a_max=pomdp.a_noise)
             intersection_driver = TTCIntersectionDriver(navigator = navigator,
                                                         intersection = intersection,
                                                         intersection_pos = VecSE2(pomdp.env.params.inter_x,
@@ -159,7 +159,7 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
                     intersection_exits = get_exit_lanes(pomdp.env.roadway)
                     intersection=Lane[route[1], route[2]]
                 end
-                navigator = RouteFollowingIDM(route=route, a_max=1.)
+                navigator = RouteFollowingIDM(route=route, a_max=pomdp.a_noise)
                 # intersection_driver = StopIntersectionDriver(navigator= navigator,
                 #                                          intersection=intersection,
                 #                                          intersection_entrances = intersection_entrances,

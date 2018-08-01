@@ -26,6 +26,7 @@ function stop_at_dist(model::DriverModel, veh::Vehicle, headway::Float64)
     else # probably unnecessary
         Δv = v_des - v
         acc = Δv*idm.k_spd
+        acc = -model.navigator.d_max
     end
 
     acc = clamp(acc, -idm.d_max, idm.a_max)

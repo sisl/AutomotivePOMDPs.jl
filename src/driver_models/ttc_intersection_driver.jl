@@ -36,10 +36,11 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     dir = model.navigator.dir
     a_lon =0.
     a_lon_idm = model.navigator.a
+    passed = has_passed(model, scene, roadway, egoid)
     if isempty(model.intersection) || model.priorities[(model.navigator.route[1].tag,model.navigator.route[end].tag)] # no intersection, go
         a_lon = model.navigator.a
     else
-        if !model.priority && !model.stop # reach stop line
+        if !model.priority && !model.stop && !passed# reach stop line
             a_lon = min(a_lon_idm, stop_at_end(model, ego, roadway))
         elseif !model.priority && model.stop # wait
             a_lon = -model.navigator.d_max # negative to make sure v stays 0
@@ -53,13 +54,26 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     end
     # if model.stop
     model.priority =  ttc_check(model, scene, roadway, egoid)
-    if !model.priority && !has_passed(model, scene, roadway, egoid)
-        a_lon =  -model.navigator.d_max
+    if !model.priority
+        if !passed && engaged(model, scene, roadway, egoid) 
+            a_lon = -model.navigator.d_max
+        elseif !passed
+            a_lon =  min(a_lon_idm, stop_at_end(model, ego, roadway))
+        end
     end
     # end
     # println(" ID ", egoid, " stop ", model.stop, " priority ", model.priority)
     model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
     model
+end
+
+function engaged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
+    ego = scene[findfirst(scene, egoid)]
+    lane = get_lane(roadway, ego)
+    if isempty(lane.entrances)
+        return false 
+    end
+    return true 
 end
 
 function has_passed(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
