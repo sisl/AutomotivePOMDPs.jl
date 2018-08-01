@@ -159,13 +159,22 @@ function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
         intersection=Lane[route[1], route[2]]
     end
     navigator = RouteFollowingIDM(route=route, a_max=2., σ=1.)
-    intersection_driver = StopIntersectionDriver(navigator= navigator,
-                                                intersection=intersection,
-                                                intersection_entrances = intersection_entrances,
-                                                intersection_exits = intersection_exits,
-                                                stop_delta=maximum(mdp.env.params.crosswalk_width),
-                                                accel_tol=0.,
-                                                priorities = mdp.env.priorities)
+    # intersection_driver = StopIntersectionDriver(navigator= navigator,
+    #                                             intersection=intersection,
+    #                                             intersection_entrances = intersection_entrances,
+    #                                             intersection_exits = intersection_exits,
+    #                                             stop_delta=maximum(mdp.env.params.crosswalk_width),
+    #                                             accel_tol=0.,
+    #                                             priorities = mdp.env.priorities)
+    intersection_driver = TTCIntersectionDriver(navigator = navigator,
+                                            intersection = intersection,
+                                            intersection_pos = VecSE2(mdp.env.params.inter_x,
+                                                                        mdp.env.params.inter_y),
+                                            stop_delta = maximum(mdp.env.params.crosswalk_width),
+                                            accel_tol = 0.,
+                                            priorities = mdp.env.priorities,
+                                            ttc_threshold = (mdp.env.params.x_max - mdp.env.params.inter_x)/mdp.env.params.speed_limit
+                                            )
     crosswalk_drivers = Vector{CrosswalkDriver}(length(mdp.env.crosswalks))
     for i=1:length(mdp.env.crosswalks)
         cw_conflict_lanes = get_conflict_lanes(mdp.env.crosswalks[i], mdp.env.roadway)
