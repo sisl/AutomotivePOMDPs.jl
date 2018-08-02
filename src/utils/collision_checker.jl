@@ -1,9 +1,17 @@
 function collision_checker(veh_a::VehicleState, veh_b::VehicleState, veh_a_def::VehicleDef, veh_b_def::VehicleDef)
     center_a = veh_a.posG
     center_b = veh_b.posG
-    Pa = polygon(center_a, veh_a_def)
-    Pb = polygon(center_b, veh_b_def)
-    return overlap(Pa, Pb)
+    # first fast check:
+    Δ² = (veh_a.posG.x - veh_b.posG.x)^2 + (veh_a.posG.y - veh_b.posG.y)^2
+    r_a = sqrt(veh_a_def.length*veh_a_def.length/4 + veh_a_def.width*veh_a_def.width/4)
+    r_b = sqrt(veh_b_def.length*veh_b_def.length/4 + veh_b_def.width*veh_b_def.width/4)
+    if Δ² ≤ r_a*r_a + 2*r_a*r_b + r_b*r_b
+        # fast check is true, run parallel axis theorem
+        Pa = polygon(center_a, veh_a_def)
+        Pb = polygon(center_b, veh_b_def)
+        return overlap(Pa, Pb)
+    end
+    return false
 end
 
 function polygon(pos::VecSE2{Float64}, veh_def::VehicleDef)
@@ -21,27 +29,27 @@ function polygon(x::Float64,y::Float64,theta::Float64,veh_def::VehicleDef)
     lcar  = veh_def.length
     wcar  = veh_def.width
 
-    l_ = lcar
+    l_ = lcar/2
     w_ = wcar/2
 
     # compute each verteces:
     P = zeros(4,2)
     # A, B, C, D = zeros(2), zeros(2), zeros(2), zeros(2)
     # top left
-    P[1,1] = -w_*cos(theta) + x
-    P[1,2] = w_*sin(theta) + y
+    P[1,1] = x + l_*cos(theta) - w_*sin(theta)
+    P[1,2] = y + l_*sin(theta) + w_*cos(theta)
 
     # top right
-    P[2,1] = w_*cos(theta) + x
-    P[2,2] = -w_*sin(theta) + y
+    P[2,1] = x + l_*cos(theta) + w_*sin(theta)
+    P[2,2] = y + l_*sin(theta) - w_*cos(theta)
 
     # bottom right
-    P[3,1] = w_*cos(theta) + x
-    P[3,2] = w_*sin(theta) + y
+    P[3,1] = x - l_*cos(theta) + w_*sin(theta)
+    P[3,2] = y - l_*sin(theta) - w_*cos(theta)
 
     # bottom left
-    P[4,1] = -w_*cos(theta) + x
-    P[4,2] = w_*sin(theta) + y
+    P[4,1] = x - l_*cos(theta) - w_*sin(theta)
+    P[4,2] = y - l_*sin(theta) + w_*cos(theta)
 
     return P
 end

@@ -197,7 +197,10 @@ export
     get_off_the_grid,
     interpolate_pedestrian,
     get_ped_mdp,
-    get_car_mdp
+    get_car_mdp,
+    get_car_models,
+    get_stop_model,
+    get_ttc_model
 
 # more discrete POMDPs
 include("explicit_pomdps/discretization.jl")
@@ -212,6 +215,7 @@ include("explicit_pomdps/pedestrian_mdp/state_space.jl")
 include("explicit_pomdps/pedestrian_mdp/transition.jl")
 include("explicit_pomdps/pedestrian_mdp/render_helpers.jl")
 include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
+include("explicit_pomdps/pedcar_mdp/driver_models_helpers.jl")
 include("explicit_pomdps/pedcar_mdp/pomdp_types.jl")
 include("explicit_pomdps/pedcar_mdp/state_space.jl")
 include("explicit_pomdps/pedcar_mdp/transition.jl")

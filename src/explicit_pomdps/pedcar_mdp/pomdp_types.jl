@@ -37,7 +37,7 @@ const PedCarMDPAction = UrbanAction
                      stop_line = 22.0))
     ego_type::VehicleDef = VehicleDef()
     car_type::VehicleDef = VehicleDef()
-    car_model::DriverModel = RouteFollowingIDM(route=random_route(env, Base.GLOBAL_RNG), σ=1.0)
+    car_models::Dict{SVector{2, LaneTag}, DriverModel} = get_car_models(env, get_stop_model)
     ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0)
     ped_model::DriverModel = ConstantPedestrian()
     max_acc::Float64 = 2.0
@@ -54,6 +54,10 @@ const PedCarMDPAction = UrbanAction
     action_cost::Float64 = 0.
     goal_reward::Float64 = 1.
     γ::Float64 = 0.95
+    _ped_grid::Dict{LaneTag, RectangleGrid{3}} = init_ped_grid(env, pos_res, vel_ped_res)
+    _car_grid::Dict{LaneTag, RectangleGrid{2}} = init_car_grid(env, pos_res, vel_res)
+    _l_grid::Dict{LaneTag, RectangleGrid{1}} = init_l_grid(env, pos_res)
+    _v_grid::RectangleGrid{1} = init_v_grid(env, vel_res)
 end
 
 
@@ -185,4 +189,45 @@ end
 
 function crash(mdp::PedCarMDP, ego::VehicleState, car::VehicleState, ped::VehicleState)
     return collision_checker(ego, car, mdp.ego_type, mdp.car_type) || collision_checker(ego, ped, mdp.ego_type, mdp.ped_type)
+end
+
+function init_ped_grid(env::UrbanEnv, pos_res::Float64, vel_res::Float64)
+    d = Dict{LaneTag, RectangleGrid{3}}()
+    phi_space = SVector{2, Float64}(0., float(pi))
+    v_space = get_ped_vspace(env, vel_res)
+    for lane in env.crosswalks
+        l_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
+        grid = RectangleGrid(l_space, v_space,  phi_space)
+        d[lane.tag] = grid
+    end
+    return d
+end
+
+function init_car_grid(env::UrbanEnv, pos_res::Float64, vel_res::Float64)
+    d = Dict{LaneTag, RectangleGrid{2}}()
+    v_space = get_car_vspace(env, vel_res)
+    for i=1:length(env.roadway.segments)
+        for lane in env.roadway.segments[i].lanes
+            l_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
+            grid = RectangleGrid(l_space, v_space)
+            d[lane.tag] = grid
+        end
+    end
+    return d
+end
+function init_l_grid(env::UrbanEnv, pos_res::Float64)
+    d = Dict{LaneTag, RectangleGrid{1}}()
+    for i=1:length(env.roadway.segments)
+        for lane in env.roadway.segments[i].lanes
+            l_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
+            grid = RectangleGrid(l_space)
+            d[lane.tag] = grid
+        end
+    end
+    return d
+end
+
+function init_v_grid(env::UrbanEnv, vel_res::Float64)
+    v_space = get_car_vspace(env, vel_res)
+    return RectangleGrid(v_space)
 end

@@ -10,7 +10,7 @@
     priorities::Dict{Tuple{LaneTag, LaneTag}, Bool} = Dict{Tuple{LaneTag, LaneTag}, Bool}()
     # states
     have_wait_list::Bool = false
-    wait_list::Vector{Int} = Int[]
+    wait_list::Vector{Int64} = Int64[]
     priority::Bool = false
     stop::Bool = false # switch to true when stopped at the intersection, stays true until the end
     n_yield::Int64 = 0 # number of vehicles to yield to
@@ -25,6 +25,8 @@ function AutomotiveDrivingModels.set_desired_speed!(model::StopIntersectionDrive
 end
 
 function AutomotiveDrivingModels.reset_hidden_state!(model::StopIntersectionDriver)
+    model.have_wait_list = false
+    model.wait_list = Int64[]
     model.priority = false
     model.stop = false
     model.n_yield = 0

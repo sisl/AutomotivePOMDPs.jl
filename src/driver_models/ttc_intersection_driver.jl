@@ -25,7 +25,6 @@ end
 function AutomotiveDrivingModels.reset_hidden_state!(model::TTCIntersectionDriver)
     model.priority = false
     model.stop = false
-    model.n_yield = 0
     model
 end
 

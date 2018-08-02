@@ -1,12 +1,12 @@
 # a bunch of interpolation helpers
-function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState, v_space::StepRangeLen)
+function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState)
     # interpolate longitudinal position and velocity
     if state.posG == mdp.off_grid
         return VehicleState[state], Float64[1.0]
     end
     lane = get_lane(mdp.env.roadway, state)
     l_space = get_discretized_lane(lane.tag, mdp.env.roadway, mdp.pos_res)
-    grid = RectangleGrid(l_space, v_space)
+    grid = mdp._car_grid[lane.tag]
     real_state = SVector{2, Float64}(state.posF.s, state.v)
     idx, weights = interpolants(grid, real_state)
     n_pts = length(idx)
@@ -21,7 +21,7 @@ function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::Vehicle
 end
 
 
-function conservative_interpolation(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState, v_space::StepRangeLen)
+function conservative_interpolation(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState)
     # interpolate position and velocity separately
     if state.posG == mdp.off_grid
         return VehicleState[state], Float64[1.0]
@@ -29,7 +29,7 @@ function conservative_interpolation(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state
     lane = get_lane(mdp.env.roadway, state)
     route = get_ego_route(mdp.env)
     l_space = get_discretized_lane(lane.tag, mdp.env.roadway, mdp.pos_res)
-    pgrid = RectangleGrid(l_space)
+    pgrid = mdp._l_grid[lane.tag]
     pidx, pweights = interpolants(pgrid, [state.posF.s])
     junction = state.posF.s > l_space[end] && lane.tag != route[end] ? 1 : 0
     jweight = 0.
@@ -53,7 +53,7 @@ function conservative_interpolation(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state
         end
     end
     # println([ind2x(pgrid, pi) for pi in pidx])
-    vgrid = RectangleGrid(v_space)
+    vgrid = mdp._v_grid
     vidx, vweights = interpolants(vgrid, [state.v])
     n_pts = length(pidx)*length(vidx)+junction*length(vidx)
     states = Vector{VehicleState}(n_pts)
@@ -87,15 +87,13 @@ function handle_junction(mdp, state)
 end
 
 # take into account heading as well
-function interpolate_pedestrian(mdp::Union{PedMDP, PedCarMDP}, state::VehicleState, v_space::StepRangeLen)
+function interpolate_pedestrian(mdp::Union{PedMDP, PedCarMDP}, state::VehicleState)
     # interpolate longitudinal position and velocity
     if state.posG == mdp.off_grid
         return (state,), (1.0,)
     end
     lane = get_lane(mdp.env.ped_roadway, state)
-    phi_space = SVector{2, Float64}(0., float(pi))
-    l_space = get_discretized_lane(lane.tag, mdp.env.ped_roadway, mdp.pos_res)
-    grid = RectangleGrid(l_space, v_space, phi_space)
+    grid = mdp._ped_grid[lane.tag]
     real_state = SVector{3, Float64}(state.posF.s, state.v, state.posF.ϕ)
     idx, weights = interpolants(grid, real_state)
     n_pts = length(idx)

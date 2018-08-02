@@ -11,7 +11,9 @@ end
 function AutomotiveDrivingModels.reset_hidden_state!(model::UrbanDriver)
     reset_hidden_state!(model.navigator)
     reset_hidden_state!(model.intersection_driver)
-    reset_hidden_state!(model.crosswalk_drivers)
+    for driver in model.crosswalk_drivers
+        reset_hidden_state!(driver)
+    end
     model
 end
 

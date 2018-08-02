@@ -58,22 +58,22 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
                 intersection=Lane[route[1], route[2]]
             end
             navigator = RouteFollowingIDM(route=route, a_max=pomdp.a_noise)
-            intersection_driver = TTCIntersectionDriver(navigator = navigator,
-                                                        intersection = intersection,
-                                                        intersection_pos = VecSE2(pomdp.env.params.inter_x,
-                                                                                  pomdp.env.params.inter_y),
-                                                        stop_delta = maximum(pomdp.env.params.crosswalk_width),
-                                                        accel_tol = 0.,
-                                                        priorities = pomdp.env.priorities,
-                                                        ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
-                                                        )
-            # intersection_driver = StopIntersectionDriver(navigator= navigator,
-            #                                          intersection=intersection,
-            #                                          intersection_entrances = intersection_entrances,
-            #                                          intersection_exits = intersection_exits,
-            #                                          stop_delta=maximum(pomdp.env.params.crosswalk_width),
-            #                                          accel_tol=0.,
-            #                                          priorities = pomdp.env.priorities)
+            # intersection_driver = TTCIntersectionDriver(navigator = navigator,
+            #                                             intersection = intersection,
+            #                                             intersection_pos = VecSE2(pomdp.env.params.inter_x,
+            #                                                                       pomdp.env.params.inter_y),
+            #                                             stop_delta = maximum(pomdp.env.params.crosswalk_width),
+            #                                             accel_tol = 0.,
+            #                                             priorities = pomdp.env.priorities,
+            #                                             ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
+            #                                             )
+            intersection_driver = StopIntersectionDriver(navigator= navigator,
+                                                     intersection=intersection,
+                                                     intersection_entrances = intersection_entrances,
+                                                     intersection_exits = intersection_exits,
+                                                     stop_delta=maximum(pomdp.env.params.crosswalk_width),
+                                                     accel_tol=0.,
+                                                     priorities = pomdp.env.priorities)
             crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
             # println("adding veh ", new_car.id)
             for i=1:length(pomdp.env.crosswalks)
@@ -160,22 +160,22 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
                     intersection=Lane[route[1], route[2]]
                 end
                 navigator = RouteFollowingIDM(route=route, a_max=pomdp.a_noise)
-                intersection_driver = TTCIntersectionDriver(navigator = navigator,
-                                                            intersection = intersection,
-                                                            intersection_pos = VecSE2(pomdp.env.params.inter_x,
-                                                            pomdp.env.params.inter_y),
-                                                            stop_delta = maximum(pomdp.env.params.crosswalk_width),
-                                                            accel_tol = 0.,
-                                                            priorities = pomdp.env.priorities,
-                                                            ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
-                                                            )
-                # intersection_driver = StopIntersectionDriver(navigator= navigator,
-                #                                          intersection=intersection,
-                #                                          intersection_entrances = intersection_entrances,
-                #                                          intersection_exits = intersection_exits,
-                #                                          stop_delta=maximum(pomdp.env.params.crosswalk_width),
-                #                                          accel_tol=0.,
-                #                                          priorities = pomdp.env.priorities)
+                # intersection_driver = TTCIntersectionDriver(navigator = navigator,
+                #                                             intersection = intersection,
+                #                                             intersection_pos = VecSE2(pomdp.env.params.inter_x,
+                #                                             pomdp.env.params.inter_y),
+                #                                             stop_delta = maximum(pomdp.env.params.crosswalk_width),
+                #                                             accel_tol = 0.,
+                #                                             priorities = pomdp.env.priorities,
+                #                                             ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
+                #                                             )
+                intersection_driver = StopIntersectionDriver(navigator= navigator,
+                                                         intersection=intersection,
+                                                         intersection_entrances = intersection_entrances,
+                                                         intersection_exits = intersection_exits,
+                                                         stop_delta=maximum(pomdp.env.params.crosswalk_width),
+                                                         accel_tol=0.,
+                                                         priorities = pomdp.env.priorities)
                 crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
                 # println("adding veh ", new_car.id)
                 for i=1:length(pomdp.env.crosswalks)
@@ -297,6 +297,7 @@ end
 # TODO find a better way to implement this to switch more easily between representations
 function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
     #TODO sort scene sp by ID!
+    sorted_vehicles =  sort(sp.entities[1:sp.n], by=x->x.id)
     n_features = 4
     if pomdp.obstacles
         n_obstacles = 3
@@ -306,7 +307,8 @@ function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1))
-    ego_veh =sp[findfirst(sp, EGO_ID)]
+    ego_veh =sp[findfirst(sp, EGO_ID)] 
+    @assert ego_veh.id == sorted_vehicles[1].id "first vehicle is $(sorted_vehicles[1].id), $([veh.id for veh in sorted_vehicles]), last ego state $(s[findfirst(s, EGO_ID)] ) "
     ego = ego_veh.state
     o[1] = ego.posG.x
     o[2] = ego.posG.y
@@ -319,7 +321,7 @@ function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::
         o[n_features*i - 1] = pos_off.posG.θ
         o[n_features*i] = 0.
     end
-    for veh in sp
+    for veh in sorted_vehicles
         if veh.id == EGO_ID
             continue
         end
@@ -616,5 +618,6 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
             push!(scene, ped)
         end
     end
+    @assert issorted([veh.id for veh in scene])
     return scene
 end

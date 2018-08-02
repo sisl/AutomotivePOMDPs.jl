@@ -14,12 +14,19 @@
     yield::Bool = true
     priority::Bool = false
     stop::Bool = false
-    wait_list::Vector{Int} = Int[]
+    wait_list::Vector{Int64} = Int64[]
 
     # transition
     clear::Bool = false
 
     debug::Bool = false
+end
+
+function AutomotiveDrivingModels.reset_hidden_state!(model::CrosswalkDriver)
+    model.priority = false
+    model.stop = false
+    model.clear = false 
+    model
 end
 
 
@@ -63,17 +70,25 @@ Check if all the pedestrian have crossed
 """
 function update_priority!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(scene, egoid)]
+    model.priority = isempty(model.wait_list) || has_passed(model, ego, roadway)
+end
+
+function has_passed(model::CrosswalkDriver, ego::Vehicle, roadway::Roadway)
     cw_length = get_end(model.crosswalk)
     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
-    # lane = get_lane(roadway, ego)
-    # collision_point = VecSE2(cw_center.x+model.crosswalk.width/2, ego.state.posG.y)
-    # collision_point_posF = Frenet(proj(collision_point, lane, roadway, move_along_curves=false), roadway)
-    # has_passed = lane ∈ model.conflict_lanes && (ego.state.posF.s > collision_point_posF.s)
-    #XXX fix has_passed: draw vector from the center of the crosswalk to the car, check the sign of the dot product 
     cw_to_car = ego.state.posG - cw_center 
     car_vec = get_front(ego) - ego.state.posG
     has_passed = dot(cw_to_car, car_vec) > 0.
-    model.priority = isempty(model.wait_list) || has_passed
+    return has_passed
+end
+
+function has_passed(model::CrosswalkDriver, ego::VehicleState, roadway::Roadway)
+    cw_length = get_end(model.crosswalk)
+    cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+    cw_to_car = ego.posG - cw_center 
+    car_vec = polar(1., ego.posG.θ) - ego.posG + ego.posG
+    has_passed = dot(cw_to_car, car_vec) > 0.
+    return has_passed
 end
 
 function grow_wait_list!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
@@ -141,23 +156,42 @@ function is_free(crosswalk::Lane, scene::Scene, roadway::Roadway)
     return true
 end
 
-function get_distance_to_crosswalk(model::CrosswalkDriver, veh::Vehicle, roadway::Roadway, delta::Float64 = 0.)
+function get_distance_to_crosswalk(model::CrosswalkDriver, veh::VehicleState, roadway::Roadway, delta::Float64 = 0.)
     lane = get_lane(roadway, veh)
     Δs = 0.
-    if lane ∈ model.conflict_lanes
+    # if lane ∈ model.conflict_lanes
+    #     cw_length = get_end(model.crosswalk)
+    #     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+    #     collision_point = VecSE2(cw_center.x, veh.posG.y)
+    #     cw_proj = Frenet(collision_point, lane, roadway)
+    #     Δs = cw_proj.s - veh.posF.s + delta - model.crosswalk.width
+    # elseif lane ∈ model.intersection_entrances # stop before the intersection to not block traffic
+    #     Δs = get_end(lane) - veh.posF.s + delta - model.crosswalk.width
+    # end
+    if lane ∈ model.intersection_entrances # stop before the intersection to not block traffic
+        Δs = get_end(lane) - veh.posF.s + delta - model.crosswalk.width
+    elseif lane ∈ model.conflict_lanes
         cw_length = get_end(model.crosswalk)
+        cw_start = model.crosswalk.curve[1].pos
         cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
-        collision_point = VecSE2(cw_center.x, veh.state.posG.y)
-        cw_proj = Frenet(collision_point, lane, roadway)
-        Δs = cw_proj.s - veh.state.posF.s + delta - model.crosswalk.width
-    elseif lane ∈ model.intersection_entrances # stop before the intersection to not block traffic
-        Δs = get_end(lane) - veh.state.posF.s + delta - model.crosswalk.width
+        cw_to_car = veh.posG - cw_center 
+        car_vec = polar(1., veh.posG.θ) - veh.posG + veh.posG
+        d = dot(car_vec, cw_to_car)
+        Δs = d + delta - model.crosswalk.width/2
     end
     return Δs
 end
 
+function get_distance_to_crosswalk(model::CrosswalkDriver, veh::Vehicle, roadway::Roadway, delta::Float64 = 0.)
+    return get_distance_to_crosswalk(model, veh.state, roadway, delta)
+end
+
 function update_stop!(model::CrosswalkDriver, veh::Vehicle, roadway::Roadway, dist_to_cw::Float64)
-    if veh.state.v ≈ 0. && isapprox(dist_to_cw, 0, atol=1.)
+    update_stop!(model, veh.state, roadway, dist_to_cw)
+end
+
+function update_stop!(model::CrosswalkDriver, veh::VehicleState, roadway::Roadway, dist_to_cw::Float64)
+    if veh.v ≈ 0. && isapprox(dist_to_cw, 0, atol=1.)
         model.stop = true
     end
 end

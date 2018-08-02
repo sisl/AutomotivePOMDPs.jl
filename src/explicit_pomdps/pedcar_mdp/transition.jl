@@ -16,8 +16,8 @@ function POMDPs.transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction
             for ic=1:length(car_ps)
                 weight = ego_probs[ie]*ped_probs[ip]*car_probs[ic]
                 # if !(weight ≈ 0.)
-                    #collision = crash(mdp, ego_ps[ie], car_ps[ic], ped_ps[ip])
-                    collision = is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(car_ps[ic], mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(ped_ps[ip], mdp.ped_type, PED_ID))
+                    collision = crash(mdp, ego_ps[ie], car_ps[ic], ped_ps[ip])
+                    # collision = is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(car_ps[ic], mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(ped_ps[ip], mdp.ped_type, PED_ID))
                     states_p[idx] = PedCarMDPState(collision, ego_ps[ie], ped_ps[ip], car_ps[ic], car_routes[ic])
                     states_probs[idx] = weight
                     idx += 1
@@ -36,8 +36,7 @@ function ego_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     acc = LonAccelDirection(a.acc, 4) #TODO paremeterize
     ego_p = propagate(s.ego, acc, mdp.env.roadway, mdp.ΔT)
     # interpolate ego_p in discrete space
-    ego_v_space = get_car_vspace(mdp.env, mdp.vel_res)
-    ego_ps, ego_probs = conservative_interpolation(mdp, ego_p, ego_v_space)
+    ego_ps, ego_probs = interpolate_state(mdp, ego_p)
     return ego_ps, ego_probs
 end
 
@@ -52,7 +51,8 @@ function ped_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
         ped_probs[1:end-1] = mdp.ped_birth/(length(ped_ps)-1)
         @assert sum(ped_probs) ≈ 1.0
     else
-        ped_actions, ped_actions_probs = get_distribution(mdp.ped_model)
+        ped_actions = (ConstantSpeedDawdling(0., 0.), ConstantSpeedDawdling(1., 0.), ConstantSpeedDawdling(2., 0.))
+        ped_actions_probs = (1/3, 1/3, 1/3)
         ped_ps = VehicleState[]
         for (i, ped_a) in enumerate(ped_actions)
             p_a = ped_actions_probs[i]
@@ -70,8 +70,7 @@ function ped_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
                 continue
             end
             # interpolate ped_p in discrete space
-            ped_v_space = get_ped_vspace(mdp.env, mdp.vel_ped_res)
-            itp_ped_ps, itp_ped_weights = interpolate_pedestrian(mdp, ped_p, ped_v_space)
+            itp_ped_ps, itp_ped_weights = interpolate_pedestrian(mdp, ped_p)
             for (j, ped_pss) in enumerate(itp_ped_ps)
                 index_itp_state = find(x -> x==ped_pss, ped_ps)
                 if !(itp_ped_weights[j] ≈ 0.)
@@ -106,7 +105,7 @@ function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
         # update model
         set_car_model!(mdp, s, a)
         lane = get_lane(mdp.env.roadway, s.car)
-        car_actions, car_actions_probs = get_distribution(mdp.car_model)
+        car_actions, car_actions_probs = get_distribution(mdp.car_models[s.route])
         car_ps = VehicleState[]
         for (i, car_a) in enumerate(car_actions)
             p_a = car_actions_probs[i]
@@ -124,8 +123,7 @@ function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
                 continue
             end
             # interpolate car_p in discrete space
-            car_v_space = get_car_vspace(mdp.env, mdp.vel_res)
-            itp_car_ps, itp_car_weights = interpolate_state(mdp, car_p, car_v_space)
+            itp_car_ps, itp_car_weights = interpolate_state(mdp, car_p)
             for (j, car_pss) in enumerate(itp_car_ps)
                 index_itp_state = find(x -> x==car_pss, car_ps)
                 if !(itp_car_weights[j] ≈ 0.)
@@ -147,18 +145,18 @@ function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
 end
 
 function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
-    car = s.car
-    lane = get_lane(mdp.env.roadway, car)
-    route = [mdp.env.roadway[tag] for tag in find_route(mdp.env, s.route)]
-    intersection_entrances = get_start_lanes(mdp.env.roadway)
-    if !(route[1] ∈ intersection_entrances)
-        intersection = Lane[]
-        intersection_exits = Lane[]
-    else
-        intersection_exits = get_exit_lanes(mdp.env.roadway)
-        intersection=Lane[route[1], route[2]]
-    end
-    navigator = RouteFollowingIDM(route=route, a_max=2., σ=1.)
+    # car = s.car
+    # lane = get_lane(mdp.env.roadway, car)
+    # route = [mdp.env.roadway[tag] for tag in find_route(mdp.env, s.route)]
+    # intersection_entrances = get_start_lanes(mdp.env.roadway)
+    # if !(route[1] ∈ intersection_entrances)
+    #     intersection = Lane[]
+    #     intersection_exits = Lane[]
+    # else
+    #     intersection_exits = get_exit_lanes(mdp.env.roadway)
+    #     intersection=Lane[route[1], route[2]]
+    # end
+    # navigator = RouteFollowingIDM(route=route, a_max=2., σ=1.)
     # intersection_driver = StopIntersectionDriver(navigator= navigator,
     #                                             intersection=intersection,
     #                                             intersection_entrances = intersection_entrances,
@@ -166,37 +164,39 @@ function set_car_model!(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     #                                             stop_delta=maximum(mdp.env.params.crosswalk_width),
     #                                             accel_tol=0.,
     #                                             priorities = mdp.env.priorities)
-    intersection_driver = TTCIntersectionDriver(navigator = navigator,
-                                            intersection = intersection,
-                                            intersection_pos = VecSE2(mdp.env.params.inter_x,
-                                                                        mdp.env.params.inter_y),
-                                            stop_delta = maximum(mdp.env.params.crosswalk_width),
-                                            accel_tol = 0.,
-                                            priorities = mdp.env.priorities,
-                                            ttc_threshold = (mdp.env.params.x_max - mdp.env.params.inter_x)/mdp.env.params.speed_limit
-                                            )
-    crosswalk_drivers = Vector{CrosswalkDriver}(length(mdp.env.crosswalks))
-    for i=1:length(mdp.env.crosswalks)
-        cw_conflict_lanes = get_conflict_lanes(mdp.env.crosswalks[i], mdp.env.roadway)
-        crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
-                                crosswalk = mdp.env.crosswalks[i],
-                                conflict_lanes = cw_conflict_lanes,
-                                intersection_entrances = intersection_entrances,
-                                yield=!isempty(intersect(cw_conflict_lanes, route))
-                                )
-        # println(" yield to cw ", i, " ", crosswalk_drivers[i].yield)
-    end
-    mdp.car_model = UrbanDriver(navigator=navigator,
-                                            intersection_driver=intersection_driver,
-                                            crosswalk_drivers=crosswalk_drivers
-                                            )
+    # # intersection_driver = TTCIntersectionDriver(navigator = navigator,
+    # #                                         intersection = intersection,
+    # #                                         intersection_pos = VecSE2(mdp.env.params.inter_x,
+    # #                                                                     mdp.env.params.inter_y),
+    # #                                         stop_delta = maximum(mdp.env.params.crosswalk_width),
+    # #                                         accel_tol = 0.,
+    # #                                         priorities = mdp.env.priorities,
+    # #                                         ttc_threshold = (mdp.env.params.x_max - mdp.env.params.inter_x)/mdp.env.params.speed_limit
+    # #                                         )
+    # crosswalk_drivers = Vector{CrosswalkDriver}(length(mdp.env.crosswalks))
+    # for i=1:length(mdp.env.crosswalks)
+    #     cw_conflict_lanes = get_conflict_lanes(mdp.env.crosswalks[i], mdp.env.roadway)
+    #     crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
+    #                             crosswalk = mdp.env.crosswalks[i],
+    #                             conflict_lanes = cw_conflict_lanes,
+    #                             intersection_entrances = intersection_entrances,
+    #                             yield=!isempty(intersect(cw_conflict_lanes, route))
+    #                             )
+    #     # println(" yield to cw ", i, " ", crosswalk_drivers[i].yield)
+    # end
+    # mdp.car_model = UrbanDriver(navigator=navigator,
+    #                                         intersection_driver=intersection_driver,
+    #                                         crosswalk_drivers=crosswalk_drivers
+    #                                         )
     # update model states 
-    scene = Scene()
-    push!(scene, Vehicle(s.ego, mdp.ego_type, EGO_ID))
-    push!(scene, Vehicle(s.car, mdp.car_type, CAR_ID))
-    push!(scene, Vehicle(s.ped, mdp.ped_type, PED_ID))
-    # fill in hiddent state
-    observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
-    # set the decision
-    observe!(mdp.car_model, scene, mdp.env.roadway, CAR_ID)
+    # scene = Scene()
+    # push!(scene, Vehicle(s.ego, mdp.ego_type, EGO_ID))
+    # push!(scene, Vehicle(s.car, mdp.car_type, CAR_ID))
+    # push!(scene, Vehicle(s.ped, mdp.ped_type, PED_ID))
+    reset_hidden_state!(mdp.car_models[s.route])
+    observe!(mdp.car_models[s.route], s.ego, s.car, s.ped, mdp.env.roadway)
+    # # fill in hidden state
+    # observe!(mdp.car_models[s.route], scene, mdp.env.roadway, CAR_ID)
+    # # set the decision
+    # observe!(mdp.car_models[s.route], scene, mdp.env.roadway, CAR_ID)
 end

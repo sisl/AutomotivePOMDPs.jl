@@ -230,9 +230,12 @@ end
 
 # return +1 if going toward, -1 if going away
 function direction_from_center(ped::Vehicle, crosswalk::Lane)
-    s_ped = ped.state.posF.s
+    direction_from_center(ped.state, crosswalk)
+end
+function direction_from_center(ped::VehicleState, crosswalk::Lane)
+    s_ped = ped.posF.s
     Δs = get_end(crosswalk)/2 - s_ped
-    return sign(Δs*cos(ped.state.posF.ϕ))
+    return sign(Δs*cos(ped.posF.ϕ))
 end
 
 
@@ -304,10 +307,10 @@ function AutomotiveDrivingModels.propagate(veh::VehicleState, action::LonAccelDi
       roadind = AutoUrban.move_along_with_direction(veh.posF.roadind, roadway, Δs, direction = action.direction)
       footpoint = roadway[roadind]
       posF = Frenet(roadind, roadway, t=t+Δt, ϕ = ϕ₂)
-      # posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
-      # posG = VecSE2(posG.x, posG.y, footpoint.pos.θ + ϕ₂)
+      posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
+      posG = VecSE2(posG.x, posG.y, footpoint.pos.θ + ϕ₂)
 
-    state = VehicleState(posF, roadway, v₂)
+    state = VehicleState(posG, posF, v₂)
     # state = VehicleState(posG, roadway[roadind.tag], roadway, v₂)
     return state
 end
