@@ -2,8 +2,9 @@
 Define a transition model for the PedCarMDP problem
 =#
 
+using Memoize
 
-function POMDPs.transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
+@memoize function POMDPs.transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     ego_ps, ego_probs = ego_transition(mdp, s, a)
     ped_ps, ped_probs = ped_transition(mdp, s, a)
     car_ps, car_routes, car_probs = car_transition(mdp, s, a)
