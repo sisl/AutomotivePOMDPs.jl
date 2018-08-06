@@ -1,22 +1,22 @@
 
 type MixedUpdater <: Updater
-    problem::OCPOMDP
+    problem::SingleOCPOMDP
     dt::Float64
-    states::Vector{OCState}
+    states::Vector{SingleOCState}
 end
 
-function MixedUpdater(problem::OCPOMDP, dt::Float64 = 0.1)
+function MixedUpdater(problem::SingleOCPOMDP, dt::Float64 = 0.1)
     return MixedUpdater(problem, dt, states(problem))
 end
 
 # efficient version of the discrete updater
-function POMDPs.update(bu::MixedUpdater, bold::OCBelief, a::OCAction, o::OCObs)
-    bnew = OCBelief()
+function POMDPs.update(bu::MixedUpdater, bold::SingleOCBelief, a::SingleOCAction, o::SingleOCObs)
+    bnew = SingleOCBelief()
     pomdp = bu.problem
 
     ego = o.ego
-    Y = get_Y_grid(pomdp)
-    V_ped = get_V_ped_grid(pomdp) # try to avoid collect
+    Y = AutomotivePOMDPs.get_Y_grid(pomdp)
+    V_ped = AutomotivePOMDPs.get_V_ped_grid(pomdp) # try to avoid collect
     n_ped_states = length(Y)*length(V_ped) + 1
     saved_prob = 0.
     for i=1:n_ped_states
@@ -26,9 +26,10 @@ function POMDPs.update(bu::MixedUpdater, bold::OCBelief, a::OCAction, o::OCObs)
             k, l = ind2sub((length(Y), length(V_ped)), i)
             y = Y[k]
             v = V_ped[l]
-            ped = yv_to_state(pomdp, y, v)
+            ped = AutomotivePOMDPs.yv_to_state(pomdp, y, v)
         end
-        sp = OCState(is_crash(pomdp, ego, ped), ego, ped)
+        collision = collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type)
+        sp = SingleOCState(collision, ego, ped)
         probo = obs_weight(o, sp, pomdp)
         # if observation prob is 0.0, then skip rest of update b/c bnew[i] is zero
         if probo ≈ 0.
@@ -58,7 +59,7 @@ function POMDPs.update(bu::MixedUpdater, bold::OCBelief, a::OCAction, o::OCObs)
                 "\n action ", a,
                 "\n prob", saved_prob,
                 "\n old belief ", bold)
-        # bnew = OCDistribution([1.0], [o])
+        # bnew = SingleOCDistribution([1.0], [o])
         throw("UpdateError")
         # println("Invalid update, probo = $probo")
         # bnew = observation(pomdp, a, o)
@@ -68,7 +69,7 @@ function POMDPs.update(bu::MixedUpdater, bold::OCBelief, a::OCAction, o::OCObs)
     bnew
 end
 
-function partial_pdf(d::OCDistribution, sp::OCState)
+function partial_pdf(d::SingleOCDistribution, sp::SingleOCState)
     for (i, s) in enumerate(d.it)
         if sp.ped == s.ped
             return d.p[i]
@@ -82,16 +83,16 @@ end
 Given a continuous observation returns a weight proportional to the probability of observing o
 while being in the state s
 """
-function obs_weight(o::OCState, s::OCState, pomdp::OCPOMDP)
+function obs_weight(o::SingleOCState, s::SingleOCState, pomdp::SingleOCPOMDP)
     weight = 1.0
-    if !is_observable(s.ped, s.ego, pomdp.env)
+    if !is_observable_fixed(s.ego, s.ped, pomdp.env)
         if off_the_grid(pomdp, o.ped)
             return 3*weight
         else
             return 0.
         end
     else
-        if off_the_grid(pomdp, o.ped) || !is_observable(o.ped, o.ego, pomdp.env)
+        if off_the_grid(pomdp, o.ped) || !is_observable_fixed(o.ego, o.ped, pomdp.env)
             return 0.
         else
             pos_noise = pomdp.pos_obs_noise
@@ -108,7 +109,7 @@ end
 Initialize a belief on all the non observable position
 """
 function initialize_off_belief(policy::QMDPEval, ego::VehicleState)
-    b = Dict{Int64, OCDistribution}()
+    b = Dict{Int64, SingleOCDistribution}()
     b[OFF_KEY] = initial_state_distribution(policy.pomdp, ego)
     return b
 end
@@ -121,22 +122,22 @@ end
 #     return init_dis
 # end
 
-function POMDPs.update(up::MixedUpdater, bold::Dict{Int64, OCDistribution}, a::Float64, o::Dict{Int64, OCObs})
-    bnew = Dict{Int64, OCDistribution}()
+function POMDPs.update(up::MixedUpdater, bold::Dict{Int64, SingleOCDistribution}, a::Float64, o::Dict{Int64, SingleOCObs})
+    bnew = Dict{Int64, SingleOCDistribution}()
     for oid in keys(o)
         if haskey(bold, oid) && oid != OFF_KEY
-            bnew[oid] = update(up, bold[oid], OCAction(a), o[oid])
+            bnew[oid] = update(up, bold[oid], SingleOCAction(a), o[oid])
         elseif oid == OFF_KEY
-            bnew[OFF_KEY] = update(up, bold[OFF_KEY], OCAction(a), o[oid])
+            bnew[OFF_KEY] = update(up, bold[OFF_KEY], SingleOCAction(a), o[oid])
         else # cars appeared
-            bnew[oid] = update(up, bold[OFF_KEY], OCAction(a), o[oid])
+            bnew[oid] = update(up, bold[OFF_KEY], SingleOCAction(a), o[oid])
         end
     end
     # print_b_stats(up.problem, bnew[OFF_KEY])
     return bnew
 end
 
-function print_b_stats(pomdp::OCPOMDP, b::OCDistribution)
+function print_b_stats(pomdp::SingleOCPOMDP, b::SingleOCDistribution)
     off_prob = 0.
     for (i,s) in enumerate(b.it)
         if off_the_grid(pomdp, s.ped)

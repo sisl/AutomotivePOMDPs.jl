@@ -10,7 +10,7 @@ type SimpleSensor
 end
 
 @with_kw mutable struct POMDPSensor
-    pomdp::OCPOMDP = OCPOMDP()
+    pomdp::SingleOCPOMDP = SingleOCPOMDP()
     sensor::SimpleSensor = SimpleSensor(0., 0.)
 end
 
@@ -24,7 +24,7 @@ function measure(scene::Scene, sensor::POMDPSensor, env::CrosswalkEnv)
     pos_noise = sensor.sensor.pos_noise
     vel_noise = sensor.sensor.vel_noise
     pomdp = sensor.pomdp
-    o = Dict{Int64, OCObs}()
+    o = Dict{Int64, SingleOCObs}()
     ego = scene[findfirst(scene, 1)].state
     for i=1:scene.n
         veh = scene[i]
@@ -32,17 +32,18 @@ function measure(scene::Scene, sensor::POMDPSensor, env::CrosswalkEnv)
             continue
         end
         car = veh.state
-        if is_observable(car, ego, env)
+        if is_observable_fixed(ego, car, env)
             y_pos = min(pomdp.y_goal, car.posG.y + pos_noise*randn())
             obs_state = VehicleState(VecSE2(car.posG.x + pos_noise*randn(),
                                                       y_pos,
                                                       car.posG.θ),
                                                       env.roadway,
                                                       car.v + vel_noise*randn())
-            o[veh.id] = OCState(is_crash(pomdp, ego, veh.state), ego, veh.state)
+            collision = collision_checker(ego, veh.state, pomdp.ego_type, veh.def)
+            o[veh.id] = SingleOCState(collision, ego, veh.state)
         end
     end
-    o[OFF_KEY] = OCState(false, ego, get_off_the_grid(pomdp))
+    o[OFF_KEY] = SingleOCState(false, ego, get_off_the_grid(pomdp))
     return o
 end
 
@@ -60,7 +61,7 @@ function measure(scene::Scene, sensor::SimpleSensor, env::CrosswalkEnv)
             continue
         end
         car = veh.state
-        if is_observable(car, ego.state, env)
+        if is_observable_fixed(ego.state, car, env)
             y_pos = min(pomdp.y_goal, car.posG.y + pos_noise*randn())
             obs_state = VehicleState(VecSE2(car.posG.x + pos_noise*randn(),
                                                       y_pos,
@@ -81,7 +82,7 @@ function measure(ego::Vehicle, cars::Vector{Entity{VehicleState, VehicleDef, Int
     observed = Vehicle[] # sizehint!(Vector{Vehicle(0)}, 5)
     for veh in cars
         car = veh.state
-        if is_observable(car, ego.state, env)
+        if is_observable_fixed(ego.state, car, env)
             obs_state = VehicleState(VecSE2(car.posG.x + model.pos_noise*randn(),
                                                       car.posG.y + model.pos_noise*randn(),
                                                       car.posG.θ),
@@ -94,31 +95,3 @@ function measure(ego::Vehicle, cars::Vector{Entity{VehicleState, VehicleDef, Int
     return observed
 end
 
-function is_observable(car::VehicleState, ego::VehicleState, env::CrosswalkEnv)
-    m = length(env.obstacles)
-    front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(car.posG.y - front.y, car.posG.x - front.x)
-    ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
-    if isinf(car.v)
-        return false
-    end
-    for i = 1:m
-        if is_colliding(ray, env.obstacles[i], car.posG)
-            return false
-        end
-    end
-    return true
-end
-
-function AutomotiveDrivingModels.is_colliding(P::Projectile, poly::ConvexPolygon, A::VecSE2)
-    # collides if at least one of the segments collides with the ray
-    point_time = sqrt(abs2(A - P.pos))
-    for i in 1 : length(poly)
-        seg = get_edge(poly, i)
-        obs_time = get_intersection_time(P, seg)
-        if !isinf(obs_time) && obs_time < point_time
-            return true
-        end
-    end
-    false
-end

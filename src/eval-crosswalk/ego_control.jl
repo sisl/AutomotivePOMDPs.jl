@@ -8,7 +8,7 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::Float64, roadwa
     v_ = veh.state.v + action*Δt
     if v_ <= 0.
         v_ = 0.
-    elseif v_ >= 8.0 # parameterized
+    elseif v_ >= 8.0 #TODO parameterized
         v_ = 8.0
     end
     return VehicleState(VecSE2(x_, veh.state.posG.y, veh.state.posG.θ), roadway, v_)
@@ -71,9 +71,9 @@ end
 function reset_model!(model::CrosswalkDriver, ego::Vehicle)
     model.tick = 0.
     model.a = 0.
-    model.o = Dict{Int64, OCState}()
+    model.o = Dict{Int64, SingleOCState}()
     # model.b = initial_state_distribution(model.policy.pomdp, model.sensor.n_ped)
-    b0 = Dict{Int64, OCDistribution}()
+    b0 = Dict{Int64, SingleOCDistribution}()
     b0[-1] = initial_state_distribution(policy.pomdp, ego.state)
     model.b = b0
     model.ego = ego

@@ -106,7 +106,7 @@ function initial_pedestrian(scene::Scene, env::CrosswalkEnv, rng::AbstractRNG)
     # new id, increment last id
     id = scene.n + 2
 
-    return Vehicle(ped_initial_state, PEDESTRIAN_DEF, id)
+    return Vehicle(ped_initial_state,  VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0), id)
 end
 
 

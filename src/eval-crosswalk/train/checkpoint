@@ -1,6 +1,0 @@
-model_checkpoint_path: "/home/boutonm/a3c-test/test31/train/model.ckpt-723201"
-all_model_checkpoint_paths: "/home/boutonm/a3c-test/test31/train/model.ckpt-675970"
-all_model_checkpoint_paths: "/home/boutonm/a3c-test/test31/train/model.ckpt-687735"
-all_model_checkpoint_paths: "/home/boutonm/a3c-test/test31/train/model.ckpt-699644"
-all_model_checkpoint_paths: "/home/boutonm/a3c-test/test31/train/model.ckpt-711383"
-all_model_checkpoint_paths: "/home/boutonm/a3c-test/test31/train/model.ckpt-723201"

@@ -1,3 +1,5 @@
+const PEDESTRIAN_DEF =  VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0)
+
 function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
     roadway = gen_straight_roadway(2, env.params.roadway_length)
     render!(rendermodel, roadway)

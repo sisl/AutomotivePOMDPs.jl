@@ -130,7 +130,12 @@ export
     obs_weight,
     rescale!,
     unrescale!,
-    obs_to_scene
+    obs_to_scene,
+    fuse_value,
+    fuse_value_min,
+    interpolate_state,
+    scene_to_states,
+    states_to_scene
 
 # single crosswalk
 include("explicit_pomdps/single_crosswalk/pomdp_types.jl")
@@ -140,6 +145,7 @@ include("explicit_pomdps/single_crosswalk/observation.jl")
 include("explicit_pomdps/single_crosswalk/belief.jl")
 include("explicit_pomdps/single_crosswalk/adm_helpers.jl")
 include("explicit_pomdps/single_crosswalk/render_helpers.jl")
+include("explicit_pomdps/single_crosswalk/decomposition.jl")
 
 # multi crowsswalk
 include("generative_pomdps/multi_crosswalk/pomdp_types.jl")
