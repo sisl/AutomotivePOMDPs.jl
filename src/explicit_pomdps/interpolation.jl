@@ -5,7 +5,6 @@ function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::Vehicle
         return VehicleState[state], Float64[1.0]
     end
     lane = get_lane(mdp.env.roadway, state)
-    l_space = get_discretized_lane(lane.tag, mdp.env.roadway, mdp.pos_res)
     grid = mdp._car_grid[lane.tag]
     real_state = SVector{2, Float64}(state.posF.s, state.v)
     idx, weights = interpolants(grid, real_state)

@@ -51,7 +51,7 @@ function get_ped_states(env::UrbanEnv, pos_res::Float64, v_res::Float64)
         for v in v_space
             for s in discrete_lane
                 for phi in (0., float(pi))
-                    ped = VehicleState(Frenet(env.roadway[lane], s, 0., phi), env.roadway, v)
+                    ped = VehicleState(Frenet(env.roadway[lane], s, 0., phi), env.ped_roadway, v)
                     push!(states_vec, ped)
                 end
             end

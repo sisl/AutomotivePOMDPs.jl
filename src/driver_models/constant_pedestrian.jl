@@ -7,7 +7,7 @@ const PEDESTRIAN_DEF = VehicleDef(AgentClass.PEDESTRIAN, PED_LENGTH, PED_WIDTH)
 """
 Action type for the pedestrian model
 """
-mutable struct ConstantSpeedDawdling
+struct ConstantSpeedDawdling
     v::Float64 # instantaneous change in velocity
     lat::Float64 # lateral displacement
 end

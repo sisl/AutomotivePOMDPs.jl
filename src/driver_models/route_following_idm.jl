@@ -64,18 +64,25 @@ function set_direction!(model::RouteFollowingIDM, scene::Scene, roadway::Roadway
     set_direction!(model, cur_lane, roadway)
 end
 function set_direction!(model::RouteFollowingIDM, lane::Lane, roadway::Roadway)
-    ind = findfirst(model.route, lane)
-    if ind == length(model.route)
-        return
+    model.dir = get_direction(lane, model.route)
+end
+
+function get_direction(lane::Lane, route::Vector{Lane})
+    dir = 1
+    ind = findfirst(route, lane)
+    if ind == length(route)
+        return dir
     end
-    next_exit = model.route[ind+1]
+    next_exit = route[ind+1]
     for i=1:length(lane.exits)
         if lane.exits[i].target.tag == next_exit.tag
-            model.dir=i
+            dir=i
             break
         end
     end
+    return dir 
 end
+
 
 function AutomotiveDrivingModels.observe!(model::RouteFollowingIDM, scene::Scene, roadway::Roadway, egoid::Int)
 

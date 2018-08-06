@@ -58,6 +58,7 @@ const PedCarMDPAction = UrbanAction
     _car_grid::Dict{LaneTag, RectangleGrid{2}} = init_car_grid(env, pos_res, vel_res)
     _l_grid::Dict{LaneTag, RectangleGrid{1}} = init_l_grid(env, pos_res)
     _v_grid::RectangleGrid{1} = init_v_grid(env, vel_res)
+    _collision_checker::Dict{Tuple{Vararg{VehicleState, 3}}, Bool} = Dict{Tuple{Vararg{VehicleState, 3}}, Bool}()
 end
 
 
