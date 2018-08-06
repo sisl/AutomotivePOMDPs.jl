@@ -60,7 +60,7 @@ end
 
 function get_car_mdp(mdp::PedCarMDP)
     # return a corresponding CarMDP
-    return CarMDP(mdp.env, mdp.ego_type, mdp.car_type, mdp.car_model, mdp.max_acc, 
+    return CarMDP(mdp.env, mdp.ego_type, mdp.car_type, mdp.car_models[CAR_ID], mdp.max_acc, 
                   mdp.pos_res, mdp.vel_res, mdp.ego_start, mdp.ego_goal, mdp.off_grid, 
                   mdp.ΔT, mdp.car_birth, mdp.collision_cost, mdp.action_cost,
                   mdp.goal_reward, mdp.γ, mdp._ped_grid, mdp._car_grid, 
