@@ -57,7 +57,6 @@ const CarMDPAction = UrbanAction
     _v_grid::RectangleGrid{1} = init_v_grid(env, vel_res)
     _collision_checker::Dict{Tuple{Vararg{VehicleState, 3}}, Bool} = Dict{Tuple{Vararg{VehicleState, 3}}, Bool}()
 end
-end
 
 ### REWARD MODEL ##################################################################################
 

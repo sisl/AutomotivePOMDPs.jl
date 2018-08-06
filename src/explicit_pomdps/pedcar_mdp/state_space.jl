@@ -126,7 +126,7 @@ function ind2state(mdp::PedCarMDP, si::Int64)
         else
             ped = ind2ped(mdp.env, ped_i, mdp.pos_res, mdp.vel_ped_res)
         end
-        collision = collision =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
+        collision = crash(mdp, ego, car, ped)
         return PedCarMDPState(collision, ego, ped, car, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0)))
     else
         si_ = si - route_shift
@@ -142,8 +142,8 @@ function ind2state(mdp::PedCarMDP, si::Int64)
         else
             ped = ind2ped(mdp.env, ped_i, mdp.pos_res, mdp.vel_ped_res)
         end
-        collision =  is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(car, mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego, mdp.ego_type, EGO_ID), Vehicle(ped, mdp.ped_type, PED_ID)) 
-        return PedCarMDPState(collision, ego, ped, car, sroute)
+        collision = crash(mdp, ego, car, ped)
+        return PedCarMDPState(collision, ego, ped, car, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0)))
     end
 end
 

@@ -177,11 +177,10 @@ export
     CarMDPAction,
     PedMDP,
     PedMDPState,
-    PedMDPAction
-    # PedCarMDP,
-    # PedCarMDPState,
-    # PedCarMDPAction,
-export
+    PedMDPAction,
+    PedCarMDP,
+    PedCarMDPState,
+    PedCarMDPAction,
     labeling,
     get_mdp_state,
     state2scene,
@@ -223,9 +222,9 @@ include("explicit_pomdps/pedestrian_mdp/state_space.jl")
 include("explicit_pomdps/pedestrian_mdp/transition.jl")
 include("explicit_pomdps/pedestrian_mdp/render_helpers.jl")
 include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
-# include("explicit_pomdps/pedcar_mdp/driver_models_helpers.jl")
+include("explicit_pomdps/pedcar_mdp/driver_models_helpers.jl")
 include("explicit_pomdps/pedcar_mdp/pomdp_types.jl")
-# include("explicit_pomdps/pedcar_mdp/state_space.jl")
+include("explicit_pomdps/pedcar_mdp/state_space.jl")
 include("explicit_pomdps/pedcar_mdp/transition.jl")
 include("explicit_pomdps/pedcar_mdp/high_fidelity.jl")
 include("explicit_pomdps/pedcar_mdp/render_helpers.jl")
