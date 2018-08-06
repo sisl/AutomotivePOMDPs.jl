@@ -7,7 +7,7 @@ const PEDESTRIAN_DEF = VehicleDef(AgentClass.PEDESTRIAN, PED_LENGTH, PED_WIDTH)
 """
 Action type for the pedestrian model
 """
-mutable struct ConstantSpeedDawdling
+struct ConstantSpeedDawdling
     v::Float64 # instantaneous change in velocity
     lat::Float64 # lateral displacement
 end
@@ -38,7 +38,7 @@ function AutomotiveDrivingModels.observe!(model::ConstantPedestrian,
         model.a = ConstantSpeedDawdling(model.v_desired + rand([-model.v_noise, 0, model.v_noise]),
                                         model.dawdling_amp*randn())
     end
-    model.a.lat = model.dawdling_amp*randn()
+    model.a = ConstantSpeedDawdling(model.a.v, model.dawdling_amp*randn())
     model.tick += 1
 end
 

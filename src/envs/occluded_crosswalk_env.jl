@@ -63,7 +63,7 @@ function CrosswalkEnv(params::CrosswalkParams = CrosswalkParams())
     push!(roadway.segments, cw_segment)
     obstacles = ConvexPolygon(4)
     #TODO parameterize the obstacle
-    obstacles.pts = [VecSE2(15, -1.5), VecSE2(15, -4.5), VecSE2(21.5, -4.5), VecSE2(21.5, -1.5)]
+    obstacles.pts = [VecE2(15, -1.5), VecE2(15, -4.5), VecE2(21.5, -4.5), VecE2(21.5, -1.5)]
     obstacles.npts = 4; # a rectangle
     env = CrosswalkEnv(roadway, crosswalk, [obstacles], params)
     return env

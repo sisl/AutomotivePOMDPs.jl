@@ -58,6 +58,7 @@ const PedCarMDPAction = UrbanAction
     _car_grid::Dict{LaneTag, RectangleGrid{2}} = init_car_grid(env, pos_res, vel_res)
     _l_grid::Dict{LaneTag, RectangleGrid{1}} = init_l_grid(env, pos_res)
     _v_grid::RectangleGrid{1} = init_v_grid(env, vel_res)
+    _collision_checker::Dict{Tuple{Vararg{VehicleState, 3}}, Bool} = Dict{Tuple{Vararg{VehicleState, 3}}, Bool}()
 end
 
 
@@ -191,43 +192,3 @@ function crash(mdp::PedCarMDP, ego::VehicleState, car::VehicleState, ped::Vehicl
     return collision_checker(ego, car, mdp.ego_type, mdp.car_type) || collision_checker(ego, ped, mdp.ego_type, mdp.ped_type)
 end
 
-function init_ped_grid(env::UrbanEnv, pos_res::Float64, vel_res::Float64)
-    d = Dict{LaneTag, RectangleGrid{3}}()
-    phi_space = SVector{2, Float64}(0., float(pi))
-    v_space = get_ped_vspace(env, vel_res)
-    for lane in env.crosswalks
-        l_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
-        grid = RectangleGrid(l_space, v_space,  phi_space)
-        d[lane.tag] = grid
-    end
-    return d
-end
-
-function init_car_grid(env::UrbanEnv, pos_res::Float64, vel_res::Float64)
-    d = Dict{LaneTag, RectangleGrid{2}}()
-    v_space = get_car_vspace(env, vel_res)
-    for i=1:length(env.roadway.segments)
-        for lane in env.roadway.segments[i].lanes
-            l_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
-            grid = RectangleGrid(l_space, v_space)
-            d[lane.tag] = grid
-        end
-    end
-    return d
-end
-function init_l_grid(env::UrbanEnv, pos_res::Float64)
-    d = Dict{LaneTag, RectangleGrid{1}}()
-    for i=1:length(env.roadway.segments)
-        for lane in env.roadway.segments[i].lanes
-            l_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
-            grid = RectangleGrid(l_space)
-            d[lane.tag] = grid
-        end
-    end
-    return d
-end
-
-function init_v_grid(env::UrbanEnv, vel_res::Float64)
-    v_space = get_car_vspace(env, vel_res)
-    return RectangleGrid(v_space)
-end

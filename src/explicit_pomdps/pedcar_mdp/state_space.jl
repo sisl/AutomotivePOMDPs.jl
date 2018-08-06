@@ -251,10 +251,11 @@ function pedestrian_starting_states(mdp::PedCarMDP)
     ped_states = Vector{VehicleState}(length(lanes)*length(v_space)*n_headings)
     i = 1
     for lane in lanes
+        dlane = get_discretized_lane(lane, mdp.env.roadway, mdp.pos_res)
         for v in v_space
             ped_states[i] = VehicleState(Frenet(mdp.env.roadway[lane], 0., 0., 0.), mdp.env.roadway, v)
             i += 1
-            ped_states[i] = VehicleState(Frenet(mdp.env.roadway[lane], get_end(mdp.env.roadway[lane]), 0., float(pi)), mdp.env.roadway, v)
+            ped_states[i] = VehicleState(Frenet(mdp.env.roadway[lane], dlane[end], 0., float(pi)), mdp.env.roadway, v)
             i += 1
         end
     end

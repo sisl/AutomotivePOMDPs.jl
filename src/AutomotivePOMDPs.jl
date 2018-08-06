@@ -79,6 +79,7 @@ export
     ConstantSpeedDawdling,
     RouteFollowingIDM,
     set_direction!,
+    get_direction,
     LonAccelDirection,
     CrosswalkDriver,
     StopIntersectionDriver,
@@ -129,7 +130,12 @@ export
     obs_weight,
     rescale!,
     unrescale!,
-    obs_to_scene
+    obs_to_scene,
+    fuse_value,
+    fuse_value_min,
+    interpolate_state,
+    scene_to_states,
+    states_to_scene
 
 # single crosswalk
 include("explicit_pomdps/single_crosswalk/pomdp_types.jl")
@@ -139,6 +145,7 @@ include("explicit_pomdps/single_crosswalk/observation.jl")
 include("explicit_pomdps/single_crosswalk/belief.jl")
 include("explicit_pomdps/single_crosswalk/adm_helpers.jl")
 include("explicit_pomdps/single_crosswalk/render_helpers.jl")
+include("explicit_pomdps/single_crosswalk/decomposition.jl")
 
 # multi crowsswalk
 include("generative_pomdps/multi_crosswalk/pomdp_types.jl")
@@ -170,24 +177,25 @@ export
     CarMDPAction,
     PedMDP,
     PedMDPState,
-    PedMDPAction,
-    PedCarMDP,
-    PedCarMDPState,
-    PedCarMDPAction,
+    PedMDPAction
+    # PedCarMDP,
+    # PedCarMDPState,
+    # PedCarMDPAction,
+export
     labeling,
     get_mdp_state,
     state2scene,
-    interpolate_state,
-    conservative_interpolation,
     get_car_vspace,
     get_ped_vspace,
     get_ego_states,
     get_car_states,
     get_ped_states,
+    get_car_routes,
+    get_ped_lanes,
     ind2ego,
     ind2ped,
     ind2car,
-    ind2state,
+    find_route,
     ego_state_index,
     ped_state_index,
     car_state_index,
@@ -195,12 +203,12 @@ export
     n_car_states,
     n_ped_states,
     get_off_the_grid,
-    interpolate_pedestrian,
     get_ped_mdp,
     get_car_mdp,
     get_car_models,
     get_stop_model,
-    get_ttc_model
+    get_ttc_model,
+    get_discretized_lane
 
 # more discrete POMDPs
 include("explicit_pomdps/discretization.jl")
@@ -215,9 +223,9 @@ include("explicit_pomdps/pedestrian_mdp/state_space.jl")
 include("explicit_pomdps/pedestrian_mdp/transition.jl")
 include("explicit_pomdps/pedestrian_mdp/render_helpers.jl")
 include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
-include("explicit_pomdps/pedcar_mdp/driver_models_helpers.jl")
+# include("explicit_pomdps/pedcar_mdp/driver_models_helpers.jl")
 include("explicit_pomdps/pedcar_mdp/pomdp_types.jl")
-include("explicit_pomdps/pedcar_mdp/state_space.jl")
+# include("explicit_pomdps/pedcar_mdp/state_space.jl")
 include("explicit_pomdps/pedcar_mdp/transition.jl")
 include("explicit_pomdps/pedcar_mdp/high_fidelity.jl")
 include("explicit_pomdps/pedcar_mdp/render_helpers.jl")

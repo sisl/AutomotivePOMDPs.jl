@@ -17,7 +17,9 @@ using Memoize
             for ic=1:length(car_ps)
                 weight = ego_probs[ie]*ped_probs[ip]*car_probs[ic]
                 # if !(weight ≈ 0.)
-                    collision = crash(mdp, ego_ps[ie], car_ps[ic], ped_ps[ip])
+                    # collision=false
+                    # collision = crash(mdp, ego_ps[ie], car_ps[ic], ped_ps[ip])
+                    collision = mdp._collision_checker[(ego_ps[ie], car_ps[ic], ped_ps[ip])]
                     # collision = is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(car_ps[ic], mdp.car_type, CAR_ID)) || is_colliding(Vehicle(ego_ps[ie], mdp.ego_type, EGO_ID), Vehicle(ped_ps[ip], mdp.ped_type, PED_ID))
                     states_p[idx] = PedCarMDPState(collision, ego_ps[ie], ped_ps[ip], car_ps[ic], car_routes[ic])
                     states_probs[idx] = weight
@@ -43,7 +45,6 @@ end
 
 function ped_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     # pedestrian transition
-    ped_probs = Float64[]
     if s.ped.posG == mdp.off_grid
         ped_ps = pedestrian_starting_states(mdp)
         push!(ped_ps, get_off_the_grid(mdp))
@@ -55,6 +56,7 @@ function ped_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
         ped_actions = (ConstantSpeedDawdling(0., 0.), ConstantSpeedDawdling(1., 0.), ConstantSpeedDawdling(2., 0.))
         ped_actions_probs = (1/3, 1/3, 1/3)
         ped_ps = VehicleState[]
+        ped_probs = Float64[]
         for (i, ped_a) in enumerate(ped_actions)
             p_a = ped_actions_probs[i]
             ped_p = propagate(s.ped, ped_a, mdp.env.roadway, mdp.ΔT)
@@ -92,8 +94,6 @@ end
 
 function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
     # car transition
-    car_probs = Float64[]
-    car_routes = SVector{2, LaneTag}[]
     if s.car.posG == mdp.off_grid
         car_ps, car_routes = car_starting_states(mdp)
         push!(car_ps, get_off_the_grid(mdp))
@@ -108,6 +108,8 @@ function car_transition(mdp::PedCarMDP, s::PedCarMDPState, a::PedCarMDPAction)
         lane = get_lane(mdp.env.roadway, s.car)
         car_actions, car_actions_probs = get_distribution(mdp.car_models[s.route])
         car_ps = VehicleState[]
+        car_probs = Float64[]
+        car_routes = SVector{2, LaneTag}[]
         for (i, car_a) in enumerate(car_actions)
             p_a = car_actions_probs[i]
             car_p = propagate(s.car, car_a, mdp.env.roadway, mdp.ΔT)
