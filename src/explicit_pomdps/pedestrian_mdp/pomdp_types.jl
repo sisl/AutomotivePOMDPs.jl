@@ -51,6 +51,11 @@ const PedMDPAction = UrbanAction
     action_cost::Float64 = 0.
     goal_reward::Float64 = 1.
     γ::Float64 = 0.95
+    _ped_grid::Dict{LaneTag, RectangleGrid{3}} = init_ped_grid(env, pos_res, vel_ped_res)
+    _car_grid::Dict{LaneTag, RectangleGrid{2}} = init_car_grid(env, pos_res, vel_res)
+    _l_grid::Dict{LaneTag, RectangleGrid{1}} = init_l_grid(env, pos_res)
+    _v_grid::RectangleGrid{1} = init_v_grid(env, vel_res)
+    _collision_checker::Dict{Tuple{Vararg{VehicleState, 3}}, Bool} = Dict{Tuple{Vararg{VehicleState, 3}}, Bool}()
 end
 
 ### REWARD MODEL ##################################################################################
