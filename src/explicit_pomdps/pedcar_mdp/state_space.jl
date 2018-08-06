@@ -143,7 +143,7 @@ function ind2state(mdp::PedCarMDP, si::Int64)
             ped = ind2ped(mdp.env, ped_i, mdp.pos_res, mdp.vel_ped_res)
         end
         collision = crash(mdp, ego, car, ped)
-        return PedCarMDPState(collision, ego, ped, car, SVector{2, LaneTag}(LaneTag(0,0), LaneTag(0, 0)))
+        return PedCarMDPState(collision, ego, ped, car, sroute)
     end
 end
 

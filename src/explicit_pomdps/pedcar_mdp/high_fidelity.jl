@@ -63,7 +63,8 @@ function get_car_mdp(mdp::PedCarMDP)
     return CarMDP(mdp.env, mdp.ego_type, mdp.car_type, mdp.car_model, mdp.max_acc, 
                   mdp.pos_res, mdp.vel_res, mdp.ego_start, mdp.ego_goal, mdp.off_grid, 
                   mdp.ΔT, mdp.car_birth, mdp.collision_cost, mdp.action_cost,
-                  mdp.goal_reward, mdp.γ)
+                  mdp.goal_reward, mdp.γ, mdp._ped_grid, mdp._car_grid, 
+                  mdp._l_grid, mdp._v_grid, mdp._collision_checker)
 end
 
 function get_ped_mdp(mdp::PedCarMDP)
@@ -71,5 +72,6 @@ function get_ped_mdp(mdp::PedCarMDP)
     return PedMDP(mdp.env, mdp.ego_type, mdp.ped_type, mdp.ped_model, mdp.max_acc, 
                   mdp.pos_res, mdp.vel_res, mdp.vel_ped_res, mdp.ego_start, mdp.ego_goal, mdp.off_grid, 
                   mdp.ΔT, mdp.ped_birth, mdp.collision_cost, mdp.action_cost,
-                  mdp.goal_reward, mdp.γ)
+                  mdp.goal_reward, mdp.γ, mdp._ped_grid, mdp._car_grid, 
+                  mdp._l_grid, mdp._v_grid, mdp._collision_checker)
 end

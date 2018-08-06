@@ -4,6 +4,7 @@ using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations, S
 using DiscreteValueIteration
 using AutomotiveDrivingModels, AutoUrban, AutoViz
 using Reel
+using Memoize
 
 """
 Abstract type to define driving environment with occlusion 
