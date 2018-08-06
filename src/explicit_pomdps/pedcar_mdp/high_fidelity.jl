@@ -2,9 +2,9 @@ function interpolate_state(mdp::PedCarMDP, s::PedCarMDPState)
     # interpolate s in the grid
     vspace = get_car_vspace(mdp.env, mdp.vel_res)
     v_ped_space = get_ped_vspace(mdp.env, mdp.vel_ped_res)
-    itp_ped, itp_ped_w = interpolate_pedestrian(get_ped_mdp(mdp), s.ped, v_ped_space)
-    itp_car, itp_car_w = interpolate_state(get_car_mdp(mdp), s.car, vspace)
-    itp_ego, itp_ego_w = interpolate_state(mdp, s.ego, vspace)
+    itp_ped, itp_ped_w = interpolate_pedestrian(get_ped_mdp(mdp), s.ped)
+    itp_car, itp_car_w = interpolate_state(get_car_mdp(mdp), s.car)
+    itp_ego, itp_ego_w = interpolate_state(mdp, s.ego)
     itp_states = Vector{PedCarMDPState}(length(itp_ego)*length(itp_car)*length(itp_ped))
     itp_w = Vector{Float64}(length(itp_states))
     l = 1
