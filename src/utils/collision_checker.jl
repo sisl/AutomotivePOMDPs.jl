@@ -1,4 +1,5 @@
-@memoize function collision_checker(veh_a::VehicleState, veh_b::VehicleState, veh_a_def::VehicleDef, veh_b_def::VehicleDef)
+
+function collision_checker(veh_a::VehicleState, veh_b::VehicleState, veh_a_def::VehicleDef, veh_b_def::VehicleDef)
     center_a = veh_a.posG
     center_b = veh_b.posG
     # first fast check:

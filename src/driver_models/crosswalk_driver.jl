@@ -133,7 +133,7 @@ function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}
     end
     # at this point, the pedestrian is not on the road
     # check if the pedestrian is going to cross or not
-    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0. && get_lane(roadway, ped).tag == crosswalk.tag && is_free(crosswalk, scene, roadway) && ped.state.v != 0.
+    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0. && get_lane(roadway, ped).tag == crosswalk.tag && is_free(crosswalk, scene, roadway)
         return true
     end
     return false

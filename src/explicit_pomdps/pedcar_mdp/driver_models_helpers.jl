@@ -101,7 +101,7 @@ function AutomotiveDrivingModels.observe!(model::UrbanDriver,
         AutomotiveDrivingModels.observe!(driver, ego, car, ped, roadway)
     end
     a_lon_crosswalks = minimum([driver.a.a_lon for driver in model.crosswalk_drivers])
-    a_lon = min(model.intersection_driver.a.a_lon, min(a_lon_crosswalks, model.navigator.a))
+    a_lon = min(a_lon_crosswalks, model.navigator.a)
 
     model.a = LonAccelDirection(a_lon, model.navigator.dir)
     return model.a
