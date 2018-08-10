@@ -68,8 +68,7 @@ function AutomotiveDrivingModels.propagate(veh::VehicleState, action::ConstantSp
     
     #XXX what exactly is happening here, ask Tim ?
     # roadind = move_along(veh.posF.roadind, roadway, Δs)
-    # footpoint = roadway[roadind]
-    
+    # footpoint = roadway[roadind]    
     # posG = convert(VecE2, footpoint.pos) + polar(t + Δt, footpoint.pos.θ + π/2)
     
     # posG = VecSE2(posG.x, posG.y, footpoint.pos.θ + ϕ)

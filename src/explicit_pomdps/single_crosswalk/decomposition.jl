@@ -50,7 +50,7 @@ function POMDPs.value(policy::AlphaVectorPolicy, s::SingleOCState)
     ego_grid = RectangleGrid(get_X_grid(pomdp), get_V_grid(pomdp)) #XXX must not allSingleOCate the grid at each function call, find better implementation
     ego_indices, ego_weights = interpolants(ego_grid, [s.ego.posG.x, s.ego.v])
 
-    if !isinf(s.ped.v)
+    if !off_the_grid(pomdp, s.ped)
         ped_grid = RectangleGrid(get_Y_grid(pomdp), get_V_ped_grid(pomdp))
         ped_indices, ped_weights = interpolants(ped_grid, [s.ped.posG.y, s.ped.v])
     else
@@ -81,12 +81,12 @@ end
 
 function POMDPs.action(policy::AlphaVectorPolicy, b::SingleOCDistribution)
     alphas = policy.alphas' #size |A|x|S|
-    util = zeros(n_actions(pomdp)) # size |A|
-    for i=1:n_actions(pomdp)
+    util = zeros(n_actions(policy.pomdp)) # size |A|
+    for i=1:n_actions(policy.pomdp)
         res = 0.0
         for (j,s) in enumerate(b.it)
-            si = state_index(pomdp, s)
-            res += alphas[i, si]*b.p[j]
+            si = state_index(policy.pomdp, s)
+            res += alphas[i][si]*b.p[j]
         end
         util[i] = res
     end

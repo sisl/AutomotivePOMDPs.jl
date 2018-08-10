@@ -78,31 +78,6 @@ function partial_pdf(d::SingleOCDistribution, sp::SingleOCState)
     return 0.
 end
 
-"""
-    function obs_weight(o::OCState, s::OCState, pomdp::OCPOMDP)
-Given a continuous observation returns a weight proportional to the probability of observing o
-while being in the state s
-"""
-function obs_weight(o::SingleOCState, s::SingleOCState, pomdp::SingleOCPOMDP)
-    weight = 1.0
-    if !is_observable_fixed(s.ego, s.ped, pomdp.env)
-        if off_the_grid(pomdp, o.ped)
-            return 3*weight
-        else
-            return 0.
-        end
-    else
-        if off_the_grid(pomdp, o.ped) || !is_observable_fixed(o.ego, o.ped, pomdp.env)
-            return 0.
-        else
-            pos_noise = pomdp.pos_obs_noise
-            vel_noise = pomdp.vel_obs_noise
-            weight *= 1/(sqrt(2*pi*pos_noise*vel_noise))*exp(-1/pos_noise*(s.ped.posG.y - o.ped.posG.y)^2 - 1/vel_noise*(s.ped.v - o.ped.v)^2)
-            return weight
-        end
-    end
-    return float(NaN)
-end
 
 """
     initialize_off_belief(pomdp::OCPOMDP)

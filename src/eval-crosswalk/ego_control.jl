@@ -18,7 +18,7 @@ end
     The driver model to be evaluated, contains the policy and the sensor model. The action is an
     acceleration updated by the observe! function at each time step
 """
-mutable struct CrosswalkDriver{A, B, O, P, U, S} <: DriverModel{Float64}
+mutable struct AVDriver{A, B, O, P, U, S} <: DriverModel{Float64}
     update_freq::Int64
     tick::Int64
     env::CrosswalkEnv
@@ -31,10 +31,10 @@ mutable struct CrosswalkDriver{A, B, O, P, U, S} <: DriverModel{Float64}
     updater::U
 end
 
-AutomotiveDrivingModels.get_name(model::CrosswalkDriver) = "CrosswalkDriver"
-Base.rand(model::CrosswalkDriver) = model.a # deterministic policy
+AutomotiveDrivingModels.get_name(model::AVDriver) = "AVDriver"
+Base.rand(model::AVDriver) = model.a # deterministic policy
 
-function AutomotiveDrivingModels.observe!(model::CrosswalkDriver,
+function AutomotiveDrivingModels.observe!(model::AVDriver,
                                           scene::EntityFrame{VehicleState, VehicleDef, Int64},
                                           roadway::Roadway,
                                           egoid::Int)
@@ -68,7 +68,7 @@ function initial_ego(env::CrosswalkEnv, rng::AbstractRNG)
                    VehicleDef(), 1)
 end
 
-function reset_model!(model::CrosswalkDriver, ego::Vehicle)
+function reset_model!(model::AVDriver, ego::Vehicle)
     model.tick = 0.
     model.a = 0.
     model.o = Dict{Int64, SingleOCState}()

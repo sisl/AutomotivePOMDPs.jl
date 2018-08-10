@@ -16,9 +16,8 @@ function POMDPs.transition(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAc
     ind = 1
     for (i,ego) in enumerate(ego_states)
         for (j,ped) in enumerate(ped_states)
-            crash = is_colliding(Vehicle(ego, pomdp.ego_type, 0),
-                                 Vehicle(ped, pomdp.ped_type, 1))
-            next_states[ind] = SingleOCState(crash, ego, ped)
+            collision = collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type)
+            next_states[ind] = SingleOCState(collision, ego, ped)
             next_probs[ind] = ped_probs[j]*ego_probs[i]
             ind += 1
         end

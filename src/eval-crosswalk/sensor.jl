@@ -62,12 +62,11 @@ function measure(scene::Scene, sensor::SimpleSensor, env::CrosswalkEnv)
         end
         car = veh.state
         if is_observable_fixed(ego.state, car, env)
-            y_pos = min(pomdp.y_goal, car.posG.y + pos_noise*randn())
             obs_state = VehicleState(VecSE2(car.posG.x + pos_noise*randn(),
-                                                      y_pos,
-                                                      car.posG.θ),
-                                                      env.roadway,
-                                                      car.v + vel_noise*randn())
+                                            car.posG.y + pos_noise*randn(),
+                                            car.posG.θ),
+                                     env.roadway,
+                                     car.v + vel_noise*randn())
             push!(o, Vehicle(obs_state, VehicleDef(), veh.id))
         end
     end

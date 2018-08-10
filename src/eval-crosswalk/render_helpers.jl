@@ -60,106 +60,106 @@ function animate_record(rec::SceneRecord)
     return duration, fps, render_rec
 end
 
-mutable struct WaitAndGoOverlay <: SceneOverlay
-    Δt::Float64
-    model::WaitAndGoModel
-    ttc::Float64
+# mutable struct WaitAndGoOverlay <: SceneOverlay
+#     Δt::Float64
+#     model::WaitAndGoModel
+#     ttc::Float64
 
-    target_id::Int
-    verbosity::Int
-    color::Colorant
-    font_size::Int
+#     target_id::Int
+#     verbosity::Int
+#     color::Colorant
+#     font_size::Int
 
-    function WaitAndGoOverlay( Δt::Float64, model::WaitAndGoModel, ttc::Float64 = Inf,
-        target_id::Int=1, verbosity::Int=1;
-        color::Colorant=colorant"white",
-        font_size::Int=20,
-        )
+#     function WaitAndGoOverlay( Δt::Float64, model::WaitAndGoModel, ttc::Float64 = Inf,
+#         target_id::Int=1, verbosity::Int=1;
+#         color::Colorant=colorant"white",
+#         font_size::Int=20,
+#         )
 
-        new(Δt, model, ttc, target_id, verbosity, color,font_size)
-    end
-end
+#         new(Δt, model, ttc, target_id, verbosity, color,font_size)
+#     end
+# end
 
-function reset_overlay!(overlay::WaitAndGoOverlay, ego::Vehicle)
-    reset_model!(overlay.model, ego)
-end
-
-
-function AutoViz.render!(rendermodel::RenderModel, overlay::WaitAndGoOverlay,
-                        scene::Scene, env::CrosswalkEnv)
-
-    # render overlay
-    font_size = overlay.font_size
-    text_y = font_size
-    text_y_jump = round(Int, font_size*1.2)
-
-    ego = scene[findfirst(scene, overlay.target_id)]
-
-    # display ego id
-    add_instruction!( rendermodel, render_text, (@sprintf("id = %d", overlay.target_id), 10, text_y, font_size, overlay.color), incameraframe=false)
-        text_y += text_y_jump
-    # display x position
-    add_instruction!( rendermodel, render_text, (@sprintf("x = %10.3f m", ego.state.posG.x), 10, text_y, font_size, overlay.color), incameraframe=false)
-        text_y += text_y_jump
-    # display ego speed
-    add_instruction!( rendermodel, render_text, (@sprintf("v = %10.3f m/s", ego.state.v), 10, text_y, font_size, overlay.color), incameraframe=false)
-    text_y += text_y_jump
-
-    # display acceleration
-    add_instruction!( rendermodel, render_text, (@sprintf("a = %10.3f m/s^2", overlay.model.a), 10, text_y, font_size, overlay.color), incameraframe=false)
-    text_y += text_y_jump
-    # display ttc
-    ttc_min = Inf
-    for veh in scene
-        if veh.id != overlay.target_id
-            ttc = (env.params.lane_width - veh.state.posG.y)/veh.state.v
-            if 0 < ttc < ttc_min
-                ttc_min = ttc
-            end
-        end
-    end
-    overlay.ttc = ttc_min
+# function reset_overlay!(overlay::WaitAndGoOverlay, ego::Vehicle)
+#     reset_model!(overlay.model, ego)
+# end
 
 
-    add_instruction!( rendermodel, render_text, (@sprintf("TTC = %10.3f s", overlay.ttc), 10, text_y, font_size, overlay.color), incameraframe=false)
-    text_y += text_y_jump
+# function AutoViz.render!(rendermodel::RenderModel, overlay::WaitAndGoOverlay,
+#                         scene::Scene, env::CrosswalkEnv)
 
-    # display state
-    state = "$(overlay.model.policy.reaching)$(overlay.model.policy.wait)$(overlay.model.policy.go)"
-    if overlay.model.policy.reaching
-        state = "reaching"
-    elseif overlay.model.policy.go
-        state = "go"
-    elseif overlay.model.policy.wait
-        state = "wait $(overlay.model.policy.N)"
-    end
-    add_instruction!( rendermodel, render_text, (state, 10, text_y, font_size, overlay.color), incameraframe=false)
-    text_y += text_y_jump
+#     # render overlay
+#     font_size = overlay.font_size
+#     text_y = font_size
+#     text_y_jump = round(Int, font_size*1.2)
 
-    #display observation
-    for veh in overlay.model.o
-        if veh.id == overlay.target_id
-            continue
-        end
-        color=RGBA(75./255, 66./255, 244./255, 0.5)
-        x, y, θ = veh.state.posG.x, veh.state.posG.y, veh.state.posG.θ
-        add_instruction!(rendermodel, render_vehicle, (x, y, θ, PEDESTRIAN_DEF.length, PEDESTRIAN_DEF.width, color))
-    end
+#     ego = scene[findfirst(scene, overlay.target_id)]
 
-    # Update overlay
-    observe!(overlay.model, scene, env.roadway, overlay.target_id)
-    rendermodel
-end
+#     # display ego id
+#     add_instruction!( rendermodel, render_text, (@sprintf("id = %d", overlay.target_id), 10, text_y, font_size, overlay.color), incameraframe=false)
+#         text_y += text_y_jump
+#     # display x position
+#     add_instruction!( rendermodel, render_text, (@sprintf("x = %10.3f m", ego.state.posG.x), 10, text_y, font_size, overlay.color), incameraframe=false)
+#         text_y += text_y_jump
+#     # display ego speed
+#     add_instruction!( rendermodel, render_text, (@sprintf("v = %10.3f m/s", ego.state.v), 10, text_y, font_size, overlay.color), incameraframe=false)
+#     text_y += text_y_jump
+
+#     # display acceleration
+#     add_instruction!( rendermodel, render_text, (@sprintf("a = %10.3f m/s^2", overlay.model.a), 10, text_y, font_size, overlay.color), incameraframe=false)
+#     text_y += text_y_jump
+#     # display ttc
+#     ttc_min = Inf
+#     for veh in scene
+#         if veh.id != overlay.target_id
+#             ttc = (env.params.lane_width - veh.state.posG.y)/veh.state.v
+#             if 0 < ttc < ttc_min
+#                 ttc_min = ttc
+#             end
+#         end
+#     end
+#     overlay.ttc = ttc_min
+
+
+#     add_instruction!( rendermodel, render_text, (@sprintf("TTC = %10.3f s", overlay.ttc), 10, text_y, font_size, overlay.color), incameraframe=false)
+#     text_y += text_y_jump
+
+#     # display state
+#     state = "$(overlay.model.policy.reaching)$(overlay.model.policy.wait)$(overlay.model.policy.go)"
+#     if overlay.model.policy.reaching
+#         state = "reaching"
+#     elseif overlay.model.policy.go
+#         state = "go"
+#     elseif overlay.model.policy.wait
+#         state = "wait $(overlay.model.policy.N)"
+#     end
+#     add_instruction!( rendermodel, render_text, (state, 10, text_y, font_size, overlay.color), incameraframe=false)
+#     text_y += text_y_jump
+
+#     #display observation
+#     for veh in overlay.model.o
+#         if veh.id == overlay.target_id
+#             continue
+#         end
+#         color=RGBA(75./255, 66./255, 244./255, 0.5)
+#         x, y, θ = veh.state.posG.x, veh.state.posG.y, veh.state.posG.θ
+#         add_instruction!(rendermodel, render_vehicle, (x, y, θ, PEDESTRIAN_DEF.length, PEDESTRIAN_DEF.width, color))
+#     end
+
+#     # Update overlay
+#     observe!(overlay.model, scene, env.roadway, overlay.target_id)
+#     rendermodel
+# end
 
 mutable struct QMDPOverlay <: SceneOverlay
-    model::CrosswalkDriver
+    model::AVDriver
     ttc::Float64
     target_id::Int
     verbosity::Int
     color::Colorant
     font_size::Int
 
-    function QMDPOverlay(model::CrosswalkDriver, ttc::Float64 = Inf,
+    function QMDPOverlay(model::AVDriver, ttc::Float64 = Inf,
         target_id::Int=1, verbosity::Int=1;
         color::Colorant=colorant"white",
         font_size::Int=20,
@@ -236,11 +236,12 @@ function AutoViz.render!(rendermodel::RenderModel, overlay::QMDPOverlay, scene::
 #             overlay.model.b[id].p[i]
 #             println(overlay.model.b[id].p[i])
                 p = overlay.model.b[id].it[i].ped.posG
-                if haskey(overlay.model.o, id)
-                    px = overlay.model.o[id].ped.posG.x
-                else
-                    px = p.x
-                end
+                # if haskey(overlay.model.o, id)
+                #     px = overlay.model.o[id].ped.posG.x
+                # else
+                #     px = p.x
+                # end
+                px = p.x
                 add_instruction!(rendermodel, render_vehicle, (px, p.y, p.θ, PEDESTRIAN_DEF.length, PEDESTRIAN_DEF.width, color))
             end
         end
@@ -271,7 +272,7 @@ function AutoViz.render!(rendermodel::RenderModel, overlay::QMDPOverlay, scene::
     text_y += 2.*text_y_jump
     add_instruction!(rendermodel, render_text, (@sprintf("Belief"), 120, text_y, font_size, overlay.color), incameraframe=false)
 
-    add_instruction!(rendermodel, render_text, (@sprintf("Absent state"), 400, 550, font_size, overlay.color), incameraframe=false)
+    add_instruction!(rendermodel, render_text, (@sprintf("Absent state"), 300, 400, font_size, overlay.color), incameraframe=false)
 
     add_instruction!( rendermodel, render_line, ([35. -5; 36 -5]', RGB(1.0, 0., 0.), 0.1))
     add_instruction!(rendermodel, render_text, (@sprintf("occluded target"), 730, 405, font_size, overlay.color), incameraframe=false)

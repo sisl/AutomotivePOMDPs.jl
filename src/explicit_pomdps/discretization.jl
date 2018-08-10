@@ -194,7 +194,8 @@ function ind2ego(env::UrbanEnv, ei::Int64, pos_res::Float64, v_res::Float64)
     s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
     v = v_space[vi]
     posF = Frenet(lane, s)
-    return VehicleState(posF, env.roadway, v)
+    posG = VecSE2{Float64}(NaN, NaN, NaN)
+    return VehicleState(posG, posF, v)
 end
 
 
@@ -266,7 +267,8 @@ function ind2car(env::UrbanEnv, ci::Int64, route::Vector{LaneTag}, pos_res::Floa
     s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
     v = v_space[vi]
     posF = Frenet(lane, s)
-    return VehicleState(posF, env.roadway, v)
+    posG = VecSE2{Float64}(NaN, NaN, NaN)
+    return VehicleState(posG, posF, v)
 
 end
 
@@ -321,7 +323,8 @@ function ind2ped(env::UrbanEnv, pedi::Int64, pos_res::Float64, v_res::Float64)
     v = v_space[vi]
     phi = phii == 1 ? 0. : float(pi)
     posF = Frenet(lane, s, 0., phi)
-    return VehicleState(posF, env.roadway, v)
+    posG = VecSE2{Float64}(NaN, NaN, NaN)
+    return VehicleState(posG, posF, v)
 end
 
 function find_range_index(r::Range{Float64}, s::Float64)
