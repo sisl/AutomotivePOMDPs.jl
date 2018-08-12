@@ -1,5 +1,5 @@
 # a bunch of interpolation helpers
-function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState)
+function interpolate_state(mdp::Union{CarMDP, PedMDP}, state::VehicleState)
     # interpolate longitudinal position and velocity
     if state.posG == mdp.off_grid
         return VehicleState[state], Float64[1.0]
@@ -13,15 +13,14 @@ function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::Vehicle
     probs = zeros(n_pts)
     for i=1:n_pts
         sg, vg = ind2x(grid, idx[i])
-        # states[i] = VehicleState(Frenet(lane, sg), mdp.env.roadway, vg)
-        states[i] = mdp._car_proj[(sg, vg, lane.tag)]
+        states[i] = VehicleState(Frenet(lane, sg), mdp.env.roadway, vg)
         probs[i] = weights[i]
     end
     return states, probs
 end
 
 
-function conservative_interpolation(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::VehicleState)
+function conservative_interpolation(mdp::Union{CarMDP, PedMDP}, state::VehicleState)
     # interpolate position and velocity separately
     if state.posG == mdp.off_grid
         return VehicleState[state], Float64[1.0]
@@ -87,7 +86,7 @@ function handle_junction(mdp, state)
 end
 
 # take into account heading as well
-function interpolate_pedestrian(mdp::Union{PedMDP, PedCarMDP}, state::VehicleState)
+function interpolate_pedestrian(mdp::Union{PedMDP}, state::VehicleState)
     # interpolate longitudinal position and velocity
     if state.posG == mdp.off_grid
         return (state,), (1.0,)
@@ -101,8 +100,7 @@ function interpolate_pedestrian(mdp::Union{PedMDP, PedCarMDP}, state::VehicleSta
     probs = zeros(n_pts)
     for i=1:n_pts
         sg, vg, phig = ind2x(grid, idx[i])
-        # states[i] = VehicleState(Frenet(lane, sg, 0., phig), mdp.env.ped_roadway, vg)
-        states[i] = mdp._ped_proj[(sg, vg, phig, lane.tag)]
+        states[i] = VehicleState(Frenet(lane, sg, 0., phig), mdp.env.ped_roadway, vg)
         probs[i] = weights[i]
     end
     return states, probs

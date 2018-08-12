@@ -177,10 +177,7 @@ export
     CarMDPAction,
     PedMDP,
     PedMDPState,
-    PedMDPAction,
-    PedCarMDP,
-    PedCarMDPState,
-    PedCarMDPAction
+    PedMDPAction
 export
     labeling,
     get_mdp_state,
@@ -208,7 +205,9 @@ export
     get_car_models,
     get_stop_model,
     get_ttc_model,
-    get_discretized_lane
+    get_discretized_lane,
+    interpolate_pedestrian,
+    interpolate_state
 
 # more discrete POMDPs
 include("explicit_pomdps/discretization.jl")
@@ -223,12 +222,12 @@ include("explicit_pomdps/pedestrian_mdp/state_space.jl")
 include("explicit_pomdps/pedestrian_mdp/transition.jl")
 include("explicit_pomdps/pedestrian_mdp/render_helpers.jl")
 include("explicit_pomdps/pedestrian_mdp/high_fidelity.jl")
-include("explicit_pomdps/pedcar_mdp/driver_models_helpers.jl")
-include("explicit_pomdps/pedcar_mdp/pomdp_types.jl")
-include("explicit_pomdps/pedcar_mdp/state_space.jl")
-include("explicit_pomdps/pedcar_mdp/transition.jl")
-include("explicit_pomdps/pedcar_mdp/high_fidelity.jl")
-include("explicit_pomdps/pedcar_mdp/render_helpers.jl")
+# include("explicit_pomdps/pedcar_mdp/driver_models_helpers.jl")
+# include("explicit_pomdps/pedcar_mdp/pomdp_types.jl")
+# include("explicit_pomdps/pedcar_mdp/state_space.jl")
+# include("explicit_pomdps/pedcar_mdp/transition.jl")
+# include("explicit_pomdps/pedcar_mdp/high_fidelity.jl")
+# include("explicit_pomdps/pedcar_mdp/render_helpers.jl")
 include("explicit_pomdps/interpolation.jl")
 
 
