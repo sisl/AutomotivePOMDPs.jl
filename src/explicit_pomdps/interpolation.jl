@@ -13,7 +13,8 @@ function interpolate_state(mdp::Union{CarMDP, PedMDP, PedCarMDP}, state::Vehicle
     probs = zeros(n_pts)
     for i=1:n_pts
         sg, vg = ind2x(grid, idx[i])
-        states[i] = VehicleState(Frenet(lane, sg), mdp.env.roadway, vg)
+        # states[i] = VehicleState(Frenet(lane, sg), mdp.env.roadway, vg)
+        states[i] = mdp._car_proj[(sg, vg, lane.tag)]
         probs[i] = weights[i]
     end
     return states, probs
@@ -100,7 +101,8 @@ function interpolate_pedestrian(mdp::Union{PedMDP, PedCarMDP}, state::VehicleSta
     probs = zeros(n_pts)
     for i=1:n_pts
         sg, vg, phig = ind2x(grid, idx[i])
-        states[i] = VehicleState(Frenet(lane, sg, 0., phig), mdp.env.ped_roadway, vg)
+        # states[i] = VehicleState(Frenet(lane, sg, 0., phig), mdp.env.ped_roadway, vg)
+        states[i] = mdp._ped_proj[(sg, vg, phig, lane.tag)]
         probs[i] = weights[i]
     end
     return states, probs

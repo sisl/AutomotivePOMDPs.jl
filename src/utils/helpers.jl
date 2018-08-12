@@ -156,6 +156,16 @@ function get_lanes(roadway::Roadway)
     return lanes
 end
 
+function get_all_lanes(roadway::Roadway)
+    lanes = Lane[]
+    for i=1:length(roadway.segments)
+        for lane in roadway.segments[i].lanes
+            push!(lanes, lane)
+        end
+    end
+    return lanes
+end
+
 """
 return the list of exit lanes, i.e. the one that does not have any exits
 """

@@ -331,37 +331,6 @@ function find_range_index(r::Range{Float64}, s::Float64)
     return clamp(round(Int, ((s - first(r))/step(r) + 1)), 1, length(r))
 end
 
-
-# transition as SparseCat?
-# ego transition is known
-# crash states are terminal
-# goal states are terminal
-
-
-# enumerate all the possible car routes
-# function get_car_routes(env::UrbanEnv)
-#     #TODO implement a routing algorithm
-#     straight_from_left = SVector(env.roadway[LaneTag(1, 1)],
-#                                        env.roadway[LaneTag(7, 1)],
-#                                        env.roadway[LaneTag(2, 1)])
-
-#     left_from_left = SVector(env.roadway[LaneTag(1, 1)],
-#                                       env.roadway[LaneTag(9, 1)],
-#                                       env.roadway[LaneTag(10, 1)],
-#                                       env.roadway[LaneTag(5, 1)])
-
-#     straight_from_right = SVector(env.roadway[LaneTag(3, 1)],
-#                                        env.roadway[LaneTag(8, 1)],
-#                                        env.roadway[LaneTag(4, 1)])
-
-#     right_from_right = SVector(env.roadway[LaneTag(3, 1)],
-#                                        env.roadway[LaneTag(11, 1)],
-#                                        env.roadway[LaneTag(12, 1)],
-#                                        env.roadway[LaneTag(5, 1)])
-#     return SVector(straight_from_left, left_from_left, straight_from_right, right_from_right)
-# end
-
-
 function get_car_routes(env::UrbanEnv)
     return [[LaneTag(1,1), LaneTag(7,1), LaneTag(2,1)],
               [LaneTag(1,1), LaneTag(9,1), LaneTag(10, 1), LaneTag(5, 1)],
@@ -394,4 +363,35 @@ function find_route(env::UrbanEnv, route::SVector{2, LaneTag})
     # should never reach this point 
     @assert false "RouteNotFound for route=$route"
     return routes[1]
+end
+
+function car_projection(env::UrbanEnv, pos_res::Float64, vel_res::Float64)
+    proj_dict = Dict{Tuple{Float64, Float64, LaneTag}, VehicleState}()
+    for lane in get_all_lanes(env.roadway)
+        if !is_crosswalk(lane)
+            dlane = get_discretized_lane(lane.tag, env.roadway, pos_res)
+            vspace = get_car_vspace(env, vel_res)
+            for s in dlane 
+                for v in vspace 
+                    proj_dict[(s, v, lane.tag)] = VehicleState(Frenet(lane, s), env.roadway, v)
+                end
+            end
+        end
+    end
+    return proj_dict
+end
+
+function ped_projection(env::UrbanEnv, pos_res::Float64, vel_res::Float64)
+    proj_dict = Dict{Tuple{Float64, Float64, Float64, LaneTag}, VehicleState}()
+    for lane in get_all_lanes(env.ped_roadway)
+        vspace = get_ped_vspace(env, vel_res)
+        dlane = get_discretized_lane(lane.tag, env.roadway, pos_res)
+        for s in dlane 
+            for v in vspace 
+                proj_dict[(s, v, 0., lane.tag)] = VehicleState(Frenet(lane, s, 0., 0.), env.ped_roadway, v)
+                proj_dict[(s, v, float(pi), lane.tag)] = VehicleState(Frenet(lane, s, 0., float(pi)), env.ped_roadway, v)
+            end
+        end
+    end
+    return proj_dict
 end
