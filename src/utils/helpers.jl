@@ -27,7 +27,7 @@ function is_crash(scene::Scene)
     ego = scene[findfirst(scene, EGO_ID)]
     for veh in scene
         if veh.id != 1
-            if is_colliding(ego, veh) #&& !(ego.state.v == 0. && veh.def.class == AgentClass.PEDESTRIAN)
+            if collision_checker(ego, veh) #&& !(ego.state.v == 0. && veh.def.class == AgentClass.PEDESTRIAN)
                 return true
             end
         end
@@ -107,7 +107,11 @@ end
 
 ### ROADWAY STUFF
 
-
+"""
+    get_lane(roadway::Roadway, vehicle::Vehicle)
+    get_lane(roadway::Roadway, vehicle::VehicleState)
+return the lane where `vehicle` is in.
+"""
 function get_lane(roadway::Roadway, vehicle::Vehicle)
     lane_tag = vehicle.state.posF.roadind.tag
     return roadway[lane_tag]
@@ -117,9 +121,13 @@ function get_lane(roadway::Roadway, vehicle::VehicleState)
     return roadway[lane_tag]
 end
 
+"""
+    get_end(lane::Lane)
+return the end longitudinal position of a lane 
+"""
 function get_end(lane::Lane)
     s_end = round(lane.curve[end].s)
-    if s_end % 2 == 1
+    if s_end % 2 == 1 #XXX hack
         s_end -= 1
     end
     return s_end
@@ -142,13 +150,21 @@ function get_start_lanes(roadway::Roadway)
     return lanes
 end
 
+"""
+    is_crosswalk(lane::Lane) 
+returns true if a lane is a crosswalk
+"""
 is_crosswalk(lane::Lane) = lane.width > 3.0  #XXX hack
 
+"""
+    get_lanes(roadway::Roadway)
+return all the lanes in a roadway that are not crosswalk and not in the ego path 
+"""
 function get_lanes(roadway::Roadway)
     lanes = Lane[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
-            if !is_crosswalk(lane) && !(lane.tag ∈ [LaneTag(15,1), LaneTag(16, 1), LaneTag(6,1), LaneTag(13, 1), LaneTag(14,1)])
+            if !is_crosswalk(lane) && !(lane.tag ∈ [LaneTag(15,1), LaneTag(16, 1), LaneTag(6,1), LaneTag(13, 1), LaneTag(14,1)]) #XXX hack
                 push!(lanes, lane)
             end
         end
@@ -156,6 +172,10 @@ function get_lanes(roadway::Roadway)
     return lanes
 end
 
+"""
+    get_all_lanes(roadway::Roadway)
+returns a list of all the lanes present in `roadway`
+"""
 function get_all_lanes(roadway::Roadway)
     lanes = Lane[]
     for i=1:length(roadway.segments)

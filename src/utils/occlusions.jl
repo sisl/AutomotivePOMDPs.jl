@@ -1,7 +1,11 @@
 
 
 """
-Occlusion checker with fixed obstacles
+    is_observable_fixed(ego::VehicleState, car::VehicleState, env::OccludedEnv)
+    is_observable_fixed(x::Float64, y::Float64, ego::VehicleState, env::OccludedEnv)
+Occlusion checker considering only fixed obstacles in the environment:
+- is_observable_fixed(ego::VehicleState, car::VehicleState, env::OccludedEnv) check if car is observable from ego
+- is_observable_fixed(x::Float64, y::Float64, ego::VehicleState, env::OccludedEnv) check if x, y is observable from ego
 """
 function is_observable_fixed(ego::VehicleState, car::VehicleState, env::OccludedEnv)
     m = length(env.obstacles)
@@ -31,7 +35,9 @@ function is_observable_fixed(x::Float64, y::Float64, ego::VehicleState, env::Occ
 end
 
 """
-Occlusion checker with dynamic obstacles only
+    is_observable_dyna(ego::Vehicle, car::Vehicle, scene::Scene)
+Occlusion checker verifying is `car` is observable from `ego`
+It considers only other vehicles (not pedestrians, not fixed obstacles)
 """
 function is_observable_dyna(ego::Vehicle, car::Vehicle, scene::Scene)
     front = ego.state.posG + polar(ego.def.length/2, ego.state.posG.θ)
@@ -52,7 +58,8 @@ end
 
 
 """
-General occlusion checker
+    is_observable(ego::Vehicle, car::Vehicle, scene::Scene, env::OccludedEnv)
+Check if car is observable from ego, by considering both fixed and dynamic obstacles
 """
 function is_observable(ego::Vehicle, car::Vehicle, scene::Scene, env::OccludedEnv)
     return is_observable_dyna(ego, car, scene) && is_observable_fixed(ego.state, car.state, env)

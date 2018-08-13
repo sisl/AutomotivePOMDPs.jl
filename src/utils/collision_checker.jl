@@ -1,4 +1,15 @@
 
+
+"""
+    collision_checker(veh_a::Vehicle, veh_b::Vehicle)
+    collision_checker(veh_a::VehicleState, veh_b::VehicleState, veh_a_def::VehicleDef, veh_b_def::VehicleDef)
+return True if `veh_a` and `veh_b` collides.
+Relies on the parallel axis theorem.
+"""
+function collision_checker(veh_a::Vehicle, veh_b::Vehicle)
+    return collision_checker(veh_a.state, veh_b.state, veh_a.def, veh_b.def)
+end
+
 function collision_checker(veh_a::VehicleState, veh_b::VehicleState, veh_a_def::VehicleDef, veh_b_def::VehicleDef)
     center_a = veh_a.posG
     center_b = veh_b.posG
@@ -17,17 +28,18 @@ function collision_checker(veh_a::VehicleState, veh_b::VehicleState, veh_a_def::
     return false
 end
 
+""" 
+    polygon(pos::VecSE2{Float64}, veh_def::VehicleDef)
+    polygon(x::Float64,y::Float64,theta::Float64,veh_def::VehicleDef)
+returns a 4x2 static matrix corresponding to a rectangle around a car
+centered at `pos` and of dimensions specified by `veh_def`
+"""
 function polygon(pos::VecSE2{Float64}, veh_def::VehicleDef)
     x, y ,θ = pos 
     return polygon(x, y, θ, veh_def)
 end
 
 function polygon(x::Float64,y::Float64,theta::Float64,veh_def::VehicleDef)
-    """ take the position of the car and the orientation and return the
-    verteces of the safety polygon
-     car located at x,y with orientation theta
-    the safety margin around the car are lsafe,wsafe"""
-
     # aliases
     lcar  = veh_def.length
     wcar  = veh_def.width
@@ -62,15 +74,17 @@ function polygon(x::Float64,y::Float64,theta::Float64,veh_def::VehicleDef)
 end
 
 ### POLYGON INTERSECTION USING PARALLEL AXIS THEOREM
-# polygon a ,
-# polygon described as a nx2 matrix
 
+""" 
+    overlap(poly_a::SMatrix{4, 2, Float64}, poly_b::SMatrix{4, 2, Float64})
+Check if two convex polygons overlap, using the parallel axis theorem
+a polygon is a nx2 matrix where n in the number of verteces
+http://gamemath.com/2011/09/detecting-whether-two-convex-polygons-overlap/ 
+  /!\ edges needs to be ordered
+"""
 function overlap(poly_a::SMatrix{4, 2, Float64},
                 poly_b::SMatrix{4, 2, Float64})
-    """ Check if two convex polygons overlap
-    a polygon is a nx2 matrix where n in the number of verteces
-        http://gamemath.com/2011/09/detecting-whether-two-convex-polygons-overlap/ """
-
+  
     if find_separating_axis(poly_a, poly_b)
         return false
     end
@@ -82,11 +96,14 @@ function overlap(poly_a::SMatrix{4, 2, Float64},
 
 end
 
+""" 
+    find_separating_axis(poly_a::SMatrix{4, 2, Float64}, poly_b::SMatrix{4, 2, Float64})
+
+build a list of candidate separating axes from the edges of a
+  /!\ edges needs to be ordered
+"""
 function find_separating_axis(poly_a::SMatrix{4, 2, Float64},
                               poly_b::SMatrix{4, 2, Float64})
-    """ build a list of candidate separating axes from the edges of a
-        /!\ edges needs to be ordered"""
-
     n_a = size(poly_a)[1]
     n_b = size(poly_b)[1]
     axis = zeros(2)
@@ -121,10 +138,13 @@ function find_separating_axis(poly_a::SMatrix{4, 2, Float64},
     return false
 end
 
+"""
+    polygon_projection(poly::SMatrix{4, 2, Float64}, axis::Vector{Float64})
+
+return the projection interval for the polygon poly over the axis axis 
+"""
 function polygon_projection(poly::SMatrix{4, 2, Float64},
                             axis::Vector{Float64})
-        """ return the projection interval for the polygon poly over the axis axis """
-
         n_a = size(poly)[1]
         @inbounds @fastmath @views d1 = dot(poly[1,:],axis)
         @inbounds @fastmath @views d2 = dot(poly[2,:],axis)
@@ -139,7 +159,6 @@ function polygon_projection(poly::SMatrix{4, 2, Float64},
 
         for i=1:n_a
             @inbounds @fastmath @views d = dot(poly[i,:],axis)
-
             if d < out_min
                 out_min = d
             elseif d > out_max
