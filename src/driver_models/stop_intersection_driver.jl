@@ -182,18 +182,6 @@ function update_priority!(model::StopIntersectionDriver, scene::Scene, roadway::
                        !(get_lane(roadway, ego) ∈ model.intersection_entrances)
 end
 
-"""
-Return the distance to the end of the lane
-"""
-function get_dist_to_end(veh::Vehicle, roadway::Roadway)
-    lane = get_lane(roadway, veh)
-    s_end = get_end(lane)
-    dist_to_end = s_end - veh.state.posF.s
-    # println("dist_to_end ", dist_to_end)
-    # println("State ", veh.state.posF)
-    return dist_to_end
-end
-
 
 ## Fancier priority model
 function check_priority(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)

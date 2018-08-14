@@ -4,9 +4,12 @@ Return the longitudinal acceleration to come to a stop at the end of the current
 follows idm style braking
 """
 function stop_at_end(model::DriverModel, veh::Vehicle, roadway::Roadway)
+    return stop_at_end(model, veh.state, roadway)
+end
+function stop_at_end(model::DriverModel, veh::VehicleState, roadway::Roadway)
     # run the IDM model, consider that the stop line is a fixed vehicle
     headway = get_dist_to_end(veh, roadway)
-    return stop_at_dist(model, veh.state, headway)
+    return stop_at_dist(model, veh, headway)
 end
 
 """
@@ -46,4 +49,19 @@ function update_stop!(model::DriverModel, veh::Vehicle, roadway::Roadway)
     if veh.state.v ≈ 0. && isapprox(dist_to_end - model.stop_delta, 0, atol=0.5) # parameterize rtol?
         model.stop = true
     end
+end
+
+"""
+Return the distance to the end of the lane
+"""
+function get_dist_to_end(veh::Vehicle, roadway::Roadway)
+    return get_dist_to_end(veh.state, roadway)
+end
+function get_dist_to_end(veh::VehicleState, roadway::Roadway)
+    lane = get_lane(roadway, veh)
+    s_end = get_end(lane)
+    dist_to_end = s_end - veh.posF.s
+    # println("dist_to_end ", dist_to_end)
+    # println("State ", veh.state.posF)
+    return dist_to_end
 end
