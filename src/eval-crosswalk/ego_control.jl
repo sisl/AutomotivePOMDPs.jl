@@ -39,7 +39,7 @@ function AutomotiveDrivingModels.observe!(model::AVDriver,
                                           roadway::Roadway,
                                           egoid::Int)
     # @assert scene[1].id == egoid
-    model.o = measure(scene, model.sensor, env)
+    model.o = measure(scene, model.sensor, model.env)
     b_ = update(model.updater, model.b, model.a, model.o)
     # f = open("timing.csv", "a")
     # write(f,"belief, $btime, $(scene.n - 1) \n")
