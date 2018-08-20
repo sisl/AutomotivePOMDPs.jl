@@ -59,7 +59,7 @@ function clean_scene!(env::OccludedEnv, scene::Scene)
     end
     for veh in scene
         for veh_ in scene
-            if is_colliding(veh, veh_) &&
+            if collision_checker(veh, veh_) &&
                veh.id != 1 && veh_.id != 1 &&
                veh.id != veh_.id &&
                veh_.def.class != AgentClass.PEDESTRIAN && veh.def.class != AgentClass.PEDESTRIAN &&
