@@ -54,8 +54,10 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     # if model.stop
     model.priority =  ttc_check(model, scene, roadway, egoid)
     if !model.priority
-        if !passed && engaged(model, scene, roadway, egoid) 
-            a_lon = -model.navigator.d_max
+        # if !passed && engaged(model, scene, roadway, egoid) 
+        #     a_lon = -model.navigator.d_max
+        if engaged(model, scene, roadway, egoid)
+            return a_lon_idm
         elseif !passed
             a_lon =  min(a_lon_idm, stop_at_end(model, ego, roadway))
         end
