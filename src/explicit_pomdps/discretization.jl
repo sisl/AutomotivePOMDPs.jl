@@ -368,6 +368,19 @@ function find_route(env::UrbanEnv, route::SVector{2, LaneTag})
     return routes[1]
 end
 
+function find_route(env::UrbanEnv, route::Vector{Lane})
+    routes = get_car_routes(env)
+    for full_route in routes
+        if full_route[end] == route[end].tag && full_route[1] == route[1].tag ||
+           full_route[end] == route[end].tag && length(route) == 1 ||
+           route[1].tag ∈ full_route && full_route[end] == route[end].tag
+            return full_route
+        end
+    end
+    @assert false "RouteNotFound for route=$route"
+    return routes[1]
+end
+
 function car_projection(env::UrbanEnv, pos_res::Float64, vel_res::Float64)
     proj_dict = Dict{Tuple{Float64, Float64, LaneTag}, VehicleState}()
     for lane in get_all_lanes(env.roadway)

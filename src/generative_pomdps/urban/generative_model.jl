@@ -48,48 +48,8 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
         new_car = initial_car(pomdp, sp, rng)
         if can_push(pomdp.env, sp, new_car)
             lane = get_lane(pomdp.env.roadway, new_car)
-            route = random_route(rng, pomdp.env.roadway, lane)
-            intersection_entrances = get_start_lanes(pomdp.env.roadway)
-            if !(route[1] ∈ intersection_entrances)
-                intersection = Lane[]
-                intersection_exits = Lane[]
-            else
-                intersection_exits = get_exit_lanes(pomdp.env.roadway)
-                intersection=Lane[route[1], route[2]]
-            end
-            navigator = RouteFollowingIDM(route=route, a_max=pomdp.a_noise)
-            intersection_driver = TTCIntersectionDriver(navigator = navigator,
-                                                        intersection = intersection,
-                                                        intersection_pos = VecSE2(pomdp.env.params.inter_x,
-                                                                                  pomdp.env.params.inter_y),
-                                                        stop_delta = maximum(pomdp.env.params.crosswalk_width),
-                                                        accel_tol = 0.,
-                                                        priorities = pomdp.env.priorities,
-                                                        ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
-                                                        )
-            # intersection_driver = StopIntersectionDriver(navigator= navigator,
-            #                                          intersection=intersection,
-            #                                          intersection_entrances = intersection_entrances,
-            #                                          intersection_exits = intersection_exits,
-            #                                          stop_delta=maximum(pomdp.env.params.crosswalk_width),
-            #                                          accel_tol=0.,
-            #                                          priorities = pomdp.env.priorities)
-            crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
-            # println("adding veh ", new_car.id)
-            for i=1:length(pomdp.env.crosswalks)
-                cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalks[i], pomdp.env.roadway)
-                crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
-                                         crosswalk = pomdp.env.crosswalks[i],
-                                         conflict_lanes = cw_conflict_lanes,
-                                         intersection_entrances = intersection_entrances,
-                                         yield=!isempty(intersect(cw_conflict_lanes, route))
-                                         )
-                # println(" yield to cw ", i, " ", crosswalk_drivers[i].yield)
-            end
-            pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
-                                                    intersection_driver=intersection_driver,
-                                                    crosswalk_drivers=crosswalk_drivers
-                                                    )
+            route = find_route(pomdp.env, random_route(rng, pomdp.env.roadway, lane))
+            pomdp.models[new_car.id] = pomdp.car_models[SVector(route[1], route[end])]
             push!(sp, new_car)
         end
     end
@@ -151,52 +111,9 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
             if can_push(pomdp.env, scene, new_car)
                 push!(scene, new_car)
                 lane = get_lane(pomdp.env.roadway, new_car)
-                route = random_route(rng, pomdp.env.roadway, lane)
-                intersection_entrances = get_start_lanes(pomdp.env.roadway)
-                if !(route[1] ∈ intersection_entrances)
-                    intersection = Lane[]
-                    intersection_exits = Lane[]
-                else
-                    intersection_exits = get_exit_lanes(pomdp.env.roadway)
-                    intersection=Lane[route[1], route[2]]
-                end
-                navigator = RouteFollowingIDM(route=route, a_max=pomdp.a_noise)
-                intersection_driver = TTCIntersectionDriver(navigator = navigator,
-                                                            intersection = intersection,
-                                                            intersection_pos = VecSE2(pomdp.env.params.inter_x,
-                                                            pomdp.env.params.inter_y),
-                                                            stop_delta = maximum(pomdp.env.params.crosswalk_width),
-                                                            accel_tol = 0.,
-                                                            priorities = pomdp.env.priorities,
-                                                            ttc_threshold = (pomdp.env.params.x_max - pomdp.env.params.inter_x)/pomdp.env.params.speed_limit
-                                                            )
-                # intersection_driver = StopIntersectionDriver(navigator= navigator,
-                #                                          intersection=intersection,
-                #                                          intersection_entrances = intersection_entrances,
-                #                                          intersection_exits = intersection_exits,
-                #                                          stop_delta=maximum(pomdp.env.params.crosswalk_width),
-                #                                          accel_tol=0.,
-                #                                          priorities = pomdp.env.priorities)
-                crosswalk_drivers = Vector{CrosswalkDriver}(length(pomdp.env.crosswalks))
-                # println("adding veh ", new_car.id)
-                for i=1:length(pomdp.env.crosswalks)
-                    cw_conflict_lanes = get_conflict_lanes(pomdp.env.crosswalks[i], pomdp.env.roadway)
-                    crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,
-                                            crosswalk = pomdp.env.crosswalks[i],
-                                            conflict_lanes = cw_conflict_lanes,
-                                            intersection_entrances = intersection_entrances,
-                                            yield=!isempty(intersect(cw_conflict_lanes, route))
-                                            )
-                    # println(" yield to cw ", i, " ", crosswalk_drivers[i].yield)
-                end
-                pomdp.models[new_car.id] = UrbanDriver(navigator=navigator,
-                                                       intersection_driver=intersection_driver,
-                                                       crosswalk_drivers=crosswalk_drivers
-                                                       )
+                route = find_route(pomdp.env, random_route(rng, pomdp.env.roadway, lane))
+                pomdp.models[new_car.id] = pomdp.car_models[SVector(route[1], route[end])]
             end
-            # pomdp.models[new_car.id] = RouteFollowingIDM(route = random_route(rng,
-            #                                                                   pomdp.env.roadway,
-            #                                                                   get_lane(pomdp.env.roadway, new_car)))
             clean_scene!(pomdp.env, scene)
         end
     end
@@ -229,7 +146,7 @@ function initial_car(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, first_sc
         s0 = rand(rng, 0.:0.5:get_end(lane))
     else
         lanes = get_start_lanes(pomdp.env.roadway)
-        lanes = delete!(Set(lanes),pomdp.env.roadway[LaneTag(6,1)])
+        # lanes = delete!(Set(lanes),pomdp.env.roadway[LaneTag(6,1)])
         lane = rand(rng, lanes) # could be precomputed
     end
     initial_posF = Frenet(lane, s0)
@@ -295,21 +212,22 @@ function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp:
     end
 end
 
-# TODO find a better way to implement this to switch more easily between representations
 function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
-    #TODO sort scene sp by ID!
-    sorted_vehicles =  sort(sp.entities[1:sp.n], by=x->x.id)
+    ego = get_ego(sp)
+    obs = measure(pomdp.sensor, ego, sp, pomdp.env.roadway, pomdp.env.obstacles)
+    o = obs_to_array(pomdp, ego, obs)
+    return o 
+end
+
+function obs_to_array(pomdp::UrbanPOMDP, ego_veh::Vehicle, obs::Vector{Vehicle})
+    sorted_vehicles = sort!(obs, by=x->x.id)
     n_features = 4
     if pomdp.obstacles
         n_obstacles = 3
     else
         n_obstacles = 0
     end
-    pos_noise = pomdp.pos_obs_noise
-    vel_noise = pomdp.vel_obs_noise
     o = zeros(n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1))
-    ego_veh =sp[findfirst(sp, EGO_ID)] 
-    @assert ego_veh.id == sorted_vehicles[1].id "first vehicle is $(sorted_vehicles[1].id), $([veh.id for veh in sorted_vehicles]), last ego state $(s[findfirst(s, EGO_ID)] ) "
     ego = ego_veh.state
     o[1] = ego.posG.x
     o[2] = ego.posG.y
@@ -327,23 +245,17 @@ function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::
             continue
         end
         if veh.def.class == AgentClass.CAR
-        # @assert veh.id <= pomdp.max_cars+1
-            if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
-                o[n_features*veh.id - 3] = veh.state.posG.x + pos_noise*randn(rng)
-                o[n_features*veh.id - 2] = veh.state.posG.y + pos_noise*randn(rng)
-                o[n_features*veh.id - 1] = veh.state.posG.θ
-                o[n_features*veh.id] = veh.state.v + vel_noise*randn(rng)
-            end
+            @assert veh.id <= pomdp.max_cars+1
+            o[n_features*veh.id - 3] = veh.state.posG.x
+            o[n_features*veh.id - 2] = veh.state.posG.y
+            o[n_features*veh.id - 1] = veh.state.posG.θ
+            o[n_features*veh.id] = veh.state.v
         end
         if veh.def.class == AgentClass.PEDESTRIAN
-            # println(" veh id ", veh.id)
-            # println(" index " , n_features*(veh.id - 100 + pomdp.max_cars + 1))
-            if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
-                o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x + pos_noise*randn(rng)
-                o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y + pos_noise*randn(rng)
-                o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ
-                o[n_features*(veh.id - 100 + pomdp.max_cars + 1)] = veh.state.v + vel_noise*randn(rng)
-            end
+            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x
+            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y
+            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ
+            o[n_features*(veh.id - 100 + pomdp.max_cars + 1)] = veh.state.v
         end
     end
     for (j,obs) in enumerate(pomdp.env.obstacles)
@@ -354,6 +266,84 @@ function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::
     end
     return rescale!(o, pomdp)
 end
+
+function POMDPs.convert_s(::Type{Vector{Float64}}, s::UrbanState, pomdp::UrbanPOMDP)
+    ego = get_ego(s)
+    obs = [veh for veh in s if veh.id != ego]
+    svec = obs_to_array(pomdp, ego, obs)
+    return svec
+end
+
+function n_dims(pomdp::UrbanPOMDP)
+    n_features = 4
+    if pomdp.obstacles
+        n_obstacles = 3
+    else
+        n_obstacles = 0
+    end
+    return n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1)
+end
+
+
+# TODO find a better way to implement this to switch more easily between representations
+# function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
+#     #TODO sort scene sp by ID!
+#     sorted_vehicles =  sort(sp.entities[1:sp.n], by=x->x.id)
+#     n_features = 4
+#     if pomdp.obstacles
+#         n_obstacles = 3
+#     else
+#         n_obstacles = 0
+#     end
+#     pos_noise = pomdp.pos_obs_noise
+#     vel_noise = pomdp.vel_obs_noise
+#     o = zeros(n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1))
+#     ego_veh =sp[findfirst(sp, EGO_ID)] 
+#     @assert ego_veh.id == sorted_vehicles[1].id "first vehicle is $(sorted_vehicles[1].id), $([veh.id for veh in sorted_vehicles]), last ego state $(s[findfirst(s, EGO_ID)] ) "
+#     ego = ego_veh.state
+#     o[1] = ego.posG.x
+#     o[2] = ego.posG.y
+#     o[3] = ego.posG.θ
+#     o[4] = ego.v
+#     pos_off = get_off_the_grid(pomdp)
+#     for i=2:pomdp.max_cars + pomdp.max_peds + n_obstacles + 1
+#         o[n_features*i - 3] = pos_off.posG.x
+#         o[n_features*i - 2] = pos_off.posG.y
+#         o[n_features*i - 1] = pos_off.posG.θ
+#         o[n_features*i] = 0.
+#     end
+#     for veh in sorted_vehicles
+#         if veh.id == EGO_ID
+#             continue
+#         end
+#         if veh.def.class == AgentClass.CAR
+#         # @assert veh.id <= pomdp.max_cars+1
+#             if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
+#                 o[n_features*veh.id - 3] = veh.state.posG.x + pos_noise*randn(rng)
+#                 o[n_features*veh.id - 2] = veh.state.posG.y + pos_noise*randn(rng)
+#                 o[n_features*veh.id - 1] = veh.state.posG.θ
+#                 o[n_features*veh.id] = veh.state.v + vel_noise*randn(rng)
+#             end
+#         end
+#         if veh.def.class == AgentClass.PEDESTRIAN
+#             # println(" veh id ", veh.id)
+#             # println(" index " , n_features*(veh.id - 100 + pomdp.max_cars + 1))
+#             if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
+#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x + pos_noise*randn(rng)
+#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y + pos_noise*randn(rng)
+#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ
+#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1)] = veh.state.v + vel_noise*randn(rng)
+#             end
+#         end
+#     end
+#     for (j,obs) in enumerate(pomdp.env.obstacles)
+#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 3] = get_width(obs)
+#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 2] = get_height(obs)
+#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 1] = get_center(obs).x
+#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1)] = get_center(obs).y
+#     end
+#     return rescale!(o, pomdp)
+# end
 
 function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
     return generate_o(pomdp, s, UrbanAction(0.), s, rng::AbstractRNG)

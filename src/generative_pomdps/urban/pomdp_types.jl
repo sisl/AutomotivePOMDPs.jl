@@ -27,7 +27,7 @@ end
     env::UrbanEnv = UrbanEnv()
     obs_dist::ObstacleDistribution = ObstacleDistribution(UrbanEnv())
     lidar::Bool = false
-    sensor::LidarSensor = LidarSensor(50, max_range=30., angle_spread=float(pi))
+    sensor::AbstractSensor = GaussianSensor()
     models::Dict{Int64, DriverModel} = Dict{Int64, DriverModel}(1=>EgoDriver(UrbanAction(0.)))
     ego_type::VehicleDef = VehicleDef()
     car_type::VehicleDef = VehicleDef()
@@ -39,6 +39,7 @@ end
     ego_start::Float64 = env.params.stop_line - ego_type.length/2
     ego_goal::LaneTag = LaneTag(2,2)
     off_grid::VecSE2 = VecSE2(UrbanEnv().params.x_min+VehicleDef().length/2, UrbanEnv().params.y_min+VehicleDef().width/2, 0)
+    car_models::Dict{SVector{2, LaneTag}, DriverModel} = get_car_models(env, get_ttc_model)
     ΔT::Float64 = 0.5 # decision frequency
     car_birth::Float64 = 0.3
     ped_birth::Float64 = 0.3
@@ -71,4 +72,21 @@ function POMDPs.action_index(pomdp::UrbanPOMDP, action::UrbanAction)
     else
         return 4
     end
+end
+
+function get_car_models(env::UrbanEnv, get_model::Function)
+    d = Dict{SVector{2, LaneTag}, DriverModel}()
+
+    r1 = SVector(LaneTag(1,1), LaneTag(2,1))
+    d[r1] = get_model(env, r1)
+
+    r2 = SVector(LaneTag(1,1), LaneTag(5,1))
+    d[r2] = get_model(env, r2)
+
+    r3 = SVector(LaneTag(3,1), LaneTag(4,1))
+    d[r3] = get_model(env, r3)
+    
+    r4 = SVector(LaneTag(3,1), LaneTag(5,1)) 
+    d[r4] = get_model(env, r4)
+    return d
 end

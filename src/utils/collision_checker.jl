@@ -36,16 +36,12 @@ centered at `pos` and of dimensions specified by `veh_def`
 """
 function polygon(pos::VecSE2{Float64}, veh_def::VehicleDef)
     x, y ,θ = pos 
-    return polygon(x, y, θ, veh_def)
+    return polygon(x, y, θ, veh_def.length, veh_def.width)
 end
 
-function polygon(x::Float64,y::Float64,theta::Float64,veh_def::VehicleDef)
-    # aliases
-    lcar  = veh_def.length
-    wcar  = veh_def.width
-
-    l_ = lcar/2
-    w_ = wcar/2
+function polygon(x::Float64,y::Float64,theta::Float64, length::Float64, width::Float64)
+    l_ = length/2
+    w_ = width/2
 
     # compute each vertex:
     @fastmath begin 
@@ -82,8 +78,8 @@ a polygon is a nx2 matrix where n in the number of verteces
 http://gamemath.com/2011/09/detecting-whether-two-convex-polygons-overlap/ 
   /!\ edges needs to be ordered
 """
-function overlap(poly_a::SMatrix{4, 2, Float64},
-                poly_b::SMatrix{4, 2, Float64})
+function overlap(poly_a::SMatrix{M, 2, Float64},
+                poly_b::SMatrix{N, 2, Float64}) where {M,N}
   
     if find_separating_axis(poly_a, poly_b)
         return false
@@ -102,8 +98,8 @@ end
 build a list of candidate separating axes from the edges of a
   /!\ edges needs to be ordered
 """
-function find_separating_axis(poly_a::SMatrix{4, 2, Float64},
-                              poly_b::SMatrix{4, 2, Float64})
+function find_separating_axis(poly_a::SMatrix{M, 2, Float64},
+                              poly_b::SMatrix{N, 2, Float64}) where {M, N}
     n_a = size(poly_a)[1]
     n_b = size(poly_b)[1]
     axis = zeros(2)
@@ -143,8 +139,8 @@ end
 
 return the projection interval for the polygon poly over the axis axis 
 """
-function polygon_projection(poly::SMatrix{4, 2, Float64},
-                            axis::Vector{Float64})
+function polygon_projection(poly::SMatrix{N, 2, Float64},
+                            axis::Vector{Float64}) where {N}
         n_a = size(poly)[1]
         @inbounds @fastmath @views d1 = dot(poly[1,:],axis)
         @inbounds @fastmath @views d2 = dot(poly[2,:],axis)

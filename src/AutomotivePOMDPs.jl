@@ -3,6 +3,7 @@ module AutomotivePOMDPs
 using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations, StaticArrays
 using DiscreteValueIteration
 using AutomotiveDrivingModels, AutoUrban, AutoViz
+using AutomotiveSensors
 using Reel
 
 """
@@ -86,7 +87,9 @@ export
     TTCIntersectionDriver,
     UrbanDriver,
     IntelligentPedestrian,
-    LidarOverlay
+    LidarOverlay,
+    get_stop_model,
+    get_ttc_model
 
 include("driver_models/route_following_idm.jl")
 include("driver_models/stop.jl")
@@ -97,6 +100,7 @@ include("driver_models/crosswalk_driver.jl")
 include("driver_models/urban_driver.jl")
 include("driver_models/lidar_sensor.jl")
 include("driver_models/intelligent_pedestrian_model.jl")
+include("driver_models/helpers.jl")
 
 export
     # pomdp types
@@ -135,7 +139,8 @@ export
     fuse_value_min,
     interpolate_state,
     scene_to_states,
-    states_to_scene
+    states_to_scene,
+    n_dims
 
 # single crosswalk
 include("explicit_pomdps/single_crosswalk/pomdp_types.jl")
