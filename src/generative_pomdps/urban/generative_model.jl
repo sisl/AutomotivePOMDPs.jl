@@ -245,7 +245,7 @@ function obs_to_array(pomdp::UrbanPOMDP, ego_veh::Vehicle, obs::Vector{Vehicle})
             continue
         end
         if veh.def.class == AgentClass.CAR
-            @assert veh.id <= pomdp.max_cars+1
+            @assert veh.id <= pomdp.max_cars+1 "$(veh.id)"
             o[n_features*veh.id - 3] = veh.state.posG.x
             o[n_features*veh.id - 2] = veh.state.posG.y
             o[n_features*veh.id - 1] = veh.state.posG.θ
