@@ -2,3 +2,4 @@
 *.webm
 __pycache__/
 log/
+*.jld

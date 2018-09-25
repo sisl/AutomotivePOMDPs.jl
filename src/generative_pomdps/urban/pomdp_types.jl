@@ -34,7 +34,7 @@ end
     ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0)
     max_cars::Int64 = 10
     max_peds::Int64 = 10
-    obstacles::Bool = true
+    max_obstacles::Int64 = 3
     max_acc::Float64 = 2.0
     ego_start::Float64 = env.params.stop_line - ego_type.length/2
     ego_goal::LaneTag = LaneTag(2,2)
@@ -74,6 +74,7 @@ function POMDPs.action_index(pomdp::UrbanPOMDP, action::UrbanAction)
     end
 end
 
+# only works for single lane intersection!
 function get_car_models(env::UrbanEnv, get_model::Function)
     d = Dict{SVector{2, LaneTag}, DriverModel}()
 

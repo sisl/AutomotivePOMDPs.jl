@@ -62,6 +62,7 @@ export
     UrbanEnv,
     ObstacleDistribution,
     sample_obstacles!,
+    sample_obstacle!,
     empty_obstacles!,
     add_obstacle!,
     car_roadway

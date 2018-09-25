@@ -95,8 +95,11 @@ end
 
 
 function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
-    if pomdp.obstacles
-        sample_obstacles!(pomdp.env, pomdp.obs_dist, rng)
+    empty_obstacles!(pomdp.env)
+    if pomdp.max_obstacles > 0
+        for i=1:pomdp.max_obstacles
+            sample_obstacle!(pomdp.env, pomdp.obs_dist, rng)
+        end
     end
     scene = Scene()
     if !no_ego
@@ -222,11 +225,7 @@ end
 function obs_to_array(pomdp::UrbanPOMDP, ego_veh::Vehicle, obs::Vector{Vehicle})
     sorted_vehicles = sort!(obs, by=x->x.id)
     n_features = 4
-    if pomdp.obstacles
-        n_obstacles = 3
-    else
-        n_obstacles = 0
-    end
+    n_obstacles = pomdp.max_obstacles
     o = zeros(n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1))
     ego = ego_veh.state
     o[1] = ego.posG.x
@@ -235,8 +234,8 @@ function obs_to_array(pomdp::UrbanPOMDP, ego_veh::Vehicle, obs::Vector{Vehicle})
     o[4] = ego.v
     pos_off = get_off_the_grid(pomdp)
     for i=2:pomdp.max_cars + pomdp.max_peds + n_obstacles + 1
-        o[n_features*i - 3] = pos_off.posG.x
-        o[n_features*i - 2] = pos_off.posG.y
+        o[n_features*i - 3] = pos_off.posG.x - ego.posG.x
+        o[n_features*i - 2] = pos_off.posG.y - ego.posG.y
         o[n_features*i - 1] = pos_off.posG.θ
         o[n_features*i] = 0.
     end
@@ -246,23 +245,23 @@ function obs_to_array(pomdp::UrbanPOMDP, ego_veh::Vehicle, obs::Vector{Vehicle})
         end
         if veh.def.class == AgentClass.CAR
             @assert veh.id <= pomdp.max_cars+1 "$(veh.id)"
-            o[n_features*veh.id - 3] = veh.state.posG.x
-            o[n_features*veh.id - 2] = veh.state.posG.y
+            o[n_features*veh.id - 3] = veh.state.posG.x - ego.posG.x
+            o[n_features*veh.id - 2] = veh.state.posG.y - ego.posG.y
             o[n_features*veh.id - 1] = veh.state.posG.θ
-            o[n_features*veh.id] = veh.state.v
+            o[n_features*veh.id] = veh.state.v 
         end
         if veh.def.class == AgentClass.PEDESTRIAN
-            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x
-            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y
-            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ
+            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x - ego.posG.x
+            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y - ego.posG.y
+            o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ 
             o[n_features*(veh.id - 100 + pomdp.max_cars + 1)] = veh.state.v
         end
     end
     for (j,obs) in enumerate(pomdp.env.obstacles)
         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 3] = get_width(obs)
         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 2] = get_height(obs)
-        o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 1] = get_center(obs).x
-        o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1)] = get_center(obs).y
+        o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 1] = get_center(obs).x - ego.posG.x
+        o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1)] = get_center(obs).y - ego.posG.y
     end
     return rescale!(o, pomdp)
 end
@@ -276,74 +275,9 @@ end
 
 function n_dims(pomdp::UrbanPOMDP)
     n_features = 4
-    if pomdp.obstacles
-        n_obstacles = 3
-    else
-        n_obstacles = 0
-    end
+    n_obstacles = pomdp.max_obstacles
     return n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1)
 end
-
-
-# TODO find a better way to implement this to switch more easily between representations
-# function measure_gaussian(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
-#     #TODO sort scene sp by ID!
-#     sorted_vehicles =  sort(sp.entities[1:sp.n], by=x->x.id)
-#     n_features = 4
-#     if pomdp.obstacles
-#         n_obstacles = 3
-#     else
-#         n_obstacles = 0
-#     end
-#     pos_noise = pomdp.pos_obs_noise
-#     vel_noise = pomdp.vel_obs_noise
-#     o = zeros(n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1))
-#     ego_veh =sp[findfirst(sp, EGO_ID)] 
-#     @assert ego_veh.id == sorted_vehicles[1].id "first vehicle is $(sorted_vehicles[1].id), $([veh.id for veh in sorted_vehicles]), last ego state $(s[findfirst(s, EGO_ID)] ) "
-#     ego = ego_veh.state
-#     o[1] = ego.posG.x
-#     o[2] = ego.posG.y
-#     o[3] = ego.posG.θ
-#     o[4] = ego.v
-#     pos_off = get_off_the_grid(pomdp)
-#     for i=2:pomdp.max_cars + pomdp.max_peds + n_obstacles + 1
-#         o[n_features*i - 3] = pos_off.posG.x
-#         o[n_features*i - 2] = pos_off.posG.y
-#         o[n_features*i - 1] = pos_off.posG.θ
-#         o[n_features*i] = 0.
-#     end
-#     for veh in sorted_vehicles
-#         if veh.id == EGO_ID
-#             continue
-#         end
-#         if veh.def.class == AgentClass.CAR
-#         # @assert veh.id <= pomdp.max_cars+1
-#             if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
-#                 o[n_features*veh.id - 3] = veh.state.posG.x + pos_noise*randn(rng)
-#                 o[n_features*veh.id - 2] = veh.state.posG.y + pos_noise*randn(rng)
-#                 o[n_features*veh.id - 1] = veh.state.posG.θ
-#                 o[n_features*veh.id] = veh.state.v + vel_noise*randn(rng)
-#             end
-#         end
-#         if veh.def.class == AgentClass.PEDESTRIAN
-#             # println(" veh id ", veh.id)
-#             # println(" index " , n_features*(veh.id - 100 + pomdp.max_cars + 1))
-#             if is_observable_fixed(ego, veh.state, pomdp.env) && is_observable_dyna(ego_veh, veh, sp)
-#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 3] = veh.state.posG.x + pos_noise*randn(rng)
-#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 2] = veh.state.posG.y + pos_noise*randn(rng)
-#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1) - 1] = veh.state.posG.θ
-#                 o[n_features*(veh.id - 100 + pomdp.max_cars + 1)] = veh.state.v + vel_noise*randn(rng)
-#             end
-#         end
-#     end
-#     for (j,obs) in enumerate(pomdp.env.obstacles)
-#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 3] = get_width(obs)
-#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 2] = get_height(obs)
-#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1) - 1] = get_center(obs).x
-#         o[n_features*(j + pomdp.max_cars + pomdp.max_peds + 1)] = get_center(obs).y
-#     end
-#     return rescale!(o, pomdp)
-# end
 
 function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
     return generate_o(pomdp, s, UrbanAction(0.), s, rng::AbstractRNG)
@@ -352,11 +286,7 @@ end
 function rescale!(o::UrbanObs, pomdp::UrbanPOMDP)
     # rescale
     n_features = 4
-    if pomdp.obstacles
-        n_obstacles = 3
-    else
-        n_obstacles = 0
-    end
+    n_obstacles = pomdp.max_obstacles
     max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
     o[1] /= max_ego_dist
     o[2] /= max_ego_dist
@@ -381,11 +311,7 @@ end
 function unrescale!(o::UrbanObs, pomdp::UrbanPOMDP)
     # unrescale
     n_features = 4
-    if pomdp.obstacles
-        n_obstacles = 3
-    else
-        n_obstacles = 0
-    end
+    n_obstacles = pomdp.max_obstacles
     max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
     o[1] *= max_ego_dist
     o[2] *= max_ego_dist
@@ -404,6 +330,21 @@ function unrescale!(o::UrbanObs, pomdp::UrbanPOMDP)
         o[n_features*i] *= max_ego_dist
     end
 
+    return o
+end
+
+function to_global_coordinates!(o::UrbanObs, pomdp::UrbanPOMDP)
+    n_features = 4
+    n_obstacles = pomdp.max_obstacles
+    ego = o[1:n_features]
+    for i=2:pomdp.max_cars + pomdp.max_peds + 1
+        o[n_features*i - 3] += ego[1]
+        o[n_features*i - 2] += ego[2]
+    end
+    for i=pomdp.max_cars + pomdp.max_peds + 2:pomdp.max_cars + pomdp.max_peds + 1 + n_obstacles
+        o[n_features*i - 1] += ego[1] 
+        o[n_features*i]+= ego[2]
+    end
     return o
 end
 
@@ -577,9 +518,10 @@ Create a scene that can be rendered from an observation
 function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
     o = deepcopy(obs)
     o = unrescale!(o, pomdp)
+    o = to_global_coordinates!(o, pomdp)
     scene = Scene()
     # extract
-    n_obstacles = pomdp.obstacles ? 3 : 0
+    n_obstacles = pomdp.max_obstacles
     ego, car_map, ped_map, obs_map = split_o(o, pomdp,  n_obstacles=n_obstacles)
 
     # project to roadway
@@ -611,4 +553,24 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
     end
     @assert issorted([veh.id for veh in scene])
     return scene
+end
+
+# given a big observation vector, split to an entity-wise representation
+function split_o(obs::UrbanObs, pomdp::UrbanPOMDP; n_features::Int64=4, n_obstacles::Int64=3)
+    car_map, ped_map, obs_map = OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}() #XXX Dictionary creation is sloooooow
+    ego = obs[1:n_features]
+#     println("ego idx ", 1, ":", n_features)
+    for (j,i) in enumerate(1:pomdp.max_cars)
+        car_map["car$j"] = obs[i*n_features+1:(i+1)*n_features]
+#         println("car$j idx ", i*n_features+1:(i+1)*n_features)
+    end
+    for (j,i) in enumerate(pomdp.max_cars + 1:pomdp.max_cars + pomdp.max_peds)
+        ped_map["ped$j"] = obs[i*n_features+1:(i+1)*n_features]
+#         println("ped$j idx ", i*n_features+1:(i+1)*n_features)
+    end
+    for (j,i)  in enumerate(pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + n_obstacles)
+        obs_map["obs$j"] = obs[i*n_features+1:(i+1)*n_features]
+#         println("obs$j idx ", i*n_features+1:(i+1)*n_features)
+    end
+    return ego, car_map, ped_map, obs_map
 end
