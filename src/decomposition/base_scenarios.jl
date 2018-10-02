@@ -1,5 +1,5 @@
 # Define several base scenarios derived from the large urban environment
-using DataStructures
+
 # ego + 2 cars
 const TwoCars = UrbanPOMDP(max_cars=2, max_peds=0, max_obstacles=0, car_birth=0.9, ped_birth=0.9)
 
@@ -31,27 +31,6 @@ end
 
 
 ### Extract input
-
-
-# given a big observation vector, split to an entity-wise representation
-function split_o(obs::UrbanObs, pomdp::UrbanPOMDP; n_features::Int64=4, n_obstacles::Int64=3)
-    car_map, ped_map, obs_map = OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}() #XXX Dictionary creation is sloooooow
-    ego = obs[1:n_features]
-#     println("ego idx ", 1, ":", n_features)
-    for (j,i) in enumerate(1:pomdp.max_cars)
-        car_map["car$j"] = obs[i*n_features+1:(i+1)*n_features]
-#         println("car$j idx ", i*n_features+1:(i+1)*n_features)
-    end
-    for (j,i) in enumerate(pomdp.max_cars + 1:pomdp.max_cars + pomdp.max_peds)
-        ped_map["ped$j"] = obs[i*n_features+1:(i+1)*n_features]
-#         println("ped$j idx ", i*n_features+1:(i+1)*n_features)
-    end
-    for (j,i)  in enumerate(pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + n_obstacles)
-        obs_map["obs$j"] = obs[i*n_features+1:(i+1)*n_features]
-#         println("obs$j idx ", i*n_features+1:(i+1)*n_features)
-    end
-    return ego, car_map, ped_map, obs_map
-end
 
 # return a list of tuple (pb_id, pb_input)
 function get_problem_input(ego::Vector{Float64},

@@ -2,12 +2,12 @@
 
 function POMDPs.states(pomdp::SingleOIPOMDP)
     env = pomdp.env
-    V = linspace(0, pomdp.env.params.speed_limit, Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1)
-    S_ego = linspace(pomdp.s_start, pomdp.s_goal, Int(floor((pomdp.s_goal - pomdp.s_start)/pomdp.pos_res)) + 1)
+    V = LinRange(0, pomdp.env.params.speed_limit, Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1)
+    S_ego = LinRange(pomdp.s_start, pomdp.s_goal, Int(floor((pomdp.s_goal - pomdp.s_start)/pomdp.pos_res)) + 1)
     state_space = Vector{SingleOIState}()
     for lane_id in LANE_ID_LIST
         s_end = get_end(env.lane_map[lane_id])
-        S = linspace(0, s_end, Int(floor(s_end/pomdp.pos_res)) + 1)
+        S = LinRange(0, s_end, Int(floor(s_end/pomdp.pos_res)) + 1)
         for s_ego in S_ego
             for v_ego in V
                 for s in S
@@ -179,19 +179,19 @@ end
 
 """
     get_ego_s(pomdp::SingleOIPOMDP)
-returns all the possible position of the ego car along its lane as a linspace
+returns all the possible position of the ego car along its lane as a LinRange
 """
 function get_ego_s_grid(pomdp::SingleOIPOMDP, res::Float64 = pomdp.pos_res)
-    return linspace(pomdp.s_start, pomdp.s_goal,
+    return LinRange(pomdp.s_start, pomdp.s_goal,
                     Int(floor((pomdp.s_goal - pomdp.s_start)/pomdp.pos_res)) + 1)
 end
 
 """
     get_v_grid(pomdp::SingleOIPOMDP)
-returns all the possible velocities as a linspace
+returns all the possible velocities as a LinRange
 """
 function get_v_grid(pomdp::SingleOIPOMDP, res::Float64 = pomdp.vel_res)
-    return linspace(0, pomdp.env.params.speed_limit,
+    return LinRange(0, pomdp.env.params.speed_limit,
                     Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1)
 end
 
@@ -201,12 +201,12 @@ returns all the possible position on the corresponding lane
 """
 function get_lane_s(pomdp::SingleOIPOMDP, lane_id::String, res::Float64 = pomdp.pos_res)
     s_end = get_end(pomdp.env.lane_map[lane_id])
-    S = linspace(0, s_end, Int(floor(s_end/res)) + 1)
+    S = LinRange(0, s_end, Int(floor(s_end/res)) + 1)
     return S
 end
 function get_lane_s(pomdp::SingleOIPOMDP, lane::Lane, res::Float64 = pomdp.pos_res)
     s_end = get_end(lane)
-    S = linspace(0, s_end, Int(floor(s_end/res)) + 1)
+    S = LinRange(0, s_end, Int(floor(s_end/res)) + 1)
     return S
 end
 
@@ -217,11 +217,11 @@ returns a vector of all the states that the other car can occupy
 """
 function car_states(pomdp::SingleOIPOMDP)
     env = pomdp.env
-    V = linspace(0, pomdp.env.params.speed_limit, Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1)
+    V = LinRange(0, pomdp.env.params.speed_limit, Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1)
     space = Vector{VehicleState}()
     for lane_id in LANE_ID_LIST
         s_end = get_end(env.lane_map[lane_id])
-        S = linspace(0, s_end, Int(floor(s_end/pomdp.pos_res)) + 1)
+        S = LinRange(0, s_end, Int(floor(s_end/pomdp.pos_res)) + 1)
         for s in S
             for v in V
                 car = car_state(pomdp, lane_id, s, v)

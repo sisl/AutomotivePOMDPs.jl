@@ -48,7 +48,7 @@ function POMDPs.update(up::KMarkovDecUpdater, b_old::KMarkovDecBelief, a::UrbanA
 end
 
 struct PreviousObsDecUpdater <: Updater
-    up::FastPreviousObservationUpdater
+    up::PreviousObservationUpdater
     problem::UrbanPOMDP
 end
 
@@ -88,13 +88,13 @@ end
 const SUM = x -> sum(x)
 const MIN = x -> minimum(hcat(l), 2)
 
-function POMDPs.action{A}(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief})
+function POMDPs.action(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief}) where A
     val = value(policy, beliefs)
     @assert length(val) == n_actions(policy.problem)
     return policy.action_map[indmax(val)]
 end
 
-function POMDPs.value{A}(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief})
+function POMDPs.value(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief}) where A
     n = length(beliefs)
     val = fill(zeros(n_actions(policy.problem),1), n)
     for (i, (prob_key, b)) in enumerate(beliefs)

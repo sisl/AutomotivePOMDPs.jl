@@ -47,7 +47,7 @@ Returns the initial state distribution over the ego car state when there is no p
 """
 function initial_distribution_no_ped(pomdp::SingleOCPOMDP)
     env = pomdp.env
-    V_ego = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
+    V_ego = LinRange(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
     rl = env.params.roadway_length
     cw = env.params.crosswalk_width
     lw = env.params.lane_width
@@ -69,7 +69,7 @@ end
 
 function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP)
     env = pomdp.env
-    V_ego = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
+    V_ego = LinRange(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
     rl = env.params.roadway_length
     cw = env.params.crosswalk_width
     lw = env.params.lane_width
@@ -79,7 +79,7 @@ function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP)
     y_ego = 0. #XXX might need to be a parameter
     x_start = pomdp.x_start #XXX parameterized
     Y = get_Y_grid(pomdp)
-    V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
+    V_ped = LinRange(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
     states = SingleOCState[]
     for v in V_ego
         ego = VehicleState(VecSE2(x_start, y_ego, 0.), env.roadway, v)
@@ -119,7 +119,7 @@ function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP, ego::VehicleSta
     y_ego = 0. #XXX might need to be a parameter
     x_start = pomdp.x_start #XXX parameterized
     Y = get_Y_grid(pomdp)
-    V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
+    V_ped = LinRange(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
     states = SingleOCState[]
     for y in Y[1:div(length(Y),2)]
         for v_ped in V_ped
@@ -219,10 +219,10 @@ function dis2vec!(pomdp::SingleOCPOMDP, bdis::SingleOCDistribution, bvec::Vector
 end
 
 """
-    get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinSpace{Float64} = get_Y_grid(pomdp), V_ped::LinSpace{Float64} = get_V_ped_grid(pomdp))
+    get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinRange{Float64} = get_Y_grid(pomdp), V_ped::LinRange{Float64} = get_V_ped_grid(pomdp))
 returns a probability matrix where the index are the pedestrian position and velSingleOCity, the values are the probability of such y,v pair
 """
-function get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinSpace{Float64} = get_Y_grid(pomdp), V_ped::LinSpace{Float64} = get_V_ped_grid(pomdp))
+function get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinRange{Float64} = get_Y_grid(pomdp), V_ped::LinRange{Float64} = get_V_ped_grid(pomdp))
     Y = get_Y_grid(pomdp)
     V_ped = get_V_ped_grid(pomdp)
     P = zeros(length(Y), length(V_ped))

@@ -9,7 +9,7 @@ struct UrbanAction
     acc::Float64
 end
 
-function Base.copy!(a::UrbanAction, b::UrbanAction)
+function Base.copyto!(a::UrbanAction, b::UrbanAction)
     a.acc = b.acc
 end
 

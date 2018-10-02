@@ -10,7 +10,7 @@ mutable struct SingleOCState
 end
 
 # copy b to a
-function Base.copy!(a::SingleOCState, b::SingleOCState)
+function Base.copyto!(a::SingleOCState, b::SingleOCState)
     a.crash = b.crash
     a.ego = b.ego
     a.ped = b.ped
@@ -34,7 +34,7 @@ mutable struct SingleOCAction
     acc::Float64
 end
 
-function Base.copy!(a::SingleOCAction, b::SingleOCAction)
+function Base.copyto!(a::SingleOCAction, b::SingleOCAction)
     a.acc = b.acc
 end
 

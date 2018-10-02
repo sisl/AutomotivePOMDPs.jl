@@ -357,7 +357,7 @@ function POMDPs.convert_o(::Type{Vector{Float64}}, o::UrbanObs, pomdp::UrbanPOMD
     return o
 end
 
-function POMDPToolbox.generate_sori(p::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
+function POMDPModelTools.generate_sori(p::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
     if p.lidar
         return generate_sor(p, s, a, rng)..., p.sensor
     else

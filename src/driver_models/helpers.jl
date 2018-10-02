@@ -53,7 +53,7 @@ function get_ttc_model(env::UrbanEnv, r::SVector{2, LaneTag})
                                             priorities = env.priorities,
                                             ttc_threshold = (env.params.x_max - env.params.inter_x)/env.params.speed_limit
                                             )
-    crosswalk_drivers = Vector{CrosswalkDriver}(length(env.crosswalks))
+    crosswalk_drivers = Vector{CrosswalkDriver}(undef, length(env.crosswalks))
     for i=1:length(env.crosswalks)
         cw_conflict_lanes = get_conflict_lanes(env.crosswalks[i], env.roadway)
         crosswalk_drivers[i] = CrosswalkDriver(navigator = navigator,

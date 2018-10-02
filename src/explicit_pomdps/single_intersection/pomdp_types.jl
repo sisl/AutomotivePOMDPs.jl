@@ -10,7 +10,7 @@ mutable struct SingleOIState
 end
 
 # copy b to a
-function Base.copy!(a::SingleOIState, b::SingleOIState)
+function Base.copyto!(a::SingleOIState, b::SingleOIState)
     a.crash = b.crash
     a.ego = b.ego
     a.car = b.car
@@ -34,7 +34,7 @@ mutable struct SingleOIAction
     acc::Float64
 end
 
-function Base.copy!(a::SingleOIAction, b::SingleOIAction)
+function Base.copyto!(a::SingleOIAction, b::SingleOIAction)
     a.acc = b.acc
 end
 

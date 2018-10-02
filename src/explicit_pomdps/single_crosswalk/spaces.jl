@@ -7,10 +7,10 @@ function POMDPs.states(pomdp::SingleOCPOMDP)
     lw = env.params.lane_width
     cl = env.params.crosswalk_length
     x_ped = 0.5*(env.params.roadway_length - env.params.crosswalk_width + 1)
-    Y = linspace(-cl/4, cl/4, Int(floor(cl/2/pomdp.pos_res)) + 1)
-    V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
-    X = linspace(5., rl/2 + 2*cw , Int(floor((rl/2 + 2*cw -5)/pomdp.pos_res)) + 1)
-    V = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
+    Y = LinRange(-cl/4, cl/4, Int(floor(cl/2/pomdp.pos_res)) + 1)
+    V_ped = LinRange(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
+    X = LinRange(5., rl/2 + 2*cw , Int(floor((rl/2 + 2*cw -5)/pomdp.pos_res)) + 1)
+    V = LinRange(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
     y_ego = 0. #XXX might need to be a parameter
     space = SingleOCState[]
     for x in X
@@ -167,7 +167,7 @@ function get_X_grid(pomdp::SingleOCPOMDP)
     cw = env.params.crosswalk_width
     lw = env.params.lane_width
     cl = env.params.crosswalk_length
-    return linspace(5., rl/2 + 2*cw , Int(floor((rl/2 + 2*cw -5)/pomdp.pos_res)) + 1)
+    return LinRange(5., rl/2 + 2*cw , Int(floor((rl/2 + 2*cw -5)/pomdp.pos_res)) + 1)
 end
 
 """
@@ -176,7 +176,7 @@ Helper function to return the ego velSingleOCity discretization
 """
 function get_V_grid(pomdp::SingleOCPOMDP)
     env = pomdp.env
-    V = linspace(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
+    V = LinRange(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
 end
 
 """
@@ -185,7 +185,7 @@ Helper function to return the Y discretization
 """
 function get_Y_grid(pomdp::SingleOCPOMDP)
     cl = pomdp.env.params.crosswalk_length
-    return linspace(-cl/4, cl/4, Int(floor(cl/2/pomdp.pos_res)) + 1)
+    return LinRange(-cl/4, cl/4, Int(floor(cl/2/pomdp.pos_res)) + 1)
 end
 
 """
@@ -194,7 +194,7 @@ Helper funcion to return the VelSingleOCity discretization for the pedestrian
 """
 function get_V_ped_grid(pomdp::SingleOCPOMDP)
     env = pomdp.env
-    V_ped = linspace(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
+    V_ped = LinRange(0, env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
 end
 
 """

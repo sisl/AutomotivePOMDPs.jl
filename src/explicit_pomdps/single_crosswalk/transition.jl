@@ -71,7 +71,7 @@ function ped_transition(pomdp::SingleOCPOMDP, ped::VehicleState, dt::Float64 = p
 
     if off_the_grid(pomdp, ped) # appear with random speed or stay of the grid
         p_birth = pomdp.p_birth
-        V_grid = linspace(0., env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
+        V_grid = LinRange(0., env.params.ped_max_speed, Int(floor(env.params.ped_max_speed/pomdp.vel_res)) + 1)
         Y_grid = get_Y_grid(pomdp)
         for v in V_grid
             for y in Y_grid[1:div(length(Y_grid),2)- 3]
@@ -102,7 +102,7 @@ function ped_transition(pomdp::SingleOCPOMDP, ped::VehicleState, dt::Float64 = p
                 push!(states, state)
                 push!(probs, weight[i])
             else
-                state_ind = find(x->x==state, states)
+                state_ind = findall(x->x==state, states)
                 probs[state_ind] += weight[i]
             end
         end

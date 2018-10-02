@@ -18,7 +18,7 @@ struct OIAction
     acc::Float64
 end
 
-function Base.copy!(a::OIAction, b::OIAction)
+function Base.copyto!(a::OIAction, b::OIAction)
     a.acc = b.acc
 end
 

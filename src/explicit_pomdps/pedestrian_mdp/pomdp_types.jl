@@ -12,7 +12,7 @@ end
 
 
 # copy b to a
-function Base.copy!(a::PedMDPState, b::PedMDPState)
+function Base.copyto!(a::PedMDPState, b::PedMDPState)
     a.crash = b.crash
     a.ego = b.ego
     a.ped = b.ped

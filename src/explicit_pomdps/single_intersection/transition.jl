@@ -13,7 +13,7 @@ function POMDPs.transition(pomdp::SingleOIPOMDP, s::SingleOIState, a::SingleOIAc
     n_next_states = length(ego_states)*length(car_states)
 
     ### Total state
-    next_states = Vector{SingleOIState}(n_next_states)
+    next_states = Vector{SingleOIState}(undef, n_next_states)
     next_probs = zeros(n_next_states)
     ind = 1
     for (i,ego) in enumerate(ego_states)
@@ -48,8 +48,8 @@ function ego_transition(pomdp::SingleOIPOMDP, ego::VehicleState, a::SingleOIActi
     index, weight = interpolants(grid, [s_, v_])
     n_pts = length(index)
 
-    states = Array{VehicleState}(n_pts)
-    probs = Array{Float64}(n_pts)
+    states = Array{VehicleState}(undef, n_pts)
+    probs = Array{Float64}(undef, n_pts)
     for i=1:n_pts
         sg, vg = ind2x(grid, index[i])
         states[i] = ego_state(pomdp, sg, vg)
@@ -76,8 +76,8 @@ function car_transition(pomdp::SingleOIPOMDP, car::VehicleState, dt::Float64,
     if off_the_grid(pomdp, car) || car.posF.s >= get_end(lane) # appear with random speed or stay of the grid
         p_birth = pomdp.p_birth
         for v in v_grid
-            for lane in LANE_ID_LIST
-                push!(states, car_state(pomdp, lane, 0., v))
+            for lane_ in LANE_ID_LIST
+                push!(states, car_state(pomdp, lane_, 0., v))
             end
         end
         probs = ones(length(states) + 1)
@@ -105,7 +105,7 @@ function car_transition(pomdp::SingleOIPOMDP, car::VehicleState, dt::Float64,
                 push!(states, state)
                 push!(probs, weight[i])
             else
-                state_ind = find(x->x==state, states)
+                state_ind = findall(x->x==state, states)
                 probs[state_ind] += weight[i]
             end
         end

@@ -330,7 +330,7 @@ function ind2ped(env::UrbanEnv, pedi::Int64, pos_res::Float64, v_res::Float64)
     return VehicleState(posG, posF, v)
 end
 
-function find_range_index(r::Range{Float64}, s::Float64)
+function find_range_index(r::AbstractRange, s::Float64)
     return clamp(round(Int, ((s - first(r))/step(r) + 1)), 1, length(r))
 end
 

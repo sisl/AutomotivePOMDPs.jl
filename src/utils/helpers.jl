@@ -281,7 +281,7 @@ function Base.:(==)(a1::LonAccelDirection, a2::LonAccelDirection)
     return a1.a_lon == a2.a_lon && a1.direction == a2.direction
 end
 
-function AutomotiveDrivingModels.propagate{D<:Union{VehicleDef, BicycleModel}}(veh::Entity{VehicleState, D, Int}, action::LonAccelDirection,  roadway::Roadway, Δt::Float64)
+function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, action::LonAccelDirection,  roadway::Roadway, Δt::Float64) where {D<:Union{VehicleDef, BicycleModel}}
     previousInd = veh.state.posF.roadind
     a_lon = action.a_lon
     v = veh.state.v
@@ -355,7 +355,7 @@ mutable struct LonAccel
     a_lon::Float64
 end
 
-function AutomotiveDrivingModels.propagate{D<:Union{VehicleDef, BicycleModel}}(veh::Entity{VehicleState, D, Int}, action::LonAccel,  roadway::Roadway, Δt::Float64)
+function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, action::LonAccel,  roadway::Roadway, Δt::Float64) where {D<:Union{VehicleDef, BicycleModel}}
     a_lat = action.a_lat
    a_lon = action.a_lon
 

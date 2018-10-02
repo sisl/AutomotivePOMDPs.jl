@@ -16,7 +16,7 @@ mutable struct OCAction
     acc::Float64
 end
 
-function Base.copy!(a::OCAction, b::OCAction)
+function Base.copyto!(a::OCAction, b::OCAction)
     a.acc = b.acc
 end
 
