@@ -10,7 +10,7 @@ struct PedCarMDPState
 end
 
 # copy b to a
-function Base.copy!(a::PedCarMDPState, b::PedCarMDPState)
+function Base.copyto!(a::PedCarMDPState, b::PedCarMDPState)
     a.crash = b.crash
     a.ego = b.ego
     a.ped = b.ped

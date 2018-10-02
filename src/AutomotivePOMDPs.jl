@@ -1,10 +1,23 @@
 module AutomotivePOMDPs
 
-using POMDPs, StatsBase, POMDPToolbox, DeepRL, Parameters, GridInterpolations, StaticArrays
+using POMDPs
+using StatsBase
+using POMDPModelTools
+using POMDPSimulators
+using POMDPPolicies
+using BeliefUpdaters
+using DeepRL
+using Parameters
+using GridInterpolations
+using StaticArrays
 using DiscreteValueIteration
-using AutomotiveDrivingModels, AutoUrban, AutoViz
+using AutomotiveDrivingModels
+using AutoUrban
+using AutoViz
 using AutomotiveSensors
 using Reel
+using Random
+using DataStructures
 
 """
 Abstract type to define driving environment with occlusion 

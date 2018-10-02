@@ -18,7 +18,7 @@ function animate_states(pomdp::SingleOCPOMDP, states::Vector{SingleOCState}, ove
     return duration, fps, render_states
 end
 
-function animate_hist{B}(pomdp::SingleOCPOMDP, hist::POMDPHistory{SingleOCState,SingleOCAction,SingleOCState, B}, overlays::Vector{SceneOverlay}=SceneOverlay[])
+function animate_hist(pomdp::SingleOCPOMDP, hist::POMDPHistory{SingleOCState,SingleOCAction,SingleOCState, B}, overlays::Vector{SceneOverlay}=SceneOverlay[]) where B
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)

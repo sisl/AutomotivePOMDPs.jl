@@ -32,7 +32,7 @@ function animate_record(rec::SceneRecord; sim_dt::Float64=0.1)
     return duration, fps, render_rec
 end
 
-function animate_hist{B}(pomdp::SingleOIPOMDP, hist::POMDPHistory{SingleOIState,SingleOIAction,SingleOIState, B})
+function animate_hist(pomdp::SingleOIPOMDP, hist::POMDPHistory{SingleOIState,SingleOIAction,SingleOIState, B}) where B
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)

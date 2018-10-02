@@ -119,7 +119,7 @@ end
 # end
 
 
-function POMDPs.action{B}(policy::Policy, b::Dict{Int64, B})
+function POMDPs.action(policy::Policy, b::Dict{Int64, B}) where B
     val = fuse_value_min(policy, b)
     max_ind = indmax(val)
     return policy.action_map[max_ind]
@@ -131,7 +131,7 @@ end
     fuse_value(policy::Policy, b::Dict{Int64,SingleOCDistribution})
 Fuse the value of different belief by summing them
 """
-function fuse_value{B}(policy::Policy, b::Dict{Int64,B})
+function fuse_value(policy::Policy, b::Dict{Int64,B}) where B
     val = zeros(n_actions(policy.pomdp))
     for id in keys(b)
         val_inc = value(policy, b[id])
@@ -145,7 +145,7 @@ end
     fuse_value_min(policy::Policy, b::Dict{Int64,SingleOCDistribution})
 Fuse the value of different belief by taking the min of the two for each action
 """
-function fuse_value_min{B}(policy::Policy, b::Dict{Int64, B})
+function fuse_value_min(policy::Policy, b::Dict{Int64, B}) where B
     val = zeros(n_actions(policy.pomdp))
     for i=1:n_actions(policy.pomdp)
         min_val = +Inf

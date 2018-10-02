@@ -52,12 +52,12 @@ function AutoViz.render!(rendermodel::RenderModel, overlay::BeliefOverlay, n_obs
     ego, car_map, ped_map, obs_map = AutomotivePOMDPs.split_o(o, problem, 4, n_obstacles)
     for (key, state) in car_map
         x, y, θ, v = state
-        color = color=RGBA(75./255, 66./255, 244./255, transparency)
+        color = color=RGBA(75.0/255, 66.0/255, 244.0/255, transparency)
         add_instruction!(rendermodel, render_vehicle, (x, y, θ, problem.car_type.length, problem.car_type.width, color, color, RGBA(1.,1.,1.,transparency)))
     end
     for (key, state) in ped_map
         x, y, θ, v = state
-        color = RGBA(75./255, 66./255, 244./255, transparency)
+        color = RGBA(75.0/255, 66.0/255, 244.0/255, transparency)
         add_instruction!(rendermodel, render_vehicle, (x, y, θ, problem.ped_type.length, problem.ped_type.width, color, color, RGBA(1.,1.,1.,transparency)))
     end
 end

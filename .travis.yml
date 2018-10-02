@@ -4,30 +4,32 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
+  - 0.7
+  - 1.0
   - nightly
 notifications:
   email: false
 git:
   depth: 99999999
 
-## uncomment the following lines to allow failures on nightly julia
-## (tests will run but not make your overall status red)
-#matrix:
-#  allow_failures:
-#  - julia: nightly
+matrix:
+ allow_failures:
+ - julia: nightly
 
 ## uncomment and modify the following lines to manually install system packages
-#addons:
-#  apt: # apt-get for linux
-#    packages:
-#    - gfortran
+addons:
+ apt: # apt-get for linux
+   packages:
+   - libgtk-3-dev
 #before_script: # homebrew for mac
 #  - if [ $TRAVIS_OS_NAME = osx ]; then brew install gcc; fi
 
 ## uncomment the following lines to override the default test script
-#script:
-#  - julia -e 'Pkg.clone(pwd()); Pkg.build("AutomotivePOMDPs"); Pkg.test("AutomotivePOMDPs"; coverage=true)'
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia --project --check-bounds=yes -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/sisl/Vec.jl")); Pkg.add(PackageSpec(url="https://github.com/sisl/Records.jl"));'
+  - julia --project --check-bounds=yes -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveDrivingModels.jl"));  Pkg.add(PackageSpec(url="https://github.com/sisl/AutoViz.jl"));  Pkg.add(PackageSpec(url="https://github.com/sisl/DeepRL.jl")); '
+  - julia --project --check-bounds=yes -e 'Pkg.build("AutomotivePOMDPs"); Pkg.test("AutomotivePOMDPs"; coverage=true)'
 after_success:
   # push coverage results to Coveralls
   - julia -e 'cd(Pkg.dir("AutomotivePOMDPs")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
