@@ -44,7 +44,7 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
             sp_ped_s = s.ped_s + sp_ped_v*cos(theta_ped) - x_delta_ego
             sp_ped_T = s.ped_T + sp_ped_v*sin(theta_ped)
             
-            state_vector = SVector(sp_ego_y, sp_ego_v, sp_ped_s, sp_ped_T, sp_ped_theta, sp_ped_v)
+            state_vector = SVector{6, Float64}(sp_ego_y, sp_ego_v, sp_ped_s, sp_ped_T, sp_ped_theta, sp_ped_v)
             
             ind, weight = interpolants(pomdp.state_space_grid, state_vector)
             for i=1:length(ind)

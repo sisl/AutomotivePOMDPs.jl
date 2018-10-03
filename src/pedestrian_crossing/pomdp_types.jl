@@ -16,6 +16,13 @@ depends on ADM VehicleState type
     ped_v::Float64
 end
 
+struct SingleOCFPedState   
+    ped_s::Float64
+    ped_T::Float64
+    ped_theta::Float64
+    ped_v::Float64
+end
+
 #### Action type
 
  struct SingleOCFAction
@@ -53,8 +60,13 @@ const SingleOCFObs = SingleOCFState
     γ::Float64 = 0.95
     
     state_space_grid::GridInterpolations.RectangleGrid = initStateSpace()
+
+
+    state_space_ped::Vector{SingleOCFPedState} = initStateSpacePed()
+
     state_space::Vector{SingleOCFState} = getStateSpaceVector(state_space_grid)
     action_space::Vector{SingleOCFAction} = initActionSpace(longitudinal_actions, lateral_actions)
+
 end
 
 
@@ -157,6 +169,35 @@ function initStateSpace()
     ped_v_space = linspace(ped_v_min,ped_v_max,5)
  
     return RectangleGrid(ego_y_space, ego_v_space, ped_s_space, ped_T_space, ped_theta_space, ped_v_space) 
+end
+
+function initStateSpacePed()
+    
+    ped_s_min = -1
+    ped_s_max = 49
+    ped_s_space = linspace(ped_s_min,ped_s_max,25)
+    
+    ped_T_min = -5
+    ped_T_max = 5
+    ped_T_space = linspace(ped_T_min,ped_T_max,10)
+
+    ped_theta_min = 1.57-1.57/2
+    ped_theta_max = 1.57+1.57/2
+    ped_theta_space = linspace(ped_theta_min,ped_theta_max,5)
+    
+    ped_v_min = 0
+    ped_v_max = 2
+    ped_v_space = linspace(ped_v_min,ped_v_max,5)
+
+    ped_grid = RectangleGrid(ped_s_space, ped_T_space, ped_theta_space, ped_v_space) 
+    state_space_ped = SingleOCFPedState[]
+    
+    for i = 1:length(ped_grid)
+        s = ind2x(ped_grid,i)
+        push!(state_space_ped,SingleOCFPedState(s[1], s[2], s[3], s[4]))
+    end
+
+    return state_space_ped
 end
 
 function getStateSpaceVector(grid_space)
