@@ -6,9 +6,11 @@
                                                                AutomotiveSensors.LinearNoise(10, 0., 0.), 0, 0, MersenneTwister(1)) 
     timestep::Float64 = 0
     t_current::Float64 = 0
+    tick::Int64 = 0
+   
     state::Int32 = 0
 
-    
+
     a_request::Float64 = 0
     a_current::Float64 = 0
     t_brake_trigger::Float64 = 0
@@ -30,19 +32,113 @@
     prediction::Array{Float64} = []
     sensor_observations::Vector{Vehicle} = []
 
+
+    update_tick_emergency_system::Int64 = 1
+
+end
+
+  
+function AutomotiveDrivingModels.observe!(model::EmergencySystem, scene::Scene, roadway::Roadway, egoid::Int)
+
+    model.t_current = model.t_current + model.timestep 
+    model.tick += 1
+    
+    ego = scene[findfirst(scene, egoid)]
+    model.sensor_observations = measure(model.sensor, ego, scene, roadway, model.obstacles)
+    
+    ################ Emergency System #####################################################
+    (ttb, stop_distance) = getStopDistanceVehicle(model, ego.state.v, 10.0, 1.0)
+    print("TTB: ", ttb)
+    
+    model.risk = 0
+    model.collision_rate = 0
+    model.brake_request = false
+    model.prediction = []
+
+    emergency_system_brake_request = false
+    a = 0.0; phi_dot = 0.0
+    t0 = 0.0; x0 = 0.0; y0 = 0.0; phi0 = 0.0
+    TS = 0.01; T = 3.0
+   
+
+    if ( model.tick % model.update_tick_emergency_system == 0 )
+
+        ego_data = caclulateCTRAModel(t0, x0, y0, phi0, ego.state.v, phi_dot, a, TS, T)
+        for object in model.sensor_observations
+        #  println(object)
+            object_posF = Frenet(object.state.posG, get_lane(env.roadway, ego.state), env.roadway)
+
+            delta_s = object_posF.s - ego.state.posF.s - ego.def.length/2
+            delta_d = object_posF.t - ego.state.posF.t
+            delta_theta = object_posF.ϕ - ego.state.posF.ϕ
+            #ttc = delta_s / ego.v
+            ped_v = object.state.v
+            if (delta_s > 2)
+
+                # in general, trajectory should come from a prediction model!!
+                object_data = caclulateCTRAPredictionSimple(t0, delta_s, 0.1, delta_d, 0.1, 
+                                                                delta_theta, 0.1, ped_v, 0.1, TS, T)
+
+                (idx, ti) = getConflictZone(ego_data, object_data)
+                (ttc, model.collision_rate, prediction) = caluclateCollision(ego_data, object_data, idx)
+                model.prediction = prediction
+
+                ttc_m = mean(ttc)
+                ttc_std = std(ttc)
+
+                print(" collision_rate: ", model.collision_rate, " ttc_m: ", ttc_m, " ttc_std: ", ttc_std)
+             #   println("ttc_min: ", ttc_m-ttc_std)
+                model.ttc = ttc_m-ttc_std
+                model.risk = min(ttb / model.ttc, 1.0)
+                println("Risk: ", model.risk, " ttc_min: ", model.ttc)
+
+                if ( model.risk > 0.99 && model.collision_rate >= 0.6 )
+                    emergency_system_brake_request = true
+             #       println("Brake request!!!")
+                end
+            end
+        end
+
+
+        if ( emergency_system_brake_request == true )
+            model.brake_request = true
+        else
+            model.brake_request = false
+        end
+        
+    end
+    
+    # brake system
+    model = brakeSystemStateMachine(model, ego.state)
+    #model.a_current = 0
+    model.a = LatLonAccel(0., model.a_current)
+  #  println("model_state: ", model.state, " ", model.a) 
 end
 
 
+
 function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, roadway::Roadway, Δt::Float64)
-    x_ = veh.state.posG.x + veh.state.v*Δt + action.a_lon*Δt^2/2
-    if x_ <= veh.state.posG.x
-        x_ = veh.state.posG.x
-    end
+
+    # new velocity
     v_ = veh.state.v + action.a_lon*Δt
-    if v_ <= 0.
+    if v_ < 0.
         v_ = 0.
     end
-    return VehicleState(VecSE2(x_, veh.state.posG.y, veh.state.posG.θ), roadway, v_)
+    
+    # lateral offset
+    delta_y = action.a_lat*Δt
+    if v_ < 0.
+        delta_y = 0.
+    end
+    s_new = v_ * Δt
+
+    # longitudional distance based on required velocity and lateral offset
+    delta_x = sqrt(s_new^2 - delta_y^2 )
+
+    y_ = veh.state.posG.y + delta_y
+    x_ = veh.state.posG.x + delta_x
+
+    return VehicleState(VecSE2(x_, y_, veh.state.posG.θ), roadway, v_)
 end
 
 function AutomotiveDrivingModels.get_name(model::EmergencySystem)
@@ -118,7 +214,7 @@ function brakeSystemStateMachine(model::EmergencySystem, ego::VehicleState)
         model.state = 0
     end
 
-
+    println("")
     if model.state == 0 
         println("standby")
         model.a_current = 0
