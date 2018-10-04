@@ -58,8 +58,8 @@ function POMDPs.state_index(mdp::CarMDP, s::CarMDPState)
         end
         # step 3: find car_index in car states
         car_i = car_state_index(mdp.env, s.car, find_route(mdp.env, s.route), mdp.pos_res, mdp.vel_res)
-        # sub2ind magic
-        si = sub2ind((n_car, n_ego), car_i, ego_i)
+        # linear/cartesian magic
+        si = LinearIndices((n_car, n_ego))[car_i, ego_i]
 
         for i=2:route_i
             size_r = n_ego * n_car_states(mdp.env, routes[i-1], mdp.pos_res, mdp.vel_res)

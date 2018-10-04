@@ -160,8 +160,8 @@ function ego_state_index(env::UrbanEnv, ego::VehicleState, pos_res::Float64, v_r
     size_v = length(v_space)
     v = ego.v
     vi = find_range_index(v_space, v)
-    # sub2ind magic
-    egoi = sub2ind((length(s_space), length(v_space)), si, vi)
+    # use linear/Cartesian magic
+    egoi = LinearIndices((length(s_space), length(v_space)))[si, vi]
     # Lanes have different lengths
     for i=2:li
         size_s = length(get_discretized_lane(lanes[i-1], env.roadway, pos_res))
@@ -190,7 +190,7 @@ function ind2ego(env::UrbanEnv, ei::Int64, pos_res::Float64, v_res::Float64)
     lane = env.roadway[lanes[lane_ind]]
     ei_ = ei - lane_shift
     size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
-    si, vi = ind2sub((size_s, size_v), ei_)
+    si, vi = Tuple(CartesianIndices((size_s, size_v))[ei_])
     s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
     v = v_space[vi]
     posF = Frenet(lane, s)
@@ -213,8 +213,8 @@ function car_state_index(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_r
     size_v = length(v_space)
     v = car.v
     vi = find_range_index(v_space, v)
-    # sub2ind magic
-    cari = sub2ind((length(s_space), length(v_space)), si, vi)
+    # use linear/Cartesian magic
+    cari = LinearIndices((length(s_space), length(v_space)))[si, vi]
     # Lanes have different lengths
     for i=2:li
         size_s = length(get_discretized_lane(lanes[i-1], env.roadway, pos_res))
@@ -235,8 +235,8 @@ function car_state_index(env::UrbanEnv, car::VehicleState, route::Vector{LaneTag
     size_v = length(v_space)
     v = car.v
     vi = find_range_index(v_space, v)
-    # sub2ind magic
-    cari = sub2ind((length(s_space), length(v_space)), si, vi)
+    # use linear/Cartesian magic
+    cari = LinearIndices((length(s_space), length(v_space)))[si, vi]
     # Lanes have different lengths
     for i=2:li
         size_s = length(get_discretized_lane(route[i-1], env.roadway, pos_res))
@@ -264,7 +264,7 @@ function ind2car(env::UrbanEnv, ci::Int64, route::Vector{LaneTag}, pos_res::Floa
     lane = env.roadway[route[lane_ind]]
     ci_ = ci - lane_shift
     size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
-    si, vi = ind2sub((size_s, size_v), ci_)
+    si, vi = Tuple(CartesianIndices((size_s, size_v))[ci_]
     s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
     v = v_space[vi]
     posF = Frenet(lane, s)
@@ -290,8 +290,8 @@ function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_r
     size_v = length(v_space)
     v = ped.v
     vi = find_range_index(v_space, v)
-    # sub2ind magic
-    pedi = sub2ind((n_headings, length(s_space), length(v_space)), phi_i, si, vi)
+    # use linear/Cartesian magic
+    pedi = LinearIndices((n_headings, length(s_space), length(v_space)))[phi_i, si, vi]
     # Lanes have different lengths
     for i=2:li
         size_s = length(get_discretized_lane(lanes[i-1], env.roadway, pos_res))
@@ -320,7 +320,7 @@ function ind2ped(env::UrbanEnv, pedi::Int64, pos_res::Float64, v_res::Float64)
     lane = env.roadway[lanes[lane_ind]]
     pi_ = pedi - lane_shift
     size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
-    phii, si, vi = ind2sub((2, size_s, size_v), pi_)
+    phii, si, vi = CartesianIndices((2, size_s, size_v))[pi_]
     s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
     v = v_space[vi]
     phi = phii == 1 ? 0. : float(pi)

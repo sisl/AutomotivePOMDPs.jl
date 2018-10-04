@@ -23,7 +23,7 @@ function POMDPs.update(bu::MixedUpdater, bold::SingleOCBelief, a::SingleOCAction
         if i == n_ped_states
             ped = get_off_the_grid(pomdp)
         else
-            k, l = ind2sub((length(Y), length(V_ped)), i)
+            k, l = Tuple(CartesianIndices((length(Y), length(V_ped)))[i])
             y = Y[k]
             v = V_ped[l]
             ped = AutomotivePOMDPs.yv_to_state(pomdp, y, v)

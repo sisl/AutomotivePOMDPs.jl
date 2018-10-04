@@ -59,9 +59,9 @@ function POMDPs.state_index(pomdp::SingleOCPOMDP, s::SingleOCState)
 
     if !off_the_grid(pomdp, s.ped)
         v_ped_ind = Int(ceil(v_ped/pomdp.vel_res)) + 1
-        i = sub2ind((size_v_ped, size_y, size_v, size_x), v_ped_ind, y_ind, v_ind, x_ind)
+        i = LinearIndices((size_v_ped, size_y, size_v, size_x))[v_ped_ind, y_ind, v_ind, x_ind]
     else
-        off_grid_ind = sub2ind((size_v, size_x), v_ind, x_ind)
+        off_grid_ind = LinearIndices((size_v, size_x))[v_ind, x_ind]
         i = size_x*size_v*size_y*size_v_ped + off_grid_ind
     end
     return i

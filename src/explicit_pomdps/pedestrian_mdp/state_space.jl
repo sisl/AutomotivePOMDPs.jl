@@ -35,7 +35,7 @@ function POMDPs.state_index(mdp::PedMDP, s::PedMDPState)
         ped_i = ped_state_index(mdp.env, s.ped, mdp.pos_res, mdp.vel_ped_res)
     end
     # step 3: find global index
-    si = sub2ind((n_ped+1, n_ego), ped_i, ego_i)
+    si = LinearIndices((n_ped+1, n_ego))[ped_i, ego_i]
 end
 
 function POMDPs.initial_state_distribution(mdp::PedMDP)

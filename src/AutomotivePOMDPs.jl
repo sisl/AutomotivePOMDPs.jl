@@ -18,6 +18,7 @@ using AutomotiveSensors
 using Reel
 using Random
 using DataStructures
+using LinearAlgebra
 
 """
 Abstract type to define driving environment with occlusion 

@@ -63,7 +63,7 @@ function POMDPs.state_index(pomdp::SingleOIPOMDP, s::SingleOIState)
 
     if !off_the_grid(pomdp, s.car)
         v_car_ind = Int(ceil(v_car/pomdp.vel_res)) + 1
-        ind = sub2ind((size_V, size_s_car, size_V, size_s_ego), v_car_ind, s_car_ind, v_ego_ind, s_ego_ind)
+        ind = LinearIndices((size_V, size_s_car, size_V, size_s_ego))[v_car_ind, s_car_ind, v_ego_ind, s_ego_ind]
         for i=1:car_lane_tag.segment-1
             lane_tag = pomdp.env.lane_map[LANE_ID_LIST[i]].tag
             s_end = get_end(pomdp.env.roadway[lane_tag])
@@ -71,7 +71,7 @@ function POMDPs.state_index(pomdp::SingleOIPOMDP, s::SingleOIState)
             ind += size_s*size_V*size_s_ego*size_V
         end
     else
-        ind = sub2ind((size_V, size_s_ego), v_ego_ind, s_ego_ind)
+        ind = LinearIndices((size_V, size_s_ego))[v_ego_ind, s_ego_ind]
         for i=1:length(LANE_ID_LIST)
             lane_tag = pomdp.env.lane_map[LANE_ID_LIST[i]].tag
             s_end = get_end(pomdp.env.roadway[lane_tag])
