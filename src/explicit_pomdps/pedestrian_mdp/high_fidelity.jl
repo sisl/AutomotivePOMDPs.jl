@@ -20,7 +20,7 @@ function interpolate_state(mdp::PedMDP, s::PedMDPState)
 end
 
 function get_mdp_state(mdp::PedMDP, s::Scene, ped_id::Int64)
-    ped_i = findfirst(s, ped_id)
+    ped_i = findfirst(isequal(ped_id), s)
     ped = Vehicle(get_off_the_grid(mdp), mdp.ped_type, ped_id)
     if ped_i != 0
         ped = s[ped_i]

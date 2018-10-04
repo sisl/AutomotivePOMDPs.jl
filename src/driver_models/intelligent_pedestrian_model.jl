@@ -22,7 +22,7 @@ function AutomotiveDrivingModels.observe!(model::IntelligentPedestrian,
                                         scene::EntityFrame{VehicleState, VehicleDef, Int64},
                                         roadway::Roadway,
                                         egoid::Int)
-    ped = scene[findfirst(scene, egoid)]
+    ped = scene[findfirst(isequal(egoid), scene)]
     observe!(model.motion, scene, roadway, egoid)
     model.crossing = update_crossing(ped, model.crosswalk, model.conflict_lanes, roadway)
     model.done = update_done(ped, model.crossing, model.crosswalk)

@@ -86,7 +86,7 @@ end
 
 function AutomotiveDrivingModels.observe!(model::IntelligentDriverModel2D, scene::Scene, roadway::Roadway, egoid::Int)
 
-    vehicle_index = findfirst(scene, egoid)
+    vehicle_index = findfirst(isequal(egoid), scene)
 
     fore = get_neighbor_fore_along_lane(scene, vehicle_index, roadway,
                                         VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())

@@ -47,7 +47,7 @@ function is_observable_fixed(s::SingleOIState, env::SimpleInterEnv)
     car = s.car
     ego = s.ego
     front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(car.posG.y - front.y, car.posG.x - front.x)
+    angle = atan(car.posG.y - front.y, car.posG.x - front.x)
     ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
     for i = 1:m
         if is_colliding(ray, env.obstacles[i], car.posG)

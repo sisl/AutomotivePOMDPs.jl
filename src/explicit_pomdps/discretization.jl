@@ -151,7 +151,7 @@ function ego_state_index(env::UrbanEnv, ego::VehicleState, pos_res::Float64, v_r
     # find lane index
     lanes = get_ego_route(env)
     lane = get_lane(env.roadway, ego)
-    li = findfirst(lanes, lane.tag) #XXX possibly inefficient
+    li = findfirst(isequal(lane.tag), lanes) #XXX possibly inefficient
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
     si = find_range_index(s_space, ego.posF.s)
@@ -204,7 +204,7 @@ function car_state_index(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_r
     # find lane index
     lanes = get_car_lanes(env)
     lane = get_lane(env.roadway, car)
-    li = findfirst(lanes, lane.tag) #XXX possibly inefficient
+    li = findfirst(isequal(lane.tag), lanes) #XXX possibly inefficient
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
     si = find_range_index(s_space, car.posF.s)
@@ -225,7 +225,7 @@ end
 
 function car_state_index(env::UrbanEnv, car::VehicleState, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64)
     lane = get_lane(env.roadway, car)
-    li = findfirst(route, lane.tag)
+    li = findfirst(isequal(lane.tag), route)
     # position index
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
@@ -264,7 +264,7 @@ function ind2car(env::UrbanEnv, ci::Int64, route::Vector{LaneTag}, pos_res::Floa
     lane = env.roadway[route[lane_ind]]
     ci_ = ci - lane_shift
     size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
-    si, vi = Tuple(CartesianIndices((size_s, size_v))[ci_]
+    si, vi = Tuple(CartesianIndices((size_s, size_v))[ci_])
     s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
     v = v_space[vi]
     posF = Frenet(lane, s)
@@ -278,7 +278,7 @@ function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_r
     # find lane index
     lanes = get_ped_lanes(env)
     lane = get_lane(env.roadway, ped)
-    li = findfirst(lanes, lane.tag) #XXX possibly inefficient
+    li = findfirst(isequal(lane.tag), lanes) #XXX possibly inefficient
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
     si = find_range_index(s_space, ped.posF.s)
@@ -320,7 +320,7 @@ function ind2ped(env::UrbanEnv, pedi::Int64, pos_res::Float64, v_res::Float64)
     lane = env.roadway[lanes[lane_ind]]
     pi_ = pedi - lane_shift
     size_s = length(get_discretized_lane(lane.tag, env.roadway, pos_res))
-    phii, si, vi = CartesianIndices((2, size_s, size_v))[pi_]
+    phii, si, vi = Tuple(CartesianIndices((2, size_s, size_v))[pi_])
     s = get_discretized_lane(lane.tag, env.roadway, pos_res)[si]
     v = v_space[vi]
     phi = phii == 1 ? 0. : float(pi)

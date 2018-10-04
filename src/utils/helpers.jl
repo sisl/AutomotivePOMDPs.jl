@@ -24,7 +24,7 @@ return true if the ego car is in collision in the given scene, do not check for 
 other participants
 """
 function is_crash(scene::Scene)
-    ego = scene[findfirst(scene, EGO_ID)]
+    ego = scene[findfirst(isequal(EGO_ID), scene)]
     for veh in scene
         if veh.id != 1
             if collision_checker(ego, veh) #&& !(ego.state.v == 0. && veh.def.class == AgentClass.PEDESTRIAN)
@@ -48,12 +48,12 @@ function clean_scene!(env::OccludedEnv, scene::Scene)
         lane = get_lane(env.roadway, veh)
         s_end = get_end(lane)
         if s >= s_end && lane ∈ exit_lanes
-            deleteat!(scene, findfirst(scene, veh.id))
+            deleteat!(scene, findfirst(isequal(veh.id), scene))
         elseif veh.def.class == AgentClass.PEDESTRIAN
             if isapprox(s, 0., atol=0.01) && veh.state.posF.ϕ ≈ float(π)
-                deleteat!(scene, findfirst(scene, veh.id))
+                deleteat!(scene, findfirst(isequal(veh.id), scene))
             elseif s >= s_end && veh.state.posF.ϕ ≈ 0.
-                deleteat!(scene, findfirst(scene, veh.id))
+                deleteat!(scene, findfirst(isequal(veh.id), scene))
             end
         end
     end
@@ -64,7 +64,7 @@ function clean_scene!(env::OccludedEnv, scene::Scene)
                veh.id != veh_.id &&
                veh_.def.class != AgentClass.PEDESTRIAN && veh.def.class != AgentClass.PEDESTRIAN &&
                !(min(veh_.state.v, veh.state.v) ≈ 0.)
-                deleteat!(scene, findfirst(scene, veh_.id))
+                deleteat!(scene, findfirst(isequal(veh_.id), scene))
             end
         end
     end
@@ -101,7 +101,7 @@ end
 return the ego vehicle from a given scene
 """
 function get_ego(scene::Scene)
-    return scene[findfirst(scene, EGO_ID)]
+    return scene[findfirst(isequal(EGO_ID), scene)]
 end
 
 
@@ -304,7 +304,7 @@ function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, ac
       dt₂ = dt + a_lat*ΔT
       speed₂ = sqrt(dt₂*dt₂ + ds₂*ds₂)
       v₂ = sign(ds₂)*speed₂
-      ϕ₂ = atan2(dt₂, ds₂) + (v₂ < 0.0)*π # handle negative speeds
+      ϕ₂ = atan(dt₂, ds₂) + (v₂ < 0.0)*π # handle negative speeds
       roadind = AutoUrban.move_along_with_direction(veh.state.posF.roadind, roadway, Δs, direction = action.direction)
       footpoint = roadway[roadind]
       posF = Frenet(roadind, roadway, t=t+Δt, ϕ = ϕ₂)
@@ -339,7 +339,7 @@ function AutomotiveDrivingModels.propagate(veh::VehicleState, action::LonAccelDi
       dt₂ = dt + a_lat*ΔT
       speed₂ = sqrt(dt₂*dt₂ + ds₂*ds₂)
       v₂ = sign(ds₂)*speed₂
-      ϕ₂ = atan2(dt₂, ds₂) + (v₂ < 0.0)*π # handle negative speeds
+      ϕ₂ = atan(dt₂, ds₂) + (v₂ < 0.0)*π # handle negative speeds
       roadind = AutoUrban.move_along_with_direction(veh.posF.roadind, roadway, Δs, direction = action.direction)
       footpoint = roadway[roadind]
       posF = Frenet(roadind, roadway, t=t+Δt, ϕ = ϕ₂)
@@ -373,7 +373,7 @@ function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, ac
    dt₂ = dt + a_lat*ΔT
    speed₂ = sqrt(dt₂*dt₂ + ds₂*ds₂)
    v₂ = sqrt(dt₂*dt₂ + ds₂*ds₂) # v is the magnitude of the velocity vector
-   ϕ₂ = atan2(dt₂, ds₂)
+   ϕ₂ = atan(dt₂, ds₂)
 
    roadind = move_along(veh.state.posF.roadind, roadway, Δs)
    footpoint = roadway[roadind]

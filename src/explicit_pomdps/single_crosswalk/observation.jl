@@ -72,7 +72,7 @@ function is_observable_fixed(s::SingleOCState, env::CrosswalkEnv)
     ped = s.ped
     ego = s.ego
     front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(ped.posG.y - front.y, ped.posG.x - front.x)
+    angle = atan(ped.posG.y - front.y, ped.posG.x - front.x)
     ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
     if isinf(ped.v)
         return false

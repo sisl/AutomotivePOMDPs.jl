@@ -35,7 +35,7 @@ end
 
 
 function AutomotiveDrivingModels.observe!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(scene, egoid)]
+    ego = scene[findfirst(isequal(egoid), scene)]
     AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
     dir = model.navigator.dir
     a_lon =0.
@@ -86,7 +86,7 @@ end
 If other vehicles reaches the intersection before the ego vehicle they are added to the waitlist
 """
 function grow_wait_list!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(scene, egoid)]
+    ego = scene[findfirst(isequal(egoid), scene)]
     ego_dist = get_dist_to_end(ego, roadway)
     ego_tts = tts(ego_dist, ego.state.v)
     n_yield = 0
@@ -114,13 +114,13 @@ end
 Remove from the wait list vehicles that are now exiting the intersection
 """
 function ungrow_wait_list!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(scene, egoid)]
+    ego = scene[findfirst(isequal(egoid), scene)]
     ego_dist = get_dist_to_end(ego, roadway)
     n = length(model.wait_list)
     to_remove = Int64[]
     for i=1:n
         vehid = model.wait_list[i]
-        veh_ind = findfirst(scene, vehid)
+        veh_ind = findfirst(isequal(vehid), scene)
         if veh_ind == 0
             push!(to_remove, i)
             continue
@@ -177,7 +177,7 @@ end
 Check if the ego car has priority or not
 """
 function update_priority!(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(scene, egoid)]
+    ego = scene[findfirst(isequal(egoid), scene)]
     model.priority = isempty(model.wait_list) && model.stop ||
                        !(get_lane(roadway, ego) ∈ model.intersection_entrances)
 end
@@ -185,7 +185,7 @@ end
 
 ## Fancier priority model
 function check_priority(model::StopIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(scene, egoid)]
+    ego = scene[findfirst(isequal(egoid), scene)]
     lane = get_lane(roadway, ego)
     route = model.navigator.route
     next_lane = intersect(lane.exits, model.navigator.route)

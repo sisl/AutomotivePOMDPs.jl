@@ -163,6 +163,6 @@ end
 #         tick!(scene, env.roadway, actions, rec.timestep)
 #         update!(rec, scene)
 #     end
-#     @assert findfirst(scene, 1) == 0
+#     @assert findfirst(isequal(1), scene) == 0
 #     return rec[0]
 # end

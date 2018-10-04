@@ -10,7 +10,7 @@ Occlusion checker considering only fixed obstacles in the environment:
 function is_observable_fixed(ego::VehicleState, car::VehicleState, env::OccludedEnv)
     m = length(env.obstacles)
     front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(car.posG.y - front.y, car.posG.x - front.x)
+    angle = atan(car.posG.y - front.y, car.posG.x - front.x)
     ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
     for i = 1:m
         if is_colliding(ray, env.obstacles[i], car.posG)
@@ -24,7 +24,7 @@ end
 function is_observable_fixed(x::Float64, y::Float64, ego::VehicleState, env::OccludedEnv)
     m = length(env.obstacles)
     front = ego.posG + polar(VehicleDef().length/2, ego.posG.θ)
-    angle = atan2(y - front.y, x - front.x)
+    angle = atan(y - front.y, x - front.x)
     ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
     for i = 1:m
         if is_colliding(ray, env.obstacles[i], VecSE2(x,y,0.))
@@ -41,7 +41,7 @@ It considers only other vehicles (not pedestrians, not fixed obstacles)
 """
 function is_observable_dyna(ego::Vehicle, car::Vehicle, scene::Scene)
     front = ego.state.posG + polar(ego.def.length/2, ego.state.posG.θ)
-    angle = atan2(car.state.posG.y - front.y, car.state.posG.x - front.x)
+    angle = atan(car.state.posG.y - front.y, car.state.posG.x - front.x)
     ray = Projectile(VecSE2(front.x, front.y, angle), 1.0)
     for veh in scene
         if veh.id == car.id || veh.id == ego.id || veh.def == PEDESTRIAN_DEF

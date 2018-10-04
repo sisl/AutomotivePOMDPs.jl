@@ -59,7 +59,7 @@ end
 set the lane exit to take at the next junction to reach the goal
 """
 function set_direction!(model::RouteFollowingIDM, scene::Scene, roadway::Roadway, egoid::Int64)
-    ego = scene[findfirst(scene, egoid)]
+    ego = scene[findfirst(isequal(egoid), scene)]
     cur_lane = get_lane(roadway, ego)
     set_direction!(model, cur_lane, roadway)
 end
@@ -69,7 +69,7 @@ end
 
 function get_direction(lane::Lane, route::Vector{Lane})
     dir = 1
-    ind = findfirst(route, lane)
+    ind = findfirst(isequal(lane), route)
     if ind == length(route)
         return dir
     end
@@ -86,7 +86,7 @@ end
 
 function AutomotiveDrivingModels.observe!(model::RouteFollowingIDM, scene::Scene, roadway::Roadway, egoid::Int)
 
-    vehicle_index = findfirst(scene, egoid)
+    vehicle_index = findfirst(isequal(egoid), scene)
 
     fore = get_neighbor_fore_along_lane(scene, vehicle_index, roadway,
                                         VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())

@@ -25,7 +25,7 @@ function measure(scene::Scene, sensor::POMDPSensor, env::CrosswalkEnv)
     vel_noise = sensor.sensor.vel_noise
     pomdp = sensor.pomdp
     o = Dict{Int64, SingleOCObs}()
-    ego = scene[findfirst(scene, 1)].state
+    ego = scene[findfirst(isequal(1), scene)].state
     for i=1:scene.n
         veh = scene[i]
         if veh.id == 1
@@ -54,7 +54,7 @@ function measure(scene::Scene, sensor::SimpleSensor, env::CrosswalkEnv)
     pos_noise = sensor.pos_noise
     vel_noise = sensor.vel_noise
     o = Vehicle[]
-    ego = scene[findfirst(scene, 1)]
+    ego = scene[findfirst(isequal(1), scene)]
     push!(o, ego)
     for veh in scene
         if veh.id == ego.id

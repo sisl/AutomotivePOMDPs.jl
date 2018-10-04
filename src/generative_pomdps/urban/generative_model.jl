@@ -4,7 +4,7 @@
 
 function POMDPs.reward(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState)
     r = 0.
-    ego = sp[findfirst(sp, EGO_ID)]
+    ego = sp[findfirst(isequal(EGO_ID), sp)]
     if is_crash(sp)
         r += pomdp.collision_cost
     end
@@ -23,7 +23,7 @@ end
 ### TERMINAL STATES ###############################################################################
 
 function POMDPs.isterminal(pomdp::UrbanPOMDP, s::UrbanState)
-    ego = s[findfirst(s, EGO_ID)]
+    ego = s[findfirst(isequal(EGO_ID), s)]
     return is_crash(s) || (ego.state.posF.s >= get_end(pomdp.env.roadway[pomdp.ego_goal]) &&
                            get_lane(pomdp.env.roadway, ego).tag == pomdp.ego_goal)
 end
@@ -42,7 +42,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
     end
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
-    is_ego_here = clamp(findfirst(s, EGO_ID),0, 1)
+    is_ego_here = clamp(findfirst(isequal(EGO_ID), s),0, 1)
     sp = deepcopy(s) #XXX bad
     if rand(rng) < pomdp.car_birth && n_cars(s) < pomdp.max_cars + is_ego_here
         new_car = initial_car(pomdp, sp, rng)

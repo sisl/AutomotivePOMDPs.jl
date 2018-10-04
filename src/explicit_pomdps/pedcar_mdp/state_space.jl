@@ -119,7 +119,7 @@ function ind2state(mdp::PedCarMDP, si::Int64)
         si_ = si - ns # shift by all the states that were added before
         car = get_off_the_grid(mdp)
         # retrieve ped and ego
-        ped_i, ego_i = CartesianIndices((n_ped + 1, n_ego))[si_]
+        ped_i, ego_i = Tuple(CartesianIndices((n_ped + 1, n_ego))[si_])
         ego = ind2ego(mdp.env, ego_i, mdp.pos_res, mdp.vel_res)
         if ped_i > n_ped
             ped = get_off_the_grid(mdp)
@@ -134,7 +134,7 @@ function ind2state(mdp::PedCarMDP, si::Int64)
         sroute = SVector{2, LaneTag}(route[1], route[end])
         n_cars = n_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
         # cartesian/linear magic
-        car_i, ped_i, ego_i = CartesianIndices((n_cars, n_ped + 1, n_ego))[si_]
+        car_i, ped_i, ego_i = Tuple(CartesianIndices((n_cars, n_ped + 1, n_ego))[si_])
         car = ind2car(mdp.env, car_i, route, mdp.pos_res, mdp.vel_res)
         ego = ind2ego(mdp.env, ego_i, mdp.pos_res, mdp.vel_res)
         if ped_i > n_ped

@@ -4,7 +4,7 @@
 
 function POMDPs.reward(pomdp::OIPOMDP, s::OIState, a::OIAction, sp::OIState)
     r = 0.
-    ego = sp[findfirst(sp, EGO_ID)]
+    ego = sp[findfirst(isequal(EGO_ID), sp)]
     if is_crash(sp)
         r += pomdp.collision_cost
     end
@@ -23,7 +23,7 @@ end
 ### TERMINAL STATES ###############################################################################
 
 function POMDPs.isterminal(pomdp::OIPOMDP, s::OIState)
-    ego = s[findfirst(s, EGO_ID)]
+    ego = s[findfirst(isequal(EGO_ID), s)]
     return is_crash(s) || (ego.state.posF.s >= get_end(pomdp.env.roadway[pomdp.ego_goal]) &&
                            get_lane(pomdp.env.roadway, ego).tag == pomdp.ego_goal)
 end
@@ -35,7 +35,7 @@ end
 function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::AbstractRNG)
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
-    is_ego_here = clamp(findfirst(s, EGO_ID),0, 1)
+    is_ego_here = clamp(findfirst(isequal(EGO_ID), s),0, 1)
     sp = deepcopy(s) #XXX bad
     max_id = 0
     for veh in sp
@@ -185,7 +185,7 @@ function POMDPs.generate_o(pomdp::OIPOMDP, s::Scene, a::OIAction, sp::Scene, rng
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(n_features*(pomdp.max_cars + 1))
-    ego = sp[findfirst(sp, EGO_ID)].state
+    ego = sp[findfirst(isequal(EGO_ID), sp)].state
     o[1] = ego.posG.x
     o[2] = ego.posG.y
     o[3] = ego.posG.θ

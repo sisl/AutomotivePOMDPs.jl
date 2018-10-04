@@ -4,7 +4,7 @@
 
 function POMDPs.reward(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState)
     r = 0.
-    ego = sp[findfirst(sp, EGO_ID)]
+    ego = sp[findfirst(isequal(EGO_ID), sp)]
     if is_crash(sp)
         r += pomdp.collision_cost
     end
@@ -21,7 +21,7 @@ end
 ### TERMINAL STATES ###############################################################################
 
 function POMDPs.isterminal(pomdp::OCPOMDP, s::OCState)
-    ego = s[findfirst(s, EGO_ID)]
+    ego = s[findfirst(isequal(EGO_ID), s)]
     return is_crash(s) || ego.state.posG.x >= pomdp.ego_goal
 end
 
@@ -57,7 +57,7 @@ end
 #         end
 #         y = veh.state.posG.y
 #         if y >= env.params.crosswalk_length/4
-#             deleteat!(scene, findfirst(scene, veh.id))
+#             deleteat!(scene, findfirst(isequal(veh.id), scene))
 #         end
 #     end
 # end
@@ -179,7 +179,7 @@ function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState,
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(2 + 2*pomdp.max_peds)
-    ego = sp[findfirst(sp, EGO_ID)].state
+    ego = sp[findfirst(isequal(EGO_ID), sp)].state
     o[1] = ego.posG.x
     o[2] = ego.v
     ped_off = get_off_the_grid(pomdp)
