@@ -5,7 +5,7 @@ function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
 
     curve = env.crosswalk.curve
     n = length(curve)
-    pts = Array{Float64}(2, n)
+    pts = Array{Float64}(undef, 2, n)
     for (i,pt) in enumerate(curve)
         pts[1,i] = pt.pos.x
         pts[2,i] = pt.pos.y
@@ -13,7 +13,7 @@ function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
 
     add_instruction!(rendermodel, render_dashed_line, (pts, colorant"white", env.crosswalk.width, 1.0, 1.0, 0.0, Cairo.CAIRO_LINE_CAP_BUTT))
     for obs in env.obstacles
-        pts = Array{Float64}(2, obs.npts)
+        pts = Array{Float64}(undef, 2, obs.npts)
         for (i, pt) in enumerate(obs.pts)
             pts[1,i] = pt.x
             pts[2,i] = pt.y
@@ -35,7 +35,7 @@ function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
         # crosswalk
         curve = cw.curve
         n = length(curve)
-        pts = Array{Float64}(2, n)
+        pts = Array{Float64}(undef, 2, n)
         for (i,pt) in enumerate(curve)
             pts[1,i] = pt.pos.x
             pts[2,i] = pt.pos.y
@@ -44,7 +44,7 @@ function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
     end
     # obstacles
     for obs in env.obstacles
-        pts = Array{Float64}(2, obs.npts)
+        pts = Array{Float64}(undef, 2, obs.npts)
         for (i, pt) in enumerate(obs.pts)
             pts[1,i] = pt.x
             pts[2,i] = pt.y
