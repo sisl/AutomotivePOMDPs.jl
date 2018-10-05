@@ -1,5 +1,5 @@
 function AutomotiveDrivingModels.observe!(lidar::LidarSensor, scene::Scene, env::OccludedEnv, egoid::Int64)
-    state_ego = scene[findfirst(isequal(egoid), scene)].state
+    state_ego = scene[findfirst(egoid, scene)].state
     ego_vel = polar(state_ego.v, state_ego.posG.θ)
     for (i,angle) in enumerate(lidar.angles)
         ray_angle = state_ego.posG.θ + angle
@@ -75,7 +75,7 @@ function render_lidar!(rendermodel::RenderModel, lidar::LidarSensor, posG::VecSE
 end
 
 function AutoViz.render!(rendermodel::RenderModel, overlay::LidarOverlay, scene::Scene, env::OccludedEnv)
-    ego = scene[findfirst(isequal(EGO_ID), scene)]
+    ego = scene[findfirst(EGO_ID, scene)]
     observe!(overlay.sensor, scene, env, ego.id)
     return render_lidar!(rendermodel, overlay.sensor, ego.state.posG)
 end

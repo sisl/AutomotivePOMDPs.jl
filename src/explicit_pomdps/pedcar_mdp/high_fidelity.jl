@@ -22,12 +22,12 @@ function interpolate_state(mdp::PedCarMDP, s::PedCarMDPState)
 end
 
 function get_mdp_state(mdp::PedCarMDP, pomdp::UrbanPOMDP, s::Scene, ped_id, car_id)
-    car_i = findfirst(isequal(car_id), s)
+    car_i = findfirst(car_id, s)
     car = Vehicle(get_off_the_grid(mdp), mdp.car_type, car_id)
     if car_i != 0
         car = s[car_i]
     end
-    ped_i = findfirst(isequal(ped_id), s)
+    ped_i = findfirst(ped_id, s)
     ped = Vehicle(get_off_the_grid(mdp), mdp.ped_type, ped_id)
     if ped_i != 0
         ped = s[ped_i]

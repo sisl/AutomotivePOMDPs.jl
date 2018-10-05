@@ -20,7 +20,7 @@ end
 
 
 function get_mdp_state(mdp::CarMDP, pomdp::UrbanPOMDP, s::Scene, car_id = 2)
-    car_i = findfirst(isequal(car_id), s)
+    car_i = findfirst(car_id, s)
     car = Vehicle(get_off_the_grid(mdp), mdp.car_type, car_id)
     if car_i != 0
         car = s[car_i]

@@ -34,7 +34,7 @@ AutomotiveDrivingModels.get_name(::CrosswalkDriver) = "CrosswalkDriver"
 Base.rand(model::CrosswalkDriver) = model.a
 
 function AutomotiveDrivingModels.observe!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(isequal(egoid), scene)]
+    ego = scene[findfirst(egoid, scene)]
     AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
     dir = model.navigator.dir
     a_lon =0.
@@ -69,7 +69,7 @@ end
 Check if all the pedestrian have crossed
 """
 function update_priority!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(isequal(egoid), scene)]
+    ego = scene[findfirst(egoid, scene)]
     model.priority = isempty(model.wait_list) || has_passed(model, ego, roadway)
 end
 
@@ -106,7 +106,7 @@ function ungrow_wait_list!(model::CrosswalkDriver, scene::Scene, roadway::Roadwa
     to_remove = Int64[]
     for i=1:n
         pedid = model.wait_list[i]
-        ped_ind = findfirst(isequal(pedid), scene)
+        ped_ind = findfirst(pedid, scene)
         if ped_ind == 0
             push!(to_remove, i)
             continue
@@ -228,7 +228,7 @@ end
 # end
 #
 # function AutomotiveDrivingModels.observe!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
-#     ego = scene[findfirst(isequal(egoid), scene)]
+#     ego = scene[findfirst(egoid, scene)]
 #     AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
 #     dir = model.navigator.dir
 #     a_lon =0.

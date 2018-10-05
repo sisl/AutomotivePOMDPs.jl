@@ -4,7 +4,7 @@
 
 function POMDPs.reward(pomdp::OIPOMDP, s::OIState, a::OIAction, sp::OIState)
     r = 0.
-    ego = sp[findfirst(isequal(EGO_ID), sp)]
+    ego = sp[findfirst(EGO_ID, sp)]
     if is_crash(sp)
         r += pomdp.collision_cost
     end
@@ -22,7 +22,7 @@ end
 ### TERMINAL STATES ###############################################################################
 
 function POMDPs.isterminal(pomdp::OIPOMDP, s::OIState)
-    ego = s[findfirst(isequal(EGO_ID), s)]
+    ego = s[findfirst(EGO_ID, s)]
     return is_crash(s) || ego.state.posF.s >= pomdp.ego_goal
 end
 
@@ -66,12 +66,12 @@ function clean_scene!(env::IntersectionEnv, scene::Scene)
         lane = get_lane(env.roadway, veh)
         s_end = get_end(lane)
         if s >= s_end
-            deleteat!(scene, findfirst(isequal(veh.id), scene))
+            deleteat!(scene, findfirst(veh.id, scene))
         end
     end
     for veh in scene
         if veh.id == 1; continue; end
-        fore = get_neighbor_fore_along_lane(scene, findfirst(isequal(veh.id), scene), env.roadway,
+        fore = get_neighbor_fore_along_lane(scene, findfirst(veh.id, scene), env.roadway,
                                             VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())
         if fore.ind != 0
             headway, v_oth = fore.Δs, scene[fore.ind].state.v
@@ -79,11 +79,11 @@ function clean_scene!(env::IntersectionEnv, scene::Scene)
             headway, v_oth = NaN, NaN
         end
         if !isnan(headway) && headway < 0.
-            deleteat!(scene, findfirst(isequal(veh.id), scene))
+            deleteat!(scene, findfirst(veh.id, scene))
         end
         for veh_ in scene
             if is_colliding(veh, veh_) && veh.id != 1 && veh_.id != 1 && veh.id != veh_.id
-                deleteat!(scene, findfirst(isequal(veh_.id), scene))
+                deleteat!(scene, findfirst(veh_.id, scene))
             end
         end
     end
@@ -159,7 +159,7 @@ function can_push(env, scene::Scene, car::Vehicle)
             return false
         end
     end
-    fore = get_neighbor_fore_along_lane(scene, findfirst(isequal(car.id), scene), env.roadway,
+    fore = get_neighbor_fore_along_lane(scene, findfirst(car.id, scene), env.roadway,
                                         VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())
     if fore.ind != 0
         headway, v_oth = fore.Δs, scene[fore.ind].state.v
@@ -200,7 +200,7 @@ function POMDPs.generate_o(pomdp::OIPOMDP, s::Scene, a::OIAction, sp::Scene, rng
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(n_features*(pomdp.max_cars + 1))
-    ego = sp[findfirst(isequal(EGO_ID), sp)].state
+    ego = sp[findfirst(EGO_ID, sp)].state
     o[1] = ego.posG.x
     o[2] = ego.posG.y
     o[3] = ego.posG.θ

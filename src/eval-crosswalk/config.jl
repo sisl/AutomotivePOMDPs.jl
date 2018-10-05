@@ -61,7 +61,7 @@ return true if the ego car is in collision in the given scene, do not check for 
 other participants
 """
 function is_crash(scene::Scene)
-    ego = scene[findfirst(isequal(1), scene)]
+    ego = scene[findfirst(EGO_ID, scene)]
     @assert ego.id == 1
     if ego.state.v ≈ 0
         return false
@@ -89,7 +89,7 @@ end
 
 function is_terminal(scene::Scene, env::CrosswalkEnv)
     # check ego car position
-    ego = scene[findfirst(isequal(1), scene)]
+    ego = scene[findfirst(EGO_ID, scene)]
     @assert ego.id == 1
     return ego.state.posG.x > env.params.end_pos
 end

@@ -4,7 +4,7 @@
 
 function POMDPs.reward(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState)
     r = 0.
-    ego = sp[findfirst(isequal(EGO_ID), sp)]
+    ego = sp[findfirst(EGO_ID, sp)]
     if is_crash(sp)
         r += pomdp.collision_cost
     end
@@ -23,7 +23,7 @@ end
 ### TERMINAL STATES ###############################################################################
 
 function POMDPs.isterminal(pomdp::UrbanPOMDP, s::UrbanState)
-    ego = s[findfirst(isequal(EGO_ID), s)]
+    ego = s[findfirst(EGO_ID, s)]
     return is_crash(s) || (ego.state.posF.s >= get_end(pomdp.env.roadway[pomdp.ego_goal]) &&
                            get_lane(pomdp.env.roadway, ego).tag == pomdp.ego_goal)
 end
@@ -40,9 +40,9 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
             delete!(pomdp.models, k)
         end
     end
-    actions = Array{Any}(length(s))
+    actions = Array{Any}(undef, length(s))
     pomdp.models[1].a = a
-    is_ego_here = clamp(findfirst(isequal(EGO_ID), s),0, 1)
+    is_ego_here = clamp(findfirst(EGO_ID, s),0, 1)
     sp = deepcopy(s) #XXX bad
     if rand(rng) < pomdp.car_birth && n_cars(s) < pomdp.max_cars + is_ego_here
         new_car = initial_car(pomdp, sp, rng)
@@ -62,7 +62,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
         pomdp.models[new_ped.id] = IntelligentPedestrian(dt = pomdp.ΔT, crosswalk=new_ped_cw, conflict_lanes=new_ped_conflict_lanes)
         push!(sp, new_ped)
     end
-    actions = Array{Any}(length(sp))
+    actions = Array{Any}(undef, length(sp))
     get_actions!(actions, sp, pomdp.env.roadway, pomdp.models)
     tick!(sp, pomdp.env.roadway, actions, pomdp.ΔT)
     clean_scene!(pomdp.env, sp)
@@ -429,7 +429,7 @@ return the list of lanes the ego car should take
 """
 function get_ego_route(pomdp::UrbanPOMDP)
     tags = [LaneTag(6,1), LaneTag(13, 1), LaneTag(2,pomdp.env.params.nlanes_main)]
-    lanes = Array{Lane}(length(tags))
+    lanes = Array{Lane}(undef, length(tags))
     for (i,tag) in enumerate(tags)
         lanes[i] = pomdp.env.roadway[tag]
     end

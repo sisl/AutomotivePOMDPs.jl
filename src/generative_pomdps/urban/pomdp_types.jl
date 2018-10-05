@@ -40,6 +40,7 @@ end
     ego_goal::LaneTag = LaneTag(2,2)
     off_grid::VecSE2 = VecSE2(UrbanEnv().params.x_min+VehicleDef().length/2, UrbanEnv().params.y_min+VehicleDef().width/2, 0)
     car_models::Dict{SVector{2, LaneTag}, DriverModel} = get_car_models(env, get_ttc_model)
+    n_features::Int64 = 4
     ΔT::Float64 = 0.5 # decision frequency
     car_birth::Float64 = 0.3
     ped_birth::Float64 = 0.3

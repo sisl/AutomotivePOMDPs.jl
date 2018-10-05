@@ -54,7 +54,7 @@ end
 
 function AutoViz.render!(rendermodel::RenderModel, overlay::InflateOverlay, scene::Scene, _env::DQNFeatures)
     env = _env.env
-    ego = scene[findfirst(isequal(1), scene)]
+    ego = scene[findfirst(EGO_ID, scene)]
     for veh in scene
         # increase pedestrian size for rendering
         if veh.def.class == AgentClass.PEDESTRIAN && is_observable(veh.state, ego.state, env)

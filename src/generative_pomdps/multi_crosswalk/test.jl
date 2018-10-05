@@ -11,6 +11,6 @@ pomdp = OCPOMDP()
 
 
 s0 = initial_state(pomdp, rng)
-ego = s0[findfirst(isequal(EGO_ID),s0)]
+ego = s0[findfirst(EGO_ID,s0)]
 println("Initial scene with $(length(s0)) cars")
 println("Initial ego state: $ego")

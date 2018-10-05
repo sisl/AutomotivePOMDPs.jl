@@ -180,7 +180,7 @@ function AutoViz.render!(rendermodel::RenderModel, overlay::QMDPOverlay, scene::
     text_y = font_size
     text_y_jump = round(Int, font_size*1.2)
 
-    ego = scene[findfirst(isequal(overlay.target_id), scene)]
+    ego = scene[findfirst(overlay.target_id, scene)]
 
     # display ego id
     add_instruction!( rendermodel, render_text, (@sprintf("Ego car state"), 10, text_y, font_size, overlay.color), incameraframe=false)

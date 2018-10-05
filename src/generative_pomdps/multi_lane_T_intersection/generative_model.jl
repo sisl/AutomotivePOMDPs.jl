@@ -4,7 +4,7 @@
 
 function POMDPs.reward(pomdp::OIPOMDP, s::OIState, a::OIAction, sp::OIState)
     r = 0.
-    ego = sp[findfirst(isequal(EGO_ID), sp)]
+    ego = sp[findfirst(EGO_ID, sp)]
     if is_crash(sp)
         r += pomdp.collision_cost
     end
@@ -23,7 +23,7 @@ end
 ### TERMINAL STATES ###############################################################################
 
 function POMDPs.isterminal(pomdp::OIPOMDP, s::OIState)
-    ego = s[findfirst(isequal(EGO_ID), s)]
+    ego = s[findfirst(EGO_ID, s)]
     return is_crash(s) || (ego.state.posF.s >= get_end(pomdp.env.roadway[pomdp.ego_goal]) &&
                            get_lane(pomdp.env.roadway, ego).tag == pomdp.ego_goal)
 end
@@ -35,7 +35,7 @@ end
 function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::AbstractRNG)
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
-    is_ego_here = clamp(findfirst(isequal(EGO_ID), s),0, 1)
+    is_ego_here = clamp(findfirst(EGO_ID, s),0, 1)
     sp = deepcopy(s) #XXX bad
     max_id = 0
     for veh in sp
@@ -65,7 +65,7 @@ function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::Abstrac
                                                        priorities = pomdp.env.priorities)
             push!(sp, new_car)
         end
-        actions = Array{Any}(length(sp))
+        actions = Array{Any}(undef, length(sp))
     end
     get_actions!(actions, sp, pomdp.env.roadway, pomdp.models)
     tick!(sp, pomdp.env.roadway, actions, pomdp.ΔT)
@@ -185,7 +185,7 @@ function POMDPs.generate_o(pomdp::OIPOMDP, s::Scene, a::OIAction, sp::Scene, rng
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(n_features*(pomdp.max_cars + 1))
-    ego = sp[findfirst(isequal(EGO_ID), sp)].state
+    ego = sp[findfirst(EGO_ID, sp)].state
     o[1] = ego.posG.x
     o[2] = ego.posG.y
     o[3] = ego.posG.θ
@@ -287,7 +287,7 @@ function obs_to_scene(pomdp::OIPOMDP, o::OIObs)
         end
         state = car_state(pomdp, x, y, θ, v)
         car_type = id == 1 ? pomdp.ego_type : pomdp.car_type
-        veh = Vehicle(state, pomdp.car_type, id)
+        veh = Vehicle(state, car_type, id)
         push!(scene, veh)
     end
     return scene
@@ -298,7 +298,7 @@ return the list of lanes the ego car should take
 """
 function get_ego_route(pomdp::OIPOMDP)
     tags = [LaneTag(6,1), LaneTag(13, 1), LaneTag(2,pomdp.env.params.nlanes_main)]
-    lanes = Array{Lane}(length(tags))
+    lanes = Array{Lane}(undef, length(tags))
     for (i,tag) in enumerate(tags)
         lanes[i] = pomdp.env.roadway[tag]
     end

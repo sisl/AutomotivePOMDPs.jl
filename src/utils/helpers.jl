@@ -24,7 +24,7 @@ return true if the ego car is in collision in the given scene, do not check for 
 other participants
 """
 function is_crash(scene::Scene)
-    ego = scene[findfirst(isequal(EGO_ID), scene)]
+    ego = scene[findfirst(EGO_ID, scene)]
     for veh in scene
         if veh.id != 1
             if collision_checker(ego, veh) #&& !(ego.state.v == 0. && veh.def.class == AgentClass.PEDESTRIAN)
@@ -48,12 +48,12 @@ function clean_scene!(env::OccludedEnv, scene::Scene)
         lane = get_lane(env.roadway, veh)
         s_end = get_end(lane)
         if s >= s_end && lane ∈ exit_lanes
-            deleteat!(scene, findfirst(isequal(veh.id), scene))
+            deleteat!(scene, findfirst(veh.id, scene))
         elseif veh.def.class == AgentClass.PEDESTRIAN
             if isapprox(s, 0., atol=0.01) && veh.state.posF.ϕ ≈ float(π)
-                deleteat!(scene, findfirst(isequal(veh.id), scene))
+                deleteat!(scene, findfirst(veh.id, scene))
             elseif s >= s_end && veh.state.posF.ϕ ≈ 0.
-                deleteat!(scene, findfirst(isequal(veh.id), scene))
+                deleteat!(scene, findfirst(veh.id, scene))
             end
         end
     end
@@ -64,7 +64,7 @@ function clean_scene!(env::OccludedEnv, scene::Scene)
                veh.id != veh_.id &&
                veh_.def.class != AgentClass.PEDESTRIAN && veh.def.class != AgentClass.PEDESTRIAN &&
                !(min(veh_.state.v, veh.state.v) ≈ 0.)
-                deleteat!(scene, findfirst(isequal(veh_.id), scene))
+                deleteat!(scene, findfirst(veh_.id, scene))
             end
         end
     end
@@ -101,7 +101,7 @@ end
 return the ego vehicle from a given scene
 """
 function get_ego(scene::Scene)
-    return scene[findfirst(isequal(EGO_ID), scene)]
+    return scene[findfirst(EGO_ID, scene)]
 end
 
 

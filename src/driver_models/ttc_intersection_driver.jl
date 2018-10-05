@@ -30,7 +30,7 @@ end
 
 
 function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(isequal(egoid), scene)]
+    ego = scene[findfirst(egoid, scene)]
     AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
     dir = model.navigator.dir
     a_lon =0.
@@ -69,7 +69,7 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
 end
 
 function engaged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(isequal(egoid), scene)]
+    ego = scene[findfirst(egoid, scene)]
     lane = get_lane(roadway, ego)
     if isempty(lane.entrances)
         return false 
@@ -78,7 +78,7 @@ function engaged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, e
 end
 
 function has_passed(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(isequal(egoid), scene)]
+    ego = scene[findfirst(egoid, scene)]
     lane = get_lane(roadway, ego)
     inter_to_car = ego.state.posG - model.intersection_pos
     car_vec = get_front(ego) - ego.state.posG
