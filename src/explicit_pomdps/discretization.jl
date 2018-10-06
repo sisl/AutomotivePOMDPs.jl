@@ -152,6 +152,9 @@ function ego_stateindex(env::UrbanEnv, ego::VehicleState, pos_res::Float64, v_re
     lanes = get_ego_route(env)
     lane = get_lane(env.roadway, ego)
     li = findfirst(isequal(lane.tag), lanes) #XXX possibly inefficient
+    if li == nothing 
+        li = 0 
+    end
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
     si = find_range_index(s_space, ego.posF.s)
@@ -205,6 +208,9 @@ function car_stateindex(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_re
     lanes = get_car_lanes(env)
     lane = get_lane(env.roadway, car)
     li = findfirst(isequal(lane.tag), lanes) #XXX possibly inefficient
+    if li == nothing 
+        li = 0 
+    end
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
     si = find_range_index(s_space, car.posF.s)
@@ -226,6 +232,9 @@ end
 function car_stateindex(env::UrbanEnv, car::VehicleState, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64)
     lane = get_lane(env.roadway, car)
     li = findfirst(isequal(lane.tag), route)
+    if li == nothing 
+        li = 0
+    end
     # position index
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
@@ -279,6 +288,9 @@ function ped_stateindex(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_re
     lanes = get_ped_lanes(env)
     lane = get_lane(env.roadway, ped)
     li = findfirst(isequal(lane.tag), lanes) #XXX possibly inefficient
+    if li == nothing 
+        li = 0 
+    end
     # find position index
     s_space = get_discretized_lane(lane.tag, env.roadway, pos_res)
     si = find_range_index(s_space, ped.posF.s)

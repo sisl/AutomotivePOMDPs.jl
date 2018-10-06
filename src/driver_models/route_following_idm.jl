@@ -70,6 +70,9 @@ end
 function get_direction(lane::Lane, route::Vector{Lane})
     dir = 1
     ind = findfirst(isequal(lane), route)
+    if ind == nothing 
+        ind = 0
+    end
     if ind == length(route)
         return dir
     end
