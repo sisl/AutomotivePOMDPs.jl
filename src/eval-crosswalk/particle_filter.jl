@@ -3,7 +3,7 @@ using ParticleFilters
 const N_PARTICLES = 1000
 
 function initial_particle_belief(pomdp::OCPOMDP)
-    d0 = initial_state_distribution(pomdp)
+    d0 = initialstate_distribution(pomdp)
     p = Vector{OCState}(N_PARTICLES)
     for i=1:N_PARTICLES
         p[i] = rand(rng, d0)

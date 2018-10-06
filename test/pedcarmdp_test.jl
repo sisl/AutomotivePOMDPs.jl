@@ -4,7 +4,7 @@ using ProgressMeter
 
 function test_index(mdp::PedCarMDP, state_space::Vector{PedCarMDPState})
     @showprogress for (i, s) in enumerate(state_space) 
-        si = state_index(mdp, s)
+        si = stateindex(mdp, s)
         if si != i
             println("bug for $i, index is $si")
             break

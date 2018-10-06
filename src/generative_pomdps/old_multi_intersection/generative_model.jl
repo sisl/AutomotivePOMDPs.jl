@@ -107,7 +107,7 @@ end
 
 ### INITIAL STATES ################################################################################
 
-function POMDPs.initial_state(pomdp::OIPOMDP, rng::AbstractRNG)
+function POMDPs.initialstate(pomdp::OIPOMDP, rng::AbstractRNG)
 
     scene = Scene()
     ego = initial_ego(pomdp, rng)
@@ -134,7 +134,7 @@ function initial_car(pomdp::OIPOMDP, scene::Scene, rng::AbstractRNG, first_scene
         s0 = rand(rng, 0.:0.5:get_end(lane))
     end
     initial_posF = Frenet(lane, s0)
-    initial_state = VehicleState(initial_posF, env.roadway, v0)
+    initialstate = VehicleState(initial_posF, env.roadway, v0)
 
 
     # new id, increment last id
@@ -149,7 +149,7 @@ function initial_car(pomdp::OIPOMDP, scene::Scene, rng::AbstractRNG, first_scene
         id = 2
     end
 
-    return Vehicle(initial_state, pomdp.car_type, id)
+    return Vehicle(initialstate, pomdp.car_type, id)
 end
 
 
@@ -181,12 +181,12 @@ mutable struct GenerativeDist
     problem::OIPOMDP
 end
 
-function POMDPs.initial_state_distribution(pomdp::OIPOMDP)
+function POMDPs.initialstate_distribution(pomdp::OIPOMDP)
     return GenerativeDist(pomdp)
 end
 
 function Base.rand(rng::AbstractRNG, d::GenerativeDist)
-    return initial_state(d.problem, rng)
+    return initialstate(d.problem, rng)
 end
 
 

@@ -8,7 +8,7 @@
 
 @with_kw mutable struct WaitAndGo
     env::CrosswalkEnv = CrosswalkEnv()
-    initial_state::Vehicle = initial_ego(env, MersenneTwister(1))
+    initialstate::Vehicle = initial_ego(env, MersenneTwister(1))
     max_acc::Float64 = 2.
     max_dec::Float64 = -4.0
     Δt::Float64 = 0.1
@@ -34,7 +34,7 @@ function action(policy::WaitAndGo, b::Vector{Vehicle})
     ego = b[1].state
     @assert b[1].id == 1
 
-    init_dec = -policy.initial_state.state.v^2/(2*(crosswalk_x - policy.initial_state.state.posG.x))
+    init_dec = -policy.initialstate.state.v^2/(2*(crosswalk_x - policy.initialstate.state.posG.x))
     @assert init_dec > policy.max_dec # negative numbers
 
     acc = 0.
@@ -50,7 +50,7 @@ function action(policy::WaitAndGo, b::Vector{Vehicle})
         end
         # acc = init_dec
         if verbose; println("reaching phase, acc = $acc") end
-        if !policy.wait && (ego.v ≈ 0. && ego.posG.x > policy.initial_state.state.posG.x) # change state
+        if !policy.wait && (ego.v ≈ 0. && ego.posG.x > policy.initialstate.state.posG.x) # change state
             policy.reaching = false
             policy.wait = true
         end
@@ -111,7 +111,7 @@ Reset the state of the FSM, must be run before each simulation. Change in place 
 policy
 """
 function reset_policy!(policy::WaitAndGo, ego::Vehicle)
-    policy.initial_state = ego
+    policy.initialstate = ego
     policy.reaching = true
     policy.wait = false
     policy.go = false

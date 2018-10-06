@@ -71,6 +71,6 @@ function POMDPs.transition(mdp::PedMDP, s::PedMDPState, a::PedMDPAction)
     normalize!(probs_p, 1)
     # remove duplicates
     # sort by si 
-    p = sortperm(states_p, by=s->state_index(mdp, s))
+    p = sortperm(states_p, by=s->stateindex(mdp, s))
     return SparseCat(states_p[p], probs_p[p])
 end

@@ -72,9 +72,9 @@ function reset_model!(model::AVDriver, ego::Vehicle)
     model.tick = 0.
     model.a = 0.
     model.o = Dict{Int64, SingleOCState}()
-    # model.b = initial_state_distribution(model.policy.pomdp, model.sensor.n_ped)
+    # model.b = initialstate_distribution(model.policy.pomdp, model.sensor.n_ped)
     b0 = Dict{Int64, SingleOCDistribution}()
-    b0[-1] = initial_state_distribution(policy.pomdp, ego.state)
+    b0[-1] = initialstate_distribution(policy.pomdp, ego.state)
     model.b = b0
     model.ego = ego
     reset_policy!(model.policy)

@@ -80,7 +80,7 @@ collision_cost = float(ARGS[1])
     o0 = Dict{Int64, OCObs}()
     ego0 = initial_ego(env, config.rng)
     b0 = Dict{Int64, OCDistribution}()
-    b0[-1] = initial_state_distribution(policy.pomdp, ego0.state)
+    b0[-1] = initialstate_distribution(policy.pomdp, ego0.state)
     update_freq = 5
     ego_model = CrosswalkDriver(update_freq, 0, env, a0, b0, o0, ego0, sensor, policy, up)
     reset_model!(ego_model, ego0)

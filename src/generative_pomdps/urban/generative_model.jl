@@ -80,7 +80,7 @@ end
 
 ### INITIAL STATES ################################################################################
 
-function POMDPs.initial_state(pomdp::UrbanPOMDP, rng::AbstractRNG, burn_in::Int64=1)
+function POMDPs.initialstate(pomdp::UrbanPOMDP, rng::AbstractRNG, burn_in::Int64=1)
     scene = initial_scene(pomdp, rng, true)
     for t = 1:burn_in
         scene = generate_s(pomdp, scene, UrbanAction(0.), rng)
@@ -153,11 +153,11 @@ function initial_car(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, first_sc
         lane = rand(rng, lanes) # could be precomputed
     end
     initial_posF = Frenet(lane, s0)
-    initial_state = VehicleState(initial_posF, env.roadway, v0)
+    initialstate = VehicleState(initial_posF, env.roadway, v0)
 
     id = next_car_id(pomdp, scene)
 
-    return Vehicle(initial_state, pomdp.car_type, id)
+    return Vehicle(initialstate, pomdp.car_type, id)
 end
 
 
@@ -192,14 +192,14 @@ function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, f
     v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
     posF = Frenet(env.crosswalks[cw_ind], s0, t0, ϕ0)
 
-    ped_initial_state = VehicleState(posF, env.ped_roadway, v0);
+    ped_initialstate = VehicleState(posF, env.ped_roadway, v0);
 
     id = next_ped_id(pomdp, scene)
 
-    return Vehicle(ped_initial_state, PEDESTRIAN_DEF, id)
+    return Vehicle(ped_initialstate, PEDESTRIAN_DEF, id)
 end
 
-function POMDPs.initial_state_distribution(pomdp::UrbanPOMDP)
+function POMDPs.initialstate_distribution(pomdp::UrbanPOMDP)
     return GenerativeDist(pomdp)
 end
 

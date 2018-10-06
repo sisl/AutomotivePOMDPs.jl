@@ -14,7 +14,7 @@ include("observation.jl")
 # check that state indexing is consistent
 function check_indexing(pomdp::SingleOIPOMDP, state_space::Vector{SingleOIState})
     for (i,s) in enumerate(state_space)
-        @test state_index(pomdp, s) == i
+        @test stateindex(pomdp, s) == i
     end
 end
 

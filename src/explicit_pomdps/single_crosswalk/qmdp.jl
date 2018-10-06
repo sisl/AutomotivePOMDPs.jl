@@ -4,7 +4,7 @@ function POMDPs.action(policy::QMDPPolicy, b::SingleOCDistribution)
     for i=1:n_actions(pomdp)
         res = 0.0
         for (j,s) in enumerate(b.it)
-            si = state_index(pomdp, s)
+            si = stateindex(pomdp, s)
             res += alphas[i, si]*b.p[j]
         end
         util[i] = res
@@ -22,7 +22,7 @@ function POMDPs.value(policy::QMDPPolicy, b::SingleOCDistribution)
     val = zeros(n_actions(policy.pomdp))
     for (i,s) in enumerate(b.it)
         val += value(policy, s)*b.p[i]
-        # si = state_index(pomdp, s)
+        # si = stateindex(pomdp, s)
         # val += policy.alphas[si, :]*b.p[i]
     end
     return val

@@ -14,7 +14,7 @@ mutable struct GenerativeDist
 end
 
 function Base.rand(rng::AbstractRNG, d::GenerativeDist)
-    return initial_state(d.problem, rng)
+    return initialstate(d.problem, rng)
 end
 
 

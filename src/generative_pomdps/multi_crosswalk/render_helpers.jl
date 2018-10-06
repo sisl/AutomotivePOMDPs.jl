@@ -4,8 +4,8 @@ function animate_hist(pomdp::OCPOMDP, hist, overlays::Vector{SceneOverlay} = Sce
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)
     function render_hist(t, dt)
-        state_index = Int(floor(t/dt)) + 1
-        scene = state_hist(hist)[state_index]
+        stateindex = Int(floor(t/dt)) + 1
+        scene = state_hist(hist)[stateindex]
         return AutoViz.render(scene, pomdp.env, overlays, cam = cam)
     end
     return duration, fps, render_hist

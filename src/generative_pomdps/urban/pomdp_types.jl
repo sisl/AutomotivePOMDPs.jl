@@ -63,7 +63,7 @@ end
 POMDPs.actions(pomdp::UrbanPOMDP) = [UrbanAction(-4.0), UrbanAction(-2.0), UrbanAction(0.0), UrbanAction(2.0)]
 POMDPs.n_actions(pomdp::UrbanPOMDP) = 4
 
-function POMDPs.action_index(pomdp::UrbanPOMDP, action::UrbanAction)
+function POMDPs.actionindex(pomdp::UrbanPOMDP, action::UrbanAction)
     if action.acc == -4.0
         return 1
     elseif action.acc == -2.0

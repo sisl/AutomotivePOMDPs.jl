@@ -10,7 +10,7 @@ rng = MersenneTwister(1)
 pomdp = OCPOMDP()
 
 
-s0 = initial_state(pomdp, rng)
+s0 = initialstate(pomdp, rng)
 ego = s0[findfirst(EGO_ID,s0)]
 println("Initial scene with $(length(s0)) cars")
 println("Initial ego state: $ego")

@@ -74,7 +74,7 @@ end
 
 ### INITIAL STATES ################################################################################
 
-function POMDPs.initial_state(pomdp::OCPOMDP, rng::AbstractRNG)
+function POMDPs.initialstate(pomdp::OCPOMDP, rng::AbstractRNG)
     pomdp.no_ped = rand(rng) < pomdp.no_ped_prob
     scene = Scene()
     if !pomdp.no_ped
@@ -128,7 +128,7 @@ function initial_pedestrian(pomdp::OCPOMDP, scene::Scene, rng::AbstractRNG, firs
     #velocity
     v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
     cw_roadway = Roadway([RoadSegment(2, [env.crosswalk])]);
-    ped_initial_state = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, cw_roadway, v0);
+    ped_initialstate = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, cw_roadway, v0);
 
     # new id, increment last id
     max_id = 0
@@ -143,11 +143,11 @@ function initial_pedestrian(pomdp::OCPOMDP, scene::Scene, rng::AbstractRNG, firs
     end
 
 
-    return Vehicle(ped_initial_state, PEDESTRIAN_DEF, id)
+    return Vehicle(ped_initialstate, PEDESTRIAN_DEF, id)
 end
 
 
-function POMDPs.initial_state_distribution(pomdp::OCPOMDP)
+function POMDPs.initialstate_distribution(pomdp::OCPOMDP)
     return GenerativeDist(pomdp)
 end
 

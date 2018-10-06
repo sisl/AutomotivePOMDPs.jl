@@ -85,14 +85,14 @@ Initialize a belief on all the non observable position
 """
 function initialize_off_belief(policy::QMDPEval, ego::VehicleState)
     b = Dict{Int64, SingleOCDistribution}()
-    b[OFF_KEY] = initial_state_distribution(policy.pomdp, ego)
+    b[OFF_KEY] = initialstate_distribution(policy.pomdp, ego)
     return b
 end
 
-# function POMDPs.initial_state_distribution(pomdp::OCPOMDP, n::Int64)
+# function POMDPs.initialstate_distribution(pomdp::OCPOMDP, n::Int64)
 #     init_dis = DecBelief()
 #     for i=1:n
-#         init_dis[i+1] = initial_state_distribution(pomdp)
+#         init_dis[i+1] = initialstate_distribution(pomdp)
 #     end
 #     return init_dis
 # end

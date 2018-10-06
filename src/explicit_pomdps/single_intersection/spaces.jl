@@ -43,7 +43,7 @@ function POMDPs.n_states(pomdp)
     return N
 end
 
-function POMDPs.state_index(pomdp::SingleOIPOMDP, s::SingleOIState)
+function POMDPs.stateindex(pomdp::SingleOIPOMDP, s::SingleOIState)
     size_V = Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1
     size_s_ego = Int(floor((pomdp.s_goal - pomdp.s_start)/pomdp.pos_res)) + 1
 
@@ -90,7 +90,7 @@ POMDPs.actions(pomdp::SingleOIPOMDP) = [SingleOIAction(-4.0),
                            SingleOIAction(3.0)]
 POMDPs.n_actions(pomdp::SingleOIPOMDP) = 5
 
-function POMDPs.action_index(pomdp::SingleOIPOMDP, a::SingleOIAction)
+function POMDPs.actionindex(pomdp::SingleOIPOMDP, a::SingleOIAction)
     if a.acc == -4.0
         return 1
     elseif a.acc == -2
@@ -111,8 +111,8 @@ function POMDPs.observations(pomdp::SingleOIPOMDP)
     return states(pomdp)
 end
 
-function POMDPs.obs_index(pomdp::SingleOIPOMDP, o::SingleOIObs)
-    return state_index(pomdp, o)
+function POMDPs.obsindex(pomdp::SingleOIPOMDP, o::SingleOIObs)
+    return stateindex(pomdp, o)
 end
 
 function POMDPs.n_observations(pomdp::SingleOIPOMDP)

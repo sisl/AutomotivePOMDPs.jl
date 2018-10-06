@@ -147,7 +147,7 @@ function n_car_states(env::UrbanEnv, route::Vector{LaneTag}, pos_res::Float64, v
 end
 
 # state indexing!
-function ego_state_index(env::UrbanEnv, ego::VehicleState, pos_res::Float64, v_res::Float64)
+function ego_stateindex(env::UrbanEnv, ego::VehicleState, pos_res::Float64, v_res::Float64)
     # find lane index
     lanes = get_ego_route(env)
     lane = get_lane(env.roadway, ego)
@@ -200,7 +200,7 @@ function ind2ego(env::UrbanEnv, ei::Int64, pos_res::Float64, v_res::Float64)
 end
 
 
-function car_state_index(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_res::Float64)
+function car_stateindex(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_res::Float64)
     # find lane index
     lanes = get_car_lanes(env)
     lane = get_lane(env.roadway, car)
@@ -223,7 +223,7 @@ function car_state_index(env::UrbanEnv, car::VehicleState, pos_res::Float64, v_r
     return cari
 end
 
-function car_state_index(env::UrbanEnv, car::VehicleState, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64)
+function car_stateindex(env::UrbanEnv, car::VehicleState, route::Vector{LaneTag}, pos_res::Float64, v_res::Float64)
     lane = get_lane(env.roadway, car)
     li = findfirst(isequal(lane.tag), route)
     # position index
@@ -274,7 +274,7 @@ function ind2car(env::UrbanEnv, ci::Int64, route::Vector{LaneTag}, pos_res::Floa
 
 end
 
-function ped_state_index(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_res::Float64)
+function ped_stateindex(env::UrbanEnv, ped::VehicleState, pos_res::Float64, v_res::Float64)
     # find lane index
     lanes = get_ped_lanes(env)
     lane = get_lane(env.roadway, ped)

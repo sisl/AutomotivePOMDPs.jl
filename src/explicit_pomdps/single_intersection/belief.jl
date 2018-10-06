@@ -7,7 +7,7 @@ mutable struct SingleOIUpdater <: Updater
 end
 
 #for sarsop for exploration
-#function POMDPs.initial_state_distribution(pomdp::SingleOIPOMDP)
+#function POMDPs.initialstate_distribution(pomdp::SingleOIPOMDP)
 #    state_space = states(pomdp)
 #    states_to_add = SingleOIState[]
 #    for s in state_space
@@ -20,7 +20,7 @@ end
 #    return SingleOIDistribution(probs, states_to_add)
 #end
 
-function POMDPs.initial_state_distribution(pomdp::SingleOIPOMDP)
+function POMDPs.initialstate_distribution(pomdp::SingleOIPOMDP)
      env = pomdp.env
      v_grid = get_v_grid(pomdp)
      states = SingleOIState[]

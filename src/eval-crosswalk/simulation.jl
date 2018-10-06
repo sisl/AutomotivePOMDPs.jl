@@ -100,13 +100,13 @@ function initial_pedestrian(scene::Scene, env::CrosswalkEnv, rng::AbstractRNG)
     #velocity
     v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
     cw_roadway = Roadway([RoadSegment(2, [env.crosswalk])]);
-    ped_initial_state = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, cw_roadway, v0);
-    # ped_initial_state = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, env.roadway, v0)
+    ped_initialstate = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, cw_roadway, v0);
+    # ped_initialstate = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, env.roadway, v0)
 
     # new id, increment last id
     id = scene.n + 2
 
-    return Vehicle(ped_initial_state,  VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0), id)
+    return Vehicle(ped_initialstate,  VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0), id)
 end
 
 
@@ -117,7 +117,7 @@ function initial_scene(models::Dict{Int64, DriverModel}, env::CrosswalkEnv, conf
     n_ped = 0
     ego = models[1].ego.state
     pomdp = models[1].updater.problem
-    b0 = initial_state_distribution(pomdp, ego)
+    b0 = initialstate_distribution(pomdp, ego)
     for i = 1:n_ped
         ped_state = rand(config.rng, b0).ped
         d_lat = Uniform(env.params.roadway_length - env.params.crosswalk_width + 2, env.params.roadway_length + env.params.crosswalk_width-1)

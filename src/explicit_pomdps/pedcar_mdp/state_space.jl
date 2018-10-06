@@ -45,17 +45,17 @@ function POMDPs.states(mdp::PedCarMDP)
 end
 
 
-function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
+function POMDPs.stateindex(mdp::PedCarMDP, s::PedCarMDPState)
     n_ego = n_ego_states(mdp.env, mdp.pos_res, mdp.vel_res)
     n_ped = n_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
     routes = get_car_routes(mdp.env)
     # step 1: find ego_index
-    ego_i = ego_state_index(mdp.env, s.ego, mdp.pos_res, mdp.vel_res)
+    ego_i = ego_stateindex(mdp.env, s.ego, mdp.pos_res, mdp.vel_res)
     # step 2: find ped index 
     if s.ped.posG == mdp.off_grid
         ped_i = n_ped + 1
     else
-        ped_i = ped_state_index(mdp.env, s.ped, mdp.pos_res, mdp.vel_ped_res)
+        ped_i = ped_stateindex(mdp.env, s.ped, mdp.pos_res, mdp.vel_ped_res)
     end
 
     # step 3 find route index 
@@ -83,7 +83,7 @@ function POMDPs.state_index(mdp::PedCarMDP, s::PedCarMDPState)
             end
         end
         # step 3: find car_index in car states
-        car_i = car_state_index(mdp.env, s.car, find_route(mdp.env, s.route), mdp.pos_res, mdp.vel_res)
+        car_i = car_stateindex(mdp.env, s.car, find_route(mdp.env, s.route), mdp.pos_res, mdp.vel_res)
         # use linear/Cartesian magic
         si = LinearIndices((n_car, n_ped + 1, n_ego))[car_i, ped_i, ego_i]
 
@@ -150,7 +150,7 @@ end
 
 #### INITIAL STATES 
 
-function POMDPs.initial_state_distribution(mdp::PedCarMDP)
+function POMDPs.initialstate_distribution(mdp::PedCarMDP)
     ego = initial_ego_state(mdp)
     init_car_states, init_car_routes = initial_car_state_distribution(mdp)
     init_ped_dist = initial_ped_state_distribution(mdp) 
@@ -198,13 +198,13 @@ function initial_car_state(mdp::PedCarMDP, rng::AbstractRNG)
     return rand(rng, init_car_states), rand(rng, init_car_routes)
 end
 
-function POMDPs.initial_state(mdp::PedCarMDP, rng::AbstractRNG)
+function POMDPs.initialstate(mdp::PedCarMDP, rng::AbstractRNG)
     # routes = get_car_routes(mdp.env)
     # route = rand(rng, routes)
     # car = rand(rng, get_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res))
     # ego = initial_ego_state(mdp)
     # crash =  is_colliding(Vehicle(ego, mdp.ego_type, 1), Vehicle(car, mdp.car_type, 2))
-    return rand(rng, initial_state_distribution(mdp))
+    return rand(rng, initialstate_distribution(mdp))
 end
 
 function car_starting_states(mdp::PedCarMDP, min_speed::Float64 = 6.0)

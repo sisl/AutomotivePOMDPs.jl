@@ -2,7 +2,7 @@ const SingleOCBelief =  SingleOCDistribution
 
 # function POMDPs.initialize_belief(pomdp::SingleOCPOMDP)
 #     b0 = DiscreteBelief(n_states(pomdp))
-#     d0 = initial_state_distribution(pomdp::SingleOCPOMDP)
+#     d0 = initialstate_distribution(pomdp::SingleOCPOMDP)
 #     for (i, s) in enumerate(iterator(states(pomdp)))
 #         b0.b[i] = pdf(d0, s)
 #     end
@@ -11,7 +11,7 @@ const SingleOCBelief =  SingleOCDistribution
 # end
 
 # #for sarsop for exploration
-# function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP)
+# function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP)
 #      state_space = states(pomdp)
 #      states_to_add = SingleOCState[]
 #      for s in state_space
@@ -27,11 +27,11 @@ const SingleOCBelief =  SingleOCDistribution
 """
 Returns the initial state of the pomdp problem
 """
-function POMDPs.initial_state(pomdp::SingleOCPOMDP, rng::AbstractRNG)
+function POMDPs.initialstate(pomdp::SingleOCPOMDP, rng::AbstractRNG)
     ped = rand(rng) > pomdp.no_ped_prob
     if ped
         pomdp.no_ped = false
-        d = initial_state_distribution(pomdp)
+        d = initialstate_distribution(pomdp)
         s = rand(rng, d)
     else
         # println("No pedestrians")
@@ -67,7 +67,7 @@ function initial_distribution_no_ped(pomdp::SingleOCPOMDP)
 end
 
 
-function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP)
+function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP)
     env = pomdp.env
     V_ego = LinRange(0., env.params.speed_limit, Int(floor(env.params.speed_limit/pomdp.vel_res)) + 1)
     rl = env.params.roadway_length
@@ -108,7 +108,7 @@ function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP)
     return SingleOCBelief(probs, states)
 end
 
-function POMDPs.initial_state_distribution(pomdp::SingleOCPOMDP, ego::VehicleState)
+function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP, ego::VehicleState)
     env = pomdp.env
     rl = env.params.roadway_length
     cw = env.params.crosswalk_width
@@ -213,7 +213,7 @@ convert an SingleOCDistribution to a full vector representation
 """
 function dis2vec!(pomdp::SingleOCPOMDP, bdis::SingleOCDistribution, bvec::Vector{Float64})
     for i =1:length(bdis.p)
-        ind = state_index(pomdp, bdis.it[i])
+        ind = stateindex(pomdp, bdis.it[i])
         bvec[ind] = bdis.p[i]
     end
 end

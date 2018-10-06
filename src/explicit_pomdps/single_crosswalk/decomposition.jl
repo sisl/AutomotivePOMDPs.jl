@@ -13,7 +13,7 @@ function POMDPs.value(policy::AlphaVectorPolicy, b::SingleOCDistribution)
     val = zeros(n_actions(policy.pomdp))
     for (i,s) in enumerate(b.it)
         val += value(policy, s)*b.p[i]
-        # si = state_index(pomdp, s)
+        # si = stateindex(pomdp, s)
         # val += policy.alphas[si, :]*b.p[i]
     end
     return val
@@ -30,7 +30,7 @@ end
 #         for (j, s) in enumerate(b.it)
 #             s_itps, w_itps = interpolate_state(s, pomdp)
 #             for (k, s_itp) in enumerate(s_itps)
-#                 si = state_index(pomdp, s_itp)
+#                 si = stateindex(pomdp, s_itp)
 #                 utilities[act, i] += vectors[si,i]*b.p[j]*w_itps[k]
 #             end
 #         end
@@ -70,7 +70,7 @@ function POMDPs.value(policy::AlphaVectorPolicy, s::SingleOCState)
                 ped = yv_to_state(pomdp, yg, v_pedg)
             end
             state = SingleOCState(is_crash(pomdp,ego,ped),ego,ped)
-            si = state_index(pomdp, state)
+            si = stateindex(pomdp, state)
             sum_weight += ego_weights[i]*ped_weights[j]
             val += [a[si] for a in policy.alphas]*ego_weights[i]*ped_weights[j]
         end
@@ -85,7 +85,7 @@ function POMDPs.action(policy::AlphaVectorPolicy, b::SingleOCDistribution)
     for i=1:n_actions(policy.pomdp)
         res = 0.0
         for (j,s) in enumerate(b.it)
-            si = state_index(policy.pomdp, s)
+            si = stateindex(policy.pomdp, s)
             res += alphas[i][si]*b.p[j]
         end
         util[i] = res
@@ -104,7 +104,7 @@ end
 #     for i=1:n
 #         res = 0.
 #         for (j, s) in enumerate(b.it)
-#             si = state_index(pomdp, s)
+#             si = stateindex(pomdp, s)
 #             res += vectors[si, i]*b.p[j]
 #         end
 #         utilities[i] = res
@@ -325,7 +325,7 @@ Initialize a belief considering two pedestrians
 """
 function initialize_two_beliefs(pomdp::SingleOCPOMDP)
     b = Dict{Int64, SingleOCDistribution}()
-    b[2] = initial_state_distribution(pomdp)
-    b[3] = initial_state_distribution(pomdp)
+    b[2] = initialstate_distribution(pomdp)
+    b[3] = initialstate_distribution(pomdp)
     return b
 end

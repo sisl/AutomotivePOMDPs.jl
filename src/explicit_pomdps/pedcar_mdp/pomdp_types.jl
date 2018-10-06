@@ -96,7 +96,7 @@ end
 POMDPs.actions(mdp::PedCarMDP) = [PedCarMDPAction(-4.0), PedCarMDPAction(-2.0), PedCarMDPAction(0.0), PedCarMDPAction(2.0)]
 POMDPs.n_actions(mdp::PedCarMDP) = 4
 
-function POMDPs.action_index(mdp::PedCarMDP, action::PedCarMDPAction)
+function POMDPs.actionindex(mdp::PedCarMDP, action::PedCarMDPAction)
     if action.acc == -4.0
         return 1
     elseif action.acc == -2.0
