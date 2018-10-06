@@ -9,7 +9,7 @@ function POMDPs.action(policy::QMDPPolicy, b::SingleOCDistribution)
         end
         util[i] = res
     end
-    ihi = indmax(util)
+    ihi = argmax(util)
     return policy.action_map[ihi]
 end
 

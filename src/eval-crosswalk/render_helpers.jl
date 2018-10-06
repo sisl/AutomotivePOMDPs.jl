@@ -227,7 +227,7 @@ function AutoViz.render!(rendermodel::RenderModel, overlay::QMDPOverlay, scene::
 
     #Display state estimate
     for id in keys(overlay.model.b)
-        max, indmax = findmax(overlay.model.b[id].p)
+        max, indmax = fargmax(overlay.model.b[id].p)
         for (i,s) in enumerate(overlay.model.b[id].it)
             prob = overlay.model.b[id].p[i]
             if prob > 1e-3

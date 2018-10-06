@@ -90,7 +90,7 @@ function POMDPs.action(policy::AlphaVectorPolicy, b::SingleOCDistribution)
         end
         util[i] = res
     end
-    ihi = indmax(util)
+    ihi = argmax(util)
     return policy.action_map[ihi]
 end
 
@@ -109,19 +109,19 @@ end
 #         end
 #         utilities[i] = res
 #     end
-#     a = actions[indmax(utilities)] + 1
+#     a = actions[argmax(utilities)] + 1
 #     return policy.action_map[a]
 # end
 
 # function POMDPs.action(policy::SARSOPPolicy, b::SingleOCDistribution)
-#     max_val, ind_max = findmax(value(policy, b))
+#     max_val, ind_max = fargmax(value(policy, b))
 #     return policy.action_map[ind_max]
 # end
 
 
 function POMDPs.action(policy::Policy, b::Dict{Int64, B}) where B
     val = fuse_value_min(policy, b)
-    max_ind = indmax(val)
+    max_ind = argmax(val)
     return policy.action_map[max_ind]
 end
 

@@ -53,7 +53,7 @@ function POMDPs.update(bu::MixedUpdater, bold::SingleOCBelief, a::SingleOCAction
     # if norm is zero, the update was invalid
     if sum(bnew.p) == 0.0
         # println("Invalid update for: ", bold, " ", a, " ", o)
-        # val, ind = findmax(bold.p)
+        # val, ind = fargmax(bold.p)
         # ml_state = bold.it[ind]
         println("Invalid update for: observation ", o,
                 "\n action ", a,

@@ -91,7 +91,7 @@ const MIN = x -> minimum(hcat(l), 2)
 function POMDPs.action(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief}) where A
     val = value(policy, beliefs)
     @assert length(val) == n_actions(policy.problem)
-    return policy.action_map[indmax(val)]
+    return policy.action_map[argmax(val)]
 end
 
 function POMDPs.value(policy::DecomposedPolicy{A}, beliefs::Union{KMarkovDecBelief, PreviousObsDecBelief}) where A

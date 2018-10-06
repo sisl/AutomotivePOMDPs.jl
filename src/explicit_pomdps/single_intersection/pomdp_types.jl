@@ -170,7 +170,7 @@ end
 returns the most likely state given distribution d
 """
 function most_likely_state(d::SingleOIDistribution)
-    val, ind = findmax(d.p)
+    val, ind = fargmax(d.p)
     return d.it[ind]
 end
 
