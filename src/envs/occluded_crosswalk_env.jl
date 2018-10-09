@@ -6,7 +6,7 @@ Container type for the environment parameters
 @with_kw mutable struct CrosswalkParams
     # geometry
     n_lanes::Int64 = 2
-    roadway_length::Float64 = 50.0
+    roadway_length::Float64 = 100.0
     lane_width::Float64 = 3.0
     crosswalk_length::Float64 = 20.0
     crosswalk_width::Float64 = 6.0
