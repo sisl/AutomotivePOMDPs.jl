@@ -56,14 +56,14 @@ function AutomotiveDrivingModels.observe!(model::EmergencySystem, scene::Scene, 
     model.prediction = []
 
     emergency_system_brake_request = false
-    a = 0.0; phi_dot = 0.0
+    phi_dot = 0.0
     t0 = 0.0; x0 = 0.0; y0 = 0.0; phi0 = 0.0
     TS = 0.01; T = 3.0
    
 
     if ( model.tick % model.update_tick_emergency_system == 0 )
 
-        ego_data = caclulateCTRAModel(t0, x0, y0, phi0, ego.state.v, phi_dot, a, TS, T)
+        ego_data = caclulateCTRAModel(t0, x0, y0, phi0, ego.state.v, phi_dot, model.a_current, TS, T)
         for object in model.sensor_observations
         #  println(object)
             object_posF = Frenet(object.state.posG, get_lane(env.roadway, ego.state), env.roadway)
@@ -88,7 +88,7 @@ function AutomotiveDrivingModels.observe!(model::EmergencySystem, scene::Scene, 
 
                 print(" collision_rate: ", model.collision_rate, " ttc_m: ", ttc_m, " ttc_std: ", ttc_std)
              #   println("ttc_min: ", ttc_m-ttc_std)
-                model.ttc = ttc_m-ttc_std
+                model.ttc = ttc_m-2*ttc_std
                 model.risk = min(ttb / model.ttc, 1.0)
                 println("Risk: ", model.risk, " ttc_min: ", model.ttc)
 
@@ -116,7 +116,7 @@ function AutomotiveDrivingModels.observe!(model::EmergencySystem, scene::Scene, 
 end
 
 
-
+# TODO: implementation in Frenet Frame
 function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, roadway::Roadway, Δt::Float64)
 
     # new velocity
@@ -126,8 +126,8 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, ro
     end
     
     # lateral offset
-    delta_y = action.a_lat*Δt
-    if v_ < 0.
+    delta_y = action.a_lat * Δt   # a_lat corresponds to lateral velocity --> a_lat == v_lat
+    if v_ <= 0.
         delta_y = 0.
     end
     s_new = v_ * Δt
@@ -135,9 +135,8 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, ro
     # longitudional distance based on required velocity and lateral offset
     delta_x = sqrt(s_new^2 - delta_y^2 )
 
-    y_ = veh.state.posG.y + delta_y
+    y_ = veh.state.posG.y + delta_y     
     x_ = veh.state.posG.x + delta_x
-
     return VehicleState(VecSE2(x_, y_, veh.state.posG.θ), roadway, v_)
 end
 
@@ -165,16 +164,22 @@ function AutoViz.render!(rendermodel::RenderModel, overlay::PretictionOverlay, s
     return rendermodel
 end
 
-function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, risk::Vector{Float64}, prediction::Vector{Array{Float64}}, cam=FitToContentCamera(0.0))
+
+function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, 
+                             risk::Vector{Float64}, ttc::Vector{Float64}, collision_rate::Vector{Float64}, brake_request::Vector{Bool}, prediction::Vector{Array{Float64}}, cam=FitToContentCamera(0.0))
+
+#function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, 
+#                                risk::Vector{Float64}, prediction::Vector{Array{Float64}}, cam=FitToContentCamera(0.0))
+     
     duration =rec.nframes*dt::Float64
     fps = Int(1/dt)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
-        text_to_visualize = [string(risk[frame_index])]
+        text_to_visualize = [string("TTC: ", ttc[frame_index], " Collision rate: ",  collision_rate[frame_index], " Risk: ",  risk[frame_index], " Brake request: ",  brake_request[frame_index])]
         sensor_overlay = GaussianSensorOverlay(sensor=sensor, o=sensor_o[frame_index])
         occlusion_overlay = OcclusionOverlay(obstacles=env.obstacles)
         prediction_overlay = PretictionOverlay(prediction=prediction[frame_index])
-        text_overlay = TextOverlay(text=text_to_visualize,pos=VecE2(10.,15.),incameraframe=true,color=colorant"white",font_size=30)
+        text_overlay = TextOverlay(text=text_to_visualize,pos=VecE2(2.,15.),incameraframe=true,color=colorant"white",font_size=15)
         return render(rec[frame_index-nframes(rec)], env, [prediction_overlay, sensor_overlay, occlusion_overlay, text_overlay, IDOverlay()], cam=cam)
 
     end
