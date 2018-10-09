@@ -1,68 +1,93 @@
 ### Observation model  ############################################################################
 
-function POMDPs.observation(pomdp::SingleOCFPOMDP, a::SingleOCFAction, sp::SingleOCFObs)
-    
-    states = SingleOCFObs[]
-    sizehint!(states, 100);
-    probs = Float64[] 
-    sizehint!(probs, 100);
-    
 
-    #=
-    states_vector = Vector{SVector}(27)
-    cnt = 1
-    for s=-0.2:0.2:0.2
-        for t=-0.2:0.2:0.2
-            for theta=-0.34:0.34:0.34
-                for v=-0.2:0.2:0.2
-                    states_vector[cnt] = SVector(sp.ego_y, sp.ego_v, sp.ped_s+s, sp.ped_T+t, sp.ped_theta+theta, sp.ped_v+v)
-                    cnt += 1
-                end
-            end
+function observation_weight(pomdp::SingleOCFPOMDP, sp::SingleOCFState, o::SingleOCFObs)
+
+    absent_state = pomdp.state_space[end]
+    absent_state_obs = SingleOCFObs(absent_state.ego_y, absent_state.ego_v, absent_state.ped_s, absent_state.ped_T, absent_state.ped_theta, absent_state.ped_v)
+   
+    if ( o == absent_state_obs )
+        o_absent = true
+    else
+        o_absent = false
+    end
+
+    if ( sp == absent_state )
+        sp_absent = true
+    else
+        sp_absent = false
+    end
+
+    if ( AutomotivePOMDPs.is_observable_fixed(sp.ped_s, sp.ped_T, VehicleState(VecSE2(0., 0., 0.), 0.0), pomdp.env) == false )
+        occluded = true
+    else
+        occluded = false
+    end
+
+
+
+    if ( o_absent && sp_absent )
+        # absent
+       # println("absent")
+        return 1.0
+    end
+
+    if ( o_absent && occluded )
+        # occluded
+       # println("occluded")
+        return 1.0
+    end
+
+    if ( !o_absent && !sp_absent && !o_absent )
+        # visible
+       # println("visible")
+
+        ob_dist = MultivariateNormal([sp.ped_s, sp.ped_T, sp.ped_theta ,sp.ped_v], 0.1*eye(4))
+
+        ego_y_o_state_space = ego_y_to_state_pace(pomdp, o.ego_y)
+        ego_v_o_state_space = ego_v_to_state_pace(pomdp, o.ego_v)
+        obs_cont = SVector(ego_y_o_state_space, ego_v_o_state_space, o.ped_s, o.ped_T, o.ped_theta, o.ped_v)
+        obs_int, obs_weight = interpolants(pomdp.state_space_grid, obs_cont)
+
+        po = 0.0
+        N = length(obs_int)
+        for i=1:N
+            obs_int_state = pomdp.state_space[obs_int[i]]
+            po += obs_weight[i]*pdf(ob_dist, [obs_int_state.ped_s, obs_int_state.ped_T, obs_int_state.ped_theta, obs_int_state.ped_v])
         end
-    end
-    =#
+        po = po / N
 
-    states_vector = Vector{SVector}(9)
-    cnt = 1
-    for s=-0.2:0.2:0.2
-        for t=-0.2:0.2:0.2
-            states_vector[cnt] = SVector(sp.ego_y, sp.ego_v, sp.ped_s+s, sp.ped_T+t, sp.ped_theta, sp.ped_v)
-            cnt += 1
-        end
+    else
+       # println("visible-else")       
+        return 0.0
     end
 
 
-#states_vector = Vector{SVector}(1)
-#states_vector[1] = SVector(sp.ego_y, sp.ego_v, sp.ped_s, sp.ped_T, sp.ped_theta, sp.ped_v)
-
-    for state_vector in states_vector
-        ind, weight = interpolants(pomdp.state_space_grid, state_vector)
-        for i=1:length(ind)
-            if weight[i] >= 0.01
-                state = pomdp.state_space[ind[i]]
-                push!(states, state)
-                push!(probs, weight[i])
-                #=
-                if !(state in states) # check for doublons
-                    push!(states, state)
-                    push!(probs, weight[i])
-                else
-                    state_ind = find(x->x==state, states)
-                    probs[state_ind] += weight[i]
-                end
-                =#
-            end
-        end
-    end
-    
-    # add roughening
-    if length(probs) > 1
-        normalize!(probs, 1)
-        probs += maximum(probs)
-        normalize!(probs,1)
-    end
-    
-    return SparseCat(states,probs)
 
 end
+
+#=
+function getObstructionCorner(obstacle::ConvexPolygon, ego_pos::VecE2)
+
+    x = Vector{Float64}(obstacle.npts)
+    y = Vector{Float64}(obstacle.npts)
+    for i = 1:obstacle.npts
+        x[i] = obstacle.pts[i].x
+        y[i] = obstacle.pts[i].y
+    end
+    
+
+    delta_s = maximum(x) - ego_pos.x
+        
+    right_side = true
+    if ( ego_pos.y > mean(y) )
+        delta_t = -(ego_pos.y -  maximum(y))
+        right_side = true
+    else
+        delta_t = minimum(y) - ego_pos.y 
+        right_side = false
+    end
+    return delta_s, delta_t, right_side 
+end
+
+=#
