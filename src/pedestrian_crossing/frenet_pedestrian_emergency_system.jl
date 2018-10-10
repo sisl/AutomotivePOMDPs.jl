@@ -44,6 +44,15 @@ function AutomotiveDrivingModels.observe!(model::EmergencySystem, scene::Scene, 
     model.tick += 1
     
     ego = scene[findfirst(scene, egoid)]
+
+    for i=2:scene.n
+        object = scene[findfirst(scene, i)]
+        if ( collision_checker(ego.state, object.state, ego.def, object.def) == true )
+            println("collision with object: ", i)
+        end
+    end
+
+
     model.sensor_observations = measure(model.sensor, ego, scene, roadway, model.obstacles)
     
     ################ Emergency System #####################################################
@@ -167,9 +176,6 @@ end
 
 function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, 
                              risk::Vector{Float64}, ttc::Vector{Float64}, collision_rate::Vector{Float64}, brake_request::Vector{Bool}, prediction::Vector{Array{Float64}}, cam=FitToContentCamera(0.0))
-
-#function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, 
-#                                risk::Vector{Float64}, prediction::Vector{Array{Float64}}, cam=FitToContentCamera(0.0))
      
     duration =rec.nframes*dt::Float64
     fps = Int(1/dt)
@@ -209,8 +215,30 @@ function AutomotiveDrivingModels.run_callback{S,D,I,R,M<:DriverModel}(
     push!(callback.prediction, models[1].prediction)
     push!(callback.sensor_observations, models[1].sensor_observations)
     
+    return is_crash(rec[0])
+end
+
+"""
+    is_crash(scene::Scene)
+return true if the ego car is in collision in the given scene, do not check for collisions between
+other participants
+"""
+function is_crash(scene::Scene)
+    ego = scene[findfirst(scene, 1)]
+    @assert ego.id == 1
+    if ego.state.v ≈ 0
+        return false
+    end
+    for veh in scene
+        if veh.id != 1
+            if AutomotivePOMDPs.is_colliding(ego, veh)
+                return true
+            end
+        end
+    end
     return false
 end
+
 
 function brakeSystemStateMachine(model::EmergencySystem, ego::VehicleState)
     
@@ -277,7 +305,6 @@ function getStopDistanceVehicle(model::EmergencySystem, delta_v::Float64, ax_max
 
     distance_to_stop = model.TD_BREAK * delta_v + s_s + s_v;
     distance_to_stop = distance_to_stop + model.SAFETY_DISTANCE_LON
-
 
     if ( distance_to_stop < 0.0) 
         distance_to_stop = 0
