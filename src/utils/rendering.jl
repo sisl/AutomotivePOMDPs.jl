@@ -34,8 +34,12 @@ function animate_scenes(scenes::Vector{Scene}, env; overlays::Vector{SceneOverla
     # cam = FitToContentCamera(0.)
     function render_rec(t, dt)
         frame_index = Int(floor(t/dt)) + 1
-
-        return AutoViz.render(scenes[frame_index], env, overlays, cam=cam)
+        disp = SceneOverlay[overlays...]
+        push!(disp, TextOverlay(text = ["Step: $frame_index"],
+                                                           font_size=20,
+                                                           pos=VecE2(-15,-10),
+                                                           incameraframe=true))
+        return AutoViz.render(scenes[frame_index], env, disp, cam=cam)
     end
     return duration, fps, render_rec
 end

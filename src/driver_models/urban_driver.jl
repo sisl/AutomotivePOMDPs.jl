@@ -28,6 +28,7 @@ function AutomotiveDrivingModels.observe!(model::UrbanDriver, scene::Scene, road
     # println("crosswalk driver ", model.crosswalk_driver.a)
     # take the more conservative of the three actions
     a_lon = min(model.intersection_driver.a.a_lon, a_lon_crosswalks)
+    # a_lon = model.intersection_driver.a.a_lon
     # i = indmin([model.intersection_driver.a.a_lon, model.crosswalk_drivers[1].a.a_lon, model.crosswalk_drivers[2].a.a_lon, model.crosswalk_drivers[3].a.a_lon])
     # println(egoid, " getting minimum acceleration from ", i)
     if model.debug

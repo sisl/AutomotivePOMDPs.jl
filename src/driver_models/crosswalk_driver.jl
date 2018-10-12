@@ -40,24 +40,39 @@ function AutomotiveDrivingModels.observe!(model::CrosswalkDriver, scene::Scene, 
     a_lon =0.
     a_lon_idm = model.navigator.a
     dist_to_cw = get_distance_to_crosswalk(model, ego, roadway, -model.stop_delta)
-    if !model.yield
+    # if !model.yield
+    #     a_lon = a_lon_idm
+    #     # println("veh ", egoid, " not yielding to crosswalk ", model.crosswalk.tag)
+    # else
+    #     if !model.priority && !model.stop # reach stop line
+    #         a_lon = min(a_lon_idm, stop_at_dist(model, ego, dist_to_cw))
+    #     elseif !model.priority && model.stop # wait
+    #         a_lon = -model.navigator.d_max # negative to make sure v stays 0
+    #     else
+    #         a_lon = a_lon_idm # just idm
+    #     end
+    # end
+    # if !model.stop
+    #     update_stop!(model, ego, roadway, dist_to_cw)
+    # end
+    # grow_wait_list!(model, scene, roadway, egoid)
+    # ungrow_wait_list!(model, scene, roadway, egoid)
+    # update_priority!(model, scene, roadway, egoid)
+
+    if !model.yield 
         a_lon = a_lon_idm
-        # println("veh ", egoid, " not yielding to crosswalk ", model.crosswalk.tag)
     else
-        if !model.priority && !model.stop # reach stop line
-            a_lon = min(a_lon_idm, stop_at_dist(model, ego, dist_to_cw))
-        elseif !model.priority && model.stop # wait
-            a_lon = -model.navigator.d_max # negative to make sure v stays 0
+        grow_wait_list!(model, scene, roadway, egoid)
+        ungrow_wait_list!(model, scene, roadway, egoid)
+        update_priority!(model, scene, roadway, egoid)
+        if !model.priority 
+            a_lon = min(a_lon_idm, AutomotivePOMDPs.stop_at_dist(model, ego, dist_to_cw))
+            # println("dist to cw $dist_to_cw, crosswalk $(model.crosswalk.tag), $(get_lane(roadway, car) ∈ model.intersection_entrances)")
+            # println("priority $(model.priority), crossing $(is_crossing(ped, model.crosswalk, model.conflict_lanes, roadway)), a_lon $a_lon, v $(car.v)")
         else
             a_lon = a_lon_idm # just idm
         end
     end
-    if !model.stop
-        update_stop!(model, ego, roadway, dist_to_cw)
-    end
-    grow_wait_list!(model, scene, roadway, egoid)
-    ungrow_wait_list!(model, scene, roadway, egoid)
-    update_priority!(model, scene, roadway, egoid)
 
     if model.debug
         println("ID ", egoid, " priority ", model.priority, " stop ", model.stop, " a ", a_lon, " wait list ", model.wait_list, " dist_to_cw ", dist_to_cw)
@@ -70,13 +85,13 @@ Check if all the pedestrian have crossed
 """
 function update_priority!(model::CrosswalkDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(egoid, scene)]
-    model.priority = isempty(model.wait_list) || has_passed(model, ego, roadway)
+    model.priority = has_passed(model, ego, roadway) || isempty(model.wait_list)
 end
 
 function has_passed(model::CrosswalkDriver, ego::Vehicle, roadway::Roadway)
     cw_length = get_end(model.crosswalk)
     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
-    cw_to_car = ego.state.posG - cw_center 
+    cw_to_car = get_front(ego) - cw_center 
     car_vec = get_front(ego) - ego.state.posG
     has_passed = dot(cw_to_car, car_vec) > 0.
     return has_passed

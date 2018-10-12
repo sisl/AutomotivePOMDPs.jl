@@ -77,3 +77,14 @@ function car_roadway(env::UrbanEnv)
     car_roadway = gen_T_roadway(intersection_params)
     return car_roadway
 end
+
+# return (turn, right)::Tuple{Bool, Bool}
+function turn_map(env::UrbanEnv, route::Tuple{LaneTag, LaneTag})
+    if route ∈ [(LaneTag(3,1), LaneTag(5,1)), (LaneTag(6,1), LaneTag(4,1))]
+        return (true, true)
+    elseif route ∈ [(LaneTag(6,1), LaneTag(2,2)),  (LaneTag(6,1), LaneTag(2,1)), (LaneTag(1,1), LaneTag(5,1)), (LaneTag(1,2), LaneTag(5,1))]
+        return (true, false)
+    else
+        return (false, false)
+    end
+end
