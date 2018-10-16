@@ -4,6 +4,20 @@ contact: Maxime Bouton, [boutonm@stanford.edu](boutonm@stanford.edu)
 
 This repository consists of different driving scenarios formulated as POMDPs. It provides a generative model for computing policies. A few of them have explicit transition and observation models.
 
+## Installation
+
+To install this package and its dependency run the following in the julia REPL:
+```julia
+using Pkg
+Pkg.add(PackageSpec(url="https://github.com/sisl/Vec.jl"))
+Pkg.add(PackageSpec(url="https://github.com/sisl/Records.jl"))
+Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveDrivingModels.jl"))
+Pkg.add(PackageSpec(url="https://github.com/sisl/AutoViz.jl"))
+Pkg.add(PackageSpec(url="https://github.com/sisl/AutoUrban.jl"))
+Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveSensors.jl"))
+Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotivePOMDPs.jl"))
+```
+
 ## Scenarios
 
 This package export the following POMDP Models:
