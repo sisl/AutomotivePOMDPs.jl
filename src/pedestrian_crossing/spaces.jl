@@ -60,7 +60,11 @@ function POMDPs.action_index(pomdp::SingleOCFPOMDP, a::SingleOCFAction)
         longitudinal_id = 5   
     end
         
-    return longitudinal_id + (lateral_id * length(pomdp.longitudinal_actions))
+    if ( length(pomdp.lateral_actions) > 1)
+        return longitudinal_id + (lateral_id * length(pomdp.longitudinal_actions))
+    else
+        return longitudinal_id
+    end
 end
 
 

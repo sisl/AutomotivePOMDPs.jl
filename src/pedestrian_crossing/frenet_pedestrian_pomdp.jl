@@ -1,5 +1,5 @@
 
-@with_kw mutable struct FrenetPedestrianPOMDP <: DriverModel{LatLonAccel}
+@with_kw mutable struct FrenetPedestrianPOMDP{B <: Updater} <: DriverModel{LatLonAccel}
     a::LatLonAccel = LatLonAccel(0.0, 0)
     env::CrosswalkEnv = CrosswalkEnv(CrosswalkParams())
     sensor::AutomotiveSensors.GaussianSensor = AutomotiveSensors.GaussianSensor(AutomotiveSensors.LinearNoise(10, 0., 0.), 
@@ -14,15 +14,16 @@
     sensor_observations::Vector{Vehicle} = []
 
 
-    update_tick_high_level_planner::Int64 = 4
+    update_tick_high_level_planner::Int64 = 1
 
     pomdp::SingleOCFPOMDP = SingleOCFPOMDP()
     policy::AlphaVectorPolicy{SingleOCFPOMDP,SingleOCFAction} = AlphaVectorPolicy(pomdp, Vector{Vector{Float64}}())
-    updater::SingleOCFUpdater = SingleOCFUpdater(pomdp)
+    updater::B = SingleOCFUpdater(pomdp)
     b::SingleOCFBelief = SingleOCFBelief(Vector{SingleOCFState}(), Vector{Float64}())
 
     ego_vehicle::Vehicle = Vehicle(VehicleState(VecSE2(0., 0., 0.), 0.), VehicleDef(), 1)
 
+    desired_velocity::Float64 = 40.0 / 3.6
 end
 
 # TODO: implementation in Frenet Frame
@@ -30,10 +31,8 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, ro
 
     # new velocity
     v_ = veh.state.v + action.a_lon*Δt
-    if v_ < 0.
-        v_ = 0.
-    end
-    
+    v_ = clamp(v_, 0, v_)
+
     # lateral offset
     delta_y = action.a_lat * Δt   # a_lat corresponds to lateral velocity --> a_lat == v_lat
     if v_ <= 0.
@@ -42,10 +41,9 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, ro
     s_new = v_ * Δt
 
     # longitudional distance based on required velocity and lateral offset
-    delta_x = sqrt(s_new^2 - delta_y^2 )
-
+#    delta_x = sqrt(s_new^2 - delta_y^2 )
     y_ = veh.state.posG.y + delta_y
-    x_ = veh.state.posG.x + delta_x
+    x_ = veh.state.posG.x + veh.state.v*Δt + action.a_lon*Δt^2/2# + delta_x
 
     return VehicleState(VecSE2(x_, y_, veh.state.posG.θ), roadway, v_)
 end
@@ -64,6 +62,7 @@ AutomotiveDrivingModels.rand(model::FrenetPedestrianPOMDP) = model.a
     sensor_observations::Vector{Vector{Vehicle}}
     belief::Vector{SingleOCFBelief}
     ego_vehicle::Vector{Vehicle}
+    action::Vector{SingleOCFAction}
 end
 
 function AutomotiveDrivingModels.run_callback{S,D,I,R,M<:DriverModel}(
@@ -77,8 +76,35 @@ function AutomotiveDrivingModels.run_callback{S,D,I,R,M<:DriverModel}(
     push!(callback.sensor_observations, models[1].sensor_observations)
     push!(callback.belief, models[1].b)
     push!(callback.ego_vehicle, models[1].ego_vehicle)
+    act = SingleOCFAction(models[1].a.a_lon, models[1].a.a_lat)
+    push!(callback.action, act)
+
+    return is_crash(rec[0])
+end
+
+
+"""
+    is_crash(scene::Scene)
+return true if the ego car is in collision in the given scene, do not check for collisions between
+other participants
+"""
+function is_crash(scene::Scene)
+    ego = scene[findfirst(scene, 1)]
+    @assert ego.id == 1
+    if ego.state.v ≈ 0
+        return false
+    end
+    for veh in scene
+        if veh.id != 1
+            if AutomotivePOMDPs.is_colliding(ego, veh)
+                println("-----------------> Collision <----------------------")
+                return true
+            end
+        end
+    end
     return false
 end
+
 
 
 
@@ -97,21 +123,25 @@ function AutoViz.render!(rendermodel::RenderModel, overlay::BeliefOverlay, scene
     
     for (s, prob) in weighted_iterator(beliefs)
         ped = Vehicle(VehicleState(VecSE2(s.ped_s, s.ped_T, s.ped_theta), 0.), VehicleDef(AutomotivePOMDPs.PEDESTRIAN_DEF), 1)
-        add_instruction!(rendermodel, render_vehicle, (ego.state.posG.x+ped.state.posG.x+2, ego.state.posG.y+ped.state.posG.y, ego.state.posG.θ + ped.state.posG.θ, ped.def.length, ped.def.width, overlay.color))
+        prob_color = RGBA(0.0, 0.0, 1.0, prob*10)
+        add_instruction!(rendermodel, render_vehicle, (ego.state.posG.x+ped.state.posG.x, ego.state.posG.y+ped.state.posG.y, ego.state.posG.θ + ped.state.posG.θ, ped.def.length, ped.def.width, prob_color))
     end
     return rendermodel
 end
 
 
-function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, risk::Vector{Float64}, belief::Vector{SingleOCFBelief}, ego_vehicle::Vector{Vehicle}, cam=FitToContentCamera(0.0))
+function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, risk::Vector{Float64}, belief::Vector{SingleOCFBelief}, ego_vehicle::Vector{Vehicle}, action_pomdp::Vector{SingleOCFAction}, cam=FitToContentCamera(0.0))
     duration =rec.nframes*dt::Float64
     fps = Int(1/dt)
     function render_rec(t, dt)
+       
         frame_index = Int(floor(t/dt)) + 1
-        text_to_visualize = [string(risk[frame_index])]
+        text_to_visualize = [string("v-ego: ", ego_vehicle[frame_index].state.v, " m/s" , 
+                                " x/y: ", ego_vehicle[frame_index].state.posG.x, " / ", ego_vehicle[frame_index].state.posG.y, " m",
+                                " ax: ", action_pomdp[frame_index].acc, " m/s²")]
         sensor_overlay = GaussianSensorOverlay(sensor=sensor, o=sensor_o[frame_index])
         occlusion_overlay = OcclusionOverlay(obstacles=env.obstacles)
-        text_overlay = TextOverlay(text=text_to_visualize,pos=VecE2(10.,15.),incameraframe=true,color=colorant"white",font_size=30)
+        text_overlay = TextOverlay(text=text_to_visualize,pos=VecE2(20.,10.),incameraframe=true,color=colorant"white",font_size=20)
         belief_overlay = BeliefOverlay(belief=belief[frame_index], ego_vehicle=ego_vehicle[frame_index])
      #   max_speed = 14.0
      #   histogram_overlay = HistogramOverlay(pos = VecE2(15.0, 10.0), val=ego_vehicle[frame_index].state.v/max_speed, label="v speed")

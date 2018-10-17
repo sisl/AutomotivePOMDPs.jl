@@ -40,9 +40,6 @@ end
   
 function AutomotiveDrivingModels.observe!(model::EmergencySystem, scene::Scene, roadway::Roadway, egoid::Int)
 
-    model.t_current = model.t_current + model.timestep 
-    model.tick += 1
-    
     ego = scene[findfirst(scene, egoid)]
 
     for i=2:scene.n
@@ -122,6 +119,10 @@ function AutomotiveDrivingModels.observe!(model::EmergencySystem, scene::Scene, 
     #model.a_current = 0
     model.a = LatLonAccel(0., model.a_current)
   #  println("model_state: ", model.state, " ", model.a) 
+
+    model.t_current = model.t_current + model.timestep 
+    model.tick += 1
+    
 end
 
 
@@ -130,9 +131,8 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, ro
 
     # new velocity
     v_ = veh.state.v + action.a_lon*Δt
-    if v_ < 0.
-        v_ = 0.
-    end
+    v_ = clamp(v_, 0., v_)
+
     
     # lateral offset
     delta_y = action.a_lat * Δt   # a_lat corresponds to lateral velocity --> a_lat == v_lat
@@ -415,38 +415,32 @@ function caluclateCollision(object_1::Trajectory, object_2::Trajectory, critical
     ttc = Float64[]
     collisions = 0
 
-    ellipses = [] #ConvexPolygon([VecE2(0., 0.), VecE2(0., 0.), VecE2(0., 0.), VecE2(0., 0.)], 4)
+    ellipses = [] 
 
     if (critical_index < length(time) )
 
         ego = object_1.X[critical_index,:]
-        ego_def =VehicleDef()
+        ego_def = VehicleDef()
         ego_state = VehicleState(VecSE2(ego[2],ego[3],ego[4]),ego[5])
-      #  println(ego_state)
+        
         object = object_2.X[critical_index,:]
         object_state = VehicleState(VecSE2(object[2],object[3],object[4]),object[5])
-      #  println(object_state)
+
+        # get objects position on ellipse
         ellipses = getObjectConfidenceInterval(object[2], object[6], object[3], object[7], object[4])
         object_positions = size(ellipses)[1]
+
+        # collision check for every object position on the ellipse 
         for i = 1:object_positions
+        
             object_state = VehicleState(VecSE2(ellipses[i,1],ellipses[i,2],object[4]),object[5])
-           # println(ellipses[i,1]," ",ellipses[i,2])
             collision = AutomotivePOMDPs.collision_checker(ego_state, object_state, ego_def, AutomotivePOMDPs.PEDESTRIAN_DEF)
             if (collision)
-               # println("--> collision")
                 collisions = collisions + 1
                 ttc_tmp = (ellipses[i,1]-ego_state_t0[2] + AutomotivePOMDPs.PEDESTRIAN_DEF.width/2) / ego_state_t0[5]
                 push!(ttc, ttc_tmp)
             end
         end
-
-        x_min = minimum(ellipses[:,1]) - AutomotivePOMDPs.PEDESTRIAN_DEF.width/2;
-        x_max = maximum(ellipses[:,1]) + AutomotivePOMDPs.PEDESTRIAN_DEF.width/2;
-
-        y_min = minimum(ellipses[:,2]) - AutomotivePOMDPs.PEDESTRIAN_DEF.width/2;
-        y_max = maximum(ellipses[:,2]) + AutomotivePOMDPs.PEDESTRIAN_DEF.width/2;
-        prediction_area = ConvexPolygon([VecE2(x_min, y_max), VecE2(x_max, y_max), VecE2(x_max, y_min), VecE2(x_min, y_min)], 4)
-
         collision_rate = collisions/object_positions
     else
         collision_rate = 0

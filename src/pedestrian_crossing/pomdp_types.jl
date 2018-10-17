@@ -45,25 +45,26 @@ const SingleOCFObs = SingleOCFState
     ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0)
     longitudinal_actions::Vector{Float64} = [1.0, 0.0, -1.0, -2.0, -4.0]
     lateral_actions::Vector{Float64} = [1.0, 0.0, -1.0]
-    ΔT::Float64 = 0.2
-    PED_V_NOISE::Vector{Float64} = linspace(-1, 1, 5)
-    PED_THETA_NOISE::Vector{Float64} = linspace(-0.78, 0.78, 5)
+    ΔT::Float64 = 0.5
+    PED_A_RANGE::Vector{Float64} = linspace(-2.0, 2.0, 5)
+    PED_THETA_NOISE::Vector{Float64} = [0]#linspace(-0.39/2., 0.39/2., 3)
+    PED_SAFETY_DISTANCE::Float64 = 1.0
     
     EGO_Y_MIN::Float64 = -1.
     EGO_Y_MAX::Float64 = 1.
-    EGO_Y_RANGE::Vector{Float64} = linspace(EGO_Y_MIN, EGO_Y_MAX, 5)
+    EGO_Y_RANGE::Vector{Float64} = [0] #linspace(EGO_Y_MIN, EGO_Y_MAX, 5)
 
     EGO_V_MIN::Float64 = 0.
     EGO_V_MAX::Float64 = 14.
-    EGO_V_RANGE::Vector{Float64} = linspace(EGO_V_MIN, EGO_V_MAX, 14)
+    EGO_V_RANGE::Vector{Float64} = linspace(EGO_V_MIN, EGO_V_MAX, 15)#29)
 
-    S_MIN::Float64 = -1.
-    S_MAX::Float64 = 49.
-    S_RANGE::Vector{Float64} = linspace(S_MIN, S_MAX, 25)
+    S_MIN::Float64 = 0.
+    S_MAX::Float64 = 50.
+    S_RANGE::Vector{Float64} = linspace(S_MIN, S_MAX, 21)#51)
 
     T_MIN::Float64 = -5.
     T_MAX::Float64 = 5.
-    T_RANGE::Vector{Float64} = linspace(T_MIN, T_MAX, 11)
+    T_RANGE::Vector{Float64} = linspace(T_MIN, T_MAX, 21)
 
     PED_V_MIN::Float64 = 0.
     PED_V_MAX::Float64 = 2.
@@ -71,15 +72,15 @@ const SingleOCFObs = SingleOCFState
 
     PED_THETA_MIN::Float64 = 1.57-1.57/2
     PED_THETA_MAX::Float64 = 1.57+1.57/2
-    PED_THETA_RANGE::Vector{Float64} = linspace(PED_THETA_MIN, PED_THETA_MAX, 5)
+    PED_THETA_RANGE::Vector{Float64} = [1.57] #linspace(PED_THETA_MIN, PED_THETA_MAX, 7)
 
 
     
-    collision_cost::Float64 = -1.0
-    action_cost_lon::Float64 = 0.0
-    action_cost_lat::Float64 = 0.0
-    goal_reward::Float64 = 1.0
-    γ::Float64 = 0.95
+    collision_cost::Float64 = -10.0
+    action_cost_lon::Float64 = -1.0
+    action_cost_lat::Float64 = -1.0
+    goal_reward::Float64 = 10.0
+    γ::Float64 = 0.99
     
     state_space_grid::GridInterpolations.RectangleGrid = initStateSpace(EGO_Y_RANGE, EGO_V_RANGE, S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE)
 
@@ -91,7 +92,9 @@ const SingleOCFObs = SingleOCFState
 
     absent::Bool = true
     obstacles::Vector{ConvexPolygon} = []
-    ego_vehicle::Vehicle = Vehicle(VehicleState(VecSE2(0.0, 0.0, 0.), 0.0), VehicleDef(), 1)
+    ego_vehicle::Vehicle = Vehicle(VehicleState(VecSE2(0.0, 0.0, 0.0), 0.0), VehicleDef(), 1)
+
+    desired_velocity::Float64 = 40.0 / 3.6
 
 end
 
@@ -101,24 +104,45 @@ end
 function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleOCFAction, sp::SingleOCFState) 
     
     r = 0.
-    if collision_checker(pomdp,s)
+
+        #object_b_def.length = object_b_def.length + pomdp.PED_SAFETY_DISTANCE
+    #object_b_def.width  = object_b_def.width + pomdp.PED_SAFETY_DISTANCE
+
+    if (action.acc > 0.0 && sp.ego_v > pomdp.desired_velocity )
+        r += (-1)
+    end
+
+    if (action.lateral_movement == 1.0 && sp.ego_y > pomdp.EGO_Y_MAX )
+        r += (-10)
+    end
+
+    if (action.lateral_movement == -1.0 && sp.ego_y < pomdp.EGO_Y_MIN )
+        r += (-10)
+    end
+
+    collision = collision_checker(pomdp,sp)
+
+    if collision
         r += pomdp.collision_cost
     end
-    if s.ped_s < 0
+    if sp.ped_s == 0
         r += pomdp.goal_reward
     end
-    
-    if action.acc > 0. && action.acc < 0.0
-        r += abs(pomdp.action_cost_lon * action.acc)
+ #   if !collision
+ #       r += pomdp.goal_reward
+ #   end
+
+    if action.acc > 0. ||  action.acc < 0.0
+        r += pomdp.action_cost_lon * abs(action.acc)^2
     end
         
-    if action.lateral_movement > 0 && action.lateral_movement < 0
-        r += abs(pomdp.action_cost_lat * action.lateral_movement)
+    if abs(action.lateral_movement) > 0 
+        r += pomdp.action_cost_lat * abs(action.lateral_movement)
     end
     
     return r
     
-end;
+end
 
 
 
@@ -148,7 +172,7 @@ function AutomotivePOMDPs.collision_checker(pomdp::SingleOCFPOMDP, s::SingleOCFS
     
     object_a_def = pomdp.ego_type
     object_b_def = pomdp.ped_type
-    
+
     center_a = VecSE2(0, s.ego_y, 0)
     center_b = VecSE2(s.ped_s, s.ped_T, s.ped_theta)
     # first fast check:
@@ -217,58 +241,39 @@ function initActionSpace(longitudinal_actions, lateral_actions)
     
 end
 
-# not nice but faster compared with interpolants
-function ego_v_to_state_space_fast(pomdp::SingleOCFPOMDP, ego_v::Float64)
-
-    if ego_v >= maximum(pomdp.EGO_V_RANGE)
-        ego_v_dis = pomdp.EGO_V_RANGE[end]
-    elseif ego_v <= minimum(pomdp.EGO_V_RANGE)
-        ego_v_dis = pomdp.EGO_V_RANGE[1]
-    else
-        idx = findfirst(x -> x > ego_v, pomdp.EGO_V_RANGE)
-        ego_v_dis = pomdp.EGO_V_RANGE[idx]
-    end
-
-    return ego_v_dis
-end
-
-function ego_v_to_state_space(pomdp::SingleOCFPOMDP, ego_v::Float64)
-
-    id_tmp = interpolants(pomdp.state_space_grid, [pomdp.EGO_Y_MIN, ego_v, pomdp.S_MIN, pomdp.T_MIN, pomdp.PED_THETA_MIN,pomdp.PED_V_MIN])
-    id_max = find(a->a==maximum(id_tmp[2]),id_tmp[2])
-    return pomdp.state_space[id_tmp[1][id_max]][1].ego_v
+function getEgoDataInStateSpace(pomdp::SingleOCFPOMDP, y::Float64, v::Float64)
+    y_grid = RectangleGrid(pomdp.EGO_Y_RANGE)
+    (id, weight) = interpolants(y_grid, [y])
+    id_max = indmax(weight)
+    ego_y = ind2x(y_grid, id[id_max])[1]
+    
+    v_grid = RectangleGrid(pomdp.EGO_V_RANGE)
+    (id, weight) = interpolants(v_grid, [v])
+    id_max = indmax(weight)
+    ego_v = ind2x(v_grid, id[id_max])[1]
+    return ego_y, ego_v
 end
 
 
-function ego_y_to_state_space_fast(pomdp::SingleOCFPOMDP, ego_y::Float64)
-
-    if ego_y >= maximum(pomdp.EGO_Y_RANGE)
-        return pomdp.EGO_Y_RANGE[end]
-    elseif ego_y <= minimum(pomdp.EGO_Y_RANGE)
-        return pomdp.EGO_Y_RANGE[1]
-    else
-        dy = pomdp.EGO_Y_RANGE[2]-pomdp.EGO_Y_RANGE[1]        
-        idx = findfirst(x -> x > ego_y, pomdp.EGO_Y_RANGE)
-        v1 = pomdp.EGO_Y_RANGE[idx]
-        idx = findfirst(x -> x > ego_y-dy, pomdp.EGO_Y_RANGE)
-        v2 = pomdp.EGO_Y_RANGE[idx]
- 
-       if abs(ego_y-v1) < abs(ego_y-v2)
-           return v1 
-        else
-           return v2            
-        end
-    end
+#=
+mdp = UnderlyingMDP(pomdp)
+struct OCMDPPolicy <: Policy
+    policy::AlphaVectorPolicy
+    pomdp::SingleOCFPOMDP
 end
 
-
-function ego_y_to_state_space(pomdp::SingleOCFPOMDP, ego_y::Float64)
-
-    id_tmp = interpolants(pomdp.state_space_grid, [ego_y, pomdp.EGO_V_MIN, pomdp.S_MIN, pomdp.T_MIN, pomdp.PED_THETA_MIN,pomdp.PED_V_MIN])
-    id_max = find(a->a==maximum(id_tmp[2]),id_tmp[2])
-    return  pomdp.state_space[id_tmp[1][id_max]][1].ego_y
+function POMDPs.action(policy::OCMDPPolicy, s::SingleOCFState)
+    si = state_index(policy.pomdp, s)
+    ai = indmax(policy.policy.alphas[si])
+    a = actions(policy.pomdp, ai)
+    return a
 end
 
+=#
 
+#=
+hr = HistoryRecorder()
 
-
+s0 = 
+hist = simulate(hr, mdp, policy, s0)
+=#

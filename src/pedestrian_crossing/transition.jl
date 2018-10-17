@@ -1,28 +1,19 @@
 ### Transition model  ############################################################################
 function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOCFAction, dt::Float64 = pomdp.ΔT)
     
-
     # ego transition 
-    x_delta_ego = s.ego_v*dt + 0.5*a.acc*dt^2
-    v_ego = s.ego_v + a.acc*dt 
-    if (v_ego < 0.)
-        sp_ego_v = 0.
-    else
-        sp_ego_v = v_ego
-    end
-        
-    # 0.5m in 0.5s should be fine   
-    sp_ego_y = s.ego_y + a.lateral_movement * pomdp.ΔT 
-    if ( sp_ego_y > pomdp.EGO_Y_MAX ) 
-        sp_ego_y = pomdp.EGO_Y_MAX
-    end
-    if ( sp_ego_y < pomdp.EGO_Y_MIN ) 
-        sp_ego_y = pomdp.EGO_Y_MIN
-    end   
-    
-    ego_y_state_space = ego_y_to_state_space(pomdp, sp_ego_y)
-    ego_v_state_space = ego_v_to_state_space(pomdp, sp_ego_v)
+    v_ego = s.ego_v + a.acc*pomdp.ΔT 
+    v_ego = s.ego_v + a.acc*pomdp.ΔT 
+    sp_ego_v = clamp(v_ego, 0, v_ego)
+  
+    x_delta_ego = s.ego_v*pomdp.ΔT + 0.5*a.acc*pomdp.ΔT^2
+   # x_delta_ego = sp_ego_v*pomdp.ΔT + 0.5*a.acc*pomdp.ΔT^2
 
+    # 0.5m in 0.5s should be fine   
+    sp_ego_y = s.ego_y + a.lateral_movement * pomdp.ΔT  # simplified movement, not exactly correct -> a=1, t = 1 --> 1m movement to the left
+    sp_ego_y = clamp(sp_ego_y, pomdp.EGO_Y_MIN, pomdp.EGO_Y_MAX )
+
+#println("pomdp.ΔT : ", pomdp.ΔT )
     # absent or not
     if (s != pomdp.state_space[end] )
         # pedestrian is absent
@@ -32,30 +23,46 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
         sizehint!(probs, 100);
 
         # ped transition
-        for v_n in pomdp.PED_V_NOISE
-            sp_ped_v = s.ped_v + v_n
-
-            if (sp_ped_v < 0.) 
-                sp_ped_v = 0.
-            end
-            if (sp_ped_v > pomdp.PED_V_MAX ) 
-                sp_ped_v = pomdp.PED_V_MAX
+        for a_ped in pomdp.PED_A_RANGE
+            sp_ped_v = s.ped_v + a_ped * pomdp.ΔT
+            sp_ped_v = clamp(sp_ped_v, 0, pomdp.PED_V_MAX)
+            if a_ped == 0
+                a_ped_prob = 3.0
+            else
+                a_ped_prob = 1.0
             end
             for theta_n in pomdp.PED_THETA_NOISE
-                theta_ped = s.ped_theta + theta_n
-                sp_ped_theta = theta_ped
-                sp_ped_s = s.ped_s + sp_ped_v*cos(theta_ped) - x_delta_ego
-                sp_ped_T = s.ped_T + sp_ped_v*sin(theta_ped) - a.lateral_movement * pomdp.ΔT  # a_lat corresponds to lateral velocity --> a_lat == v_lat
-                
-                #state_vector = SVector{6, Float64}(sp_ego_y, sp_ego_v, sp_ped_s, sp_ped_T, sp_ped_theta, sp_ped_v)
 
-                state_vector = SVector(ego_y_state_space, ego_v_state_space, sp_ped_s, sp_ped_T, sp_ped_theta, sp_ped_v) # looks faster
+                theta_ped = s.ped_theta + theta_n
+          #      println("theta_ped: ", theta_ped, " sp_ped_v*cos(theta_ped): ", sp_ped_v*cos(theta_ped))
+                sp_ped_theta = theta_ped
+                sp_ped_s = s.ped_s + sp_ped_v*cos(theta_ped) * pomdp.ΔT - x_delta_ego
+                sp_ped_T = s.ped_T + sp_ped_v*sin(theta_ped) * pomdp.ΔT - a.lateral_movement * pomdp.ΔT  # a_lat corresponds to lateral velocity --> a_lat == v_lat
+                
+                sp_ped_s = clamp(sp_ped_s, pomdp.S_MIN, pomdp.S_MAX)
+                sp_ped_T = clamp(sp_ped_T, pomdp.T_MIN, pomdp.T_MAX)
+
+           #     println("s.ped_T: ", s.ped_T , " s.ped_v: ", s.ped_v, " a_ped: ", a_ped, " sp_ped_v: ", sp_ped_v, " a_ped * pomdp.ΔT: ", a_ped * pomdp.ΔT, " sp_ped_s: ", sp_ped_s, " sp_ped_T: ", sp_ped_T)
+
+
+                state_vector = SVector(sp_ego_y, sp_ego_v, sp_ped_s, sp_ped_T, sp_ped_theta, sp_ped_v) # looks faster
+         #       println("state_vector: ", state_vector)
                 ind, weight = interpolants(pomdp.state_space_grid, state_vector)
                 for i=1:length(ind)
                     if weight[i] > 0.1
                         state = pomdp.state_space[ind[i]]
                         push!(states, state)
-                        push!(probs, weight[i])
+                        push!(probs, weight[i]*a_ped_prob)
+                        #=
+                        if !(state in states) # check for doublons
+                            push!(states, state)
+                            push!(probs, weight[i]*a_ped_prob)
+                        else
+                            state_ind = find(x->x==state, states)
+                            probs[state_ind] += weight[i]*a_ped_prob
+                        end
+                        =#
+
                     end
                 end
             end
@@ -70,12 +77,12 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
 
     else
         # pedestrian is absent
-#println("bingo tran absent")
         states = SingleOCFState[]
         sizehint!(states, 2500);
         probs = Float64[] 
         sizehint!(probs, 2500);
 
+        (ego_y_state_space,ego_v_state_space) = getEgoDataInStateSpace(pomdp, sp_ego_y, sp_ego_v)
 
         # add states on the right side
         for ped_theta in pomdp.PED_THETA_RANGE
@@ -85,6 +92,7 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
                 end
             end
         end
+        
         # add absent state
         push!(states,pomdp.state_space[end])
 
@@ -103,13 +111,14 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
                         end
                     end
                 end
-            end            
+            end
         end
 
         probs = ones(length(states)) / length(states)
     end
-
+    
     return SparseCat(states,probs)
+
 end
 
 
@@ -123,18 +132,20 @@ function getObstructionCorner(obstacle::ConvexPolygon, ego_pos::VecE2)
         y[i] = obstacle.pts[i].y
     end
     
-
     delta_s = maximum(x) - ego_pos.x
-        
-    right_side = true
-    if ( ego_pos.y > mean(y) )
-        delta_t = -(ego_pos.y -  maximum(y))
+    if delta_s > 0 
         right_side = true
+        if ( ego_pos.y > mean(y) )
+            delta_t = -(ego_pos.y -  maximum(y))
+            right_side = true
+        else
+            delta_t = minimum(y) - ego_pos.y 
+            right_side = false
+        end
+        return (delta_s, delta_t, right_side) 
     else
-        delta_t = minimum(y) - ego_pos.y 
-        right_side = false
+        return (1000., 1000., false)
     end
-    return delta_s, delta_t, right_side 
 end
 
 
