@@ -52,7 +52,7 @@ const SingleOCFObs = SingleOCFState
     
     EGO_Y_MIN::Float64 = -1.
     EGO_Y_MAX::Float64 = 1.
-    EGO_Y_RANGE::Vector{Float64} = [0] #linspace(EGO_Y_MIN, EGO_Y_MAX, 5)
+    EGO_Y_RANGE::Vector{Float64} = linspace(EGO_Y_MIN, EGO_Y_MAX, 5)
 
     EGO_V_MIN::Float64 = 0.
     EGO_V_MAX::Float64 = 14.
@@ -238,18 +238,7 @@ function initActionSpace(longitudinal_actions, lateral_actions)
     
 end
 
-function getEgoDataInStateSpace(pomdp::SingleOCFPOMDP, y::Float64, v::Float64)
-    y_grid = RectangleGrid(pomdp.EGO_Y_RANGE)
-    (id, weight) = interpolants(y_grid, [y])
-    id_max = indmax(weight)
-    ego_y = ind2x(y_grid, id[id_max])[1]
-    
-    v_grid = RectangleGrid(pomdp.EGO_V_RANGE)
-    (id, weight) = interpolants(v_grid, [v])
-    id_max = indmax(weight)
-    ego_v = ind2x(v_grid, id[id_max])[1]
-    return ego_y, ego_v
-end
+
 
 
 #=

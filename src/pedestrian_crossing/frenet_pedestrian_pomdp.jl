@@ -31,6 +31,7 @@ end
 function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::Scene, roadway::Roadway, egoid::Int)
 
     ego = scene[findfirst(scene, egoid)]
+    pomdp.ego_vehicle = ego
     model.ego_vehicle = ego
     model.sensor_observations = measure(model.sensor, ego, scene, roadway, model.obstacles)
     
@@ -43,7 +44,7 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
         ego_t = ego.state.posF.t
         ego_s = ego.state.posF.s
         ego_v = ego.state.v
-        obs = pomdp.state_space[end]   
+        obs = get_state_absent(pomdp,ego.state.posG.y, ego_v) 
 
         delta_s = -10.
         delta_t = -10.
@@ -63,15 +64,11 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
 
         end
         
-        pomdp.ego_vehicle = ego
-      #  pomdp.obstacles = model.obstacles
-
       
         # init belief for the first time step
         if (model.t_current == 0 )
             # no object or out of state space
-# TODO: change to is_obs_absent   
-            if ( length(model.sensor_observations) == 0 || (delta_s > pomdp.S_MAX || delta_s < pomdp.S_MIN || delta_t > pomdp.T_MAX || delta_t < pomdp.T_MIN) )
+            if ( length(model.sensor_observations) == 0 || is_observation_absent(pomdp, obs) )
                 model.b = initBeliefAbsentPedestrian(pomdp, ego_t, ego_v)
                 println("init belief absent")
             else
@@ -79,25 +76,16 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
                 println("init belief observation")
 
             end
-        else
-
-#=    
-            ## debug
-
-            if ( length(model.sensor_observations) == 0 || (delta_s > pomdp.S_MAX || delta_s < pomdp.S_MIN || delta_t > pomdp.T_MAX || delta_t < pomdp.T_MIN) )
-                model.b = initBeliefAbsentPedestrian(pomdp, ego_y, ego_v)
-            else
-                model.b = initBeliefPedestrian(pomdp, obs)
-            end
-
-            ## end debug 
-=#
-            action_pomdp = SingleOCFAction(model.a.a_lon, model.a.a_lat)
-            println("action before update: ", action_pomdp)
+       # else
+        end
 
 
-            b_ = update(model.updater, model.b, action_pomdp, obs)  
-            model.b = deepcopy(b_)
+        action_pomdp = SingleOCFAction(model.a.a_lon, model.a.a_lat)
+        println("action before update: ", action_pomdp)
+
+        b_ = update(model.updater, model.b, action_pomdp, obs)  
+        model.b = deepcopy(b_)
+
 #=
             b_states = []
             b_prob = []
@@ -112,18 +100,18 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
        =#
 
          #   println(model.b)
-            println("b-length: ", length(model.b))
+        println("b-length: ", length(model.b))
             
           #  act = action(model.policy, model.b) # policy
             #model.a = LatLonAccel(act.lateral_movement, act.acc)
           #  println("action after update: ", act)
 
-            if (model.tick > 1 )
-                model.a = LatLonAccel(-1.0, 0.0)
-                println("manual intervention")
-            #    println(model.b)
-            end
+        if (model.tick > 2 )
+            model.a = LatLonAccel(0.0, -4.0)
+            println("manual intervention")
+        #    println(model.b)
         end
+
 
     end
     

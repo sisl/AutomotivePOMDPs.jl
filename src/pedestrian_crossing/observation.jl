@@ -4,21 +4,17 @@
 
 function observation_weight(pomdp::SingleOCFPOMDP, sp::SingleOCFState, o::SingleOCFObs)
 
-    absent_state = pomdp.state_space[end]
-    absent_state_obs = pomdp.state_space[end] #SingleOCFObs(absent_state.ego_y, absent_state.ego_v, absent_state.ped_s, absent_state.ped_T, absent_state.ped_theta, absent_state.ped_v)
-   
-    if (o.ped_s != -10 && o.ped_T != -10  )
-    #if ( o == absent_state_obs )
-        o_absent = false
-    else
+    
+    if ( is_observation_absent(pomdp, o) )
         o_absent = true
+    else
+        o_absent = false
     end
 
-    if (sp.ped_s != -10 && sp.ped_T != -10  )
-    #if ( sp == absent_state )
-        sp_absent = false
-    else
+    if (is_state_absent(pomdp, sp) )
         sp_absent = true
+    else
+        sp_absent = false
     end
 
    if ( AutomotivePOMDPs.is_observable_fixed(pomdp.ego_vehicle.state, VehicleState(VecSE2(pomdp.ego_vehicle.state.posG.x+sp.ped_s, pomdp.ego_vehicle.state.posG.y+sp.ped_T, 0.), 0.0), pomdp.env) == false )
@@ -40,8 +36,8 @@ function observation_weight(pomdp::SingleOCFPOMDP, sp::SingleOCFState, o::Single
     if ( !o_absent && !sp_absent && !o_absent )       # visible
 
         std_obs = 0.2*eye(4)
-        std_obs[3,3] = 1        # theta
-        std_obs[4,4] = 1        # velocity
+        std_obs[3,3] = 0.5        # theta
+        std_obs[4,4] = 0.5        # velocity
         ob_dist = MultivariateNormal([sp.ped_s, sp.ped_T, sp.ped_theta ,sp.ped_v], std_obs)
 
         (ego_y_state_space, ego_v_state_space) = getEgoDataInStateSpace(pomdp, o.ego_y, o.ego_v)
@@ -79,16 +75,3 @@ function POMDPs.observation(pomdp::SingleOCFPOMDP, a::SingleOCFAction, sp::Singl
     return SparseCat(states,probs)
 
 end
-
-#=
-function is_observation_absent(pomdp::SingleOCFPOMDP, o::SingleOCFObs)
-
-    if (o.ped_s <= -10 && s.ped_T != -10  )
-        return false;
-    else
-        return true;
-    end
-
-end
-
-=#

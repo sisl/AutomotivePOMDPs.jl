@@ -13,8 +13,7 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
     sp_ego_y = clamp(sp_ego_y, pomdp.EGO_Y_MIN, pomdp.EGO_Y_MAX )
 
     # absent or not
-    if (s.ped_s != -10 && s.ped_T != -10  )
-#    if (s != pomdp.state_space[end] )
+    if ( !is_state_absent(pomdp, s) )
         # pedestrian is not absent
         states = SingleOCFState[]
         sizehint!(states, 100);
@@ -93,7 +92,10 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
         end
                 
         # add absent state
-        push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0, 0.0))
+#TODO: maybe nicer implementation        
+        absent_state = get_state_absent(pomdp, ego_y_state_space, pomdp.ego_vehicle.state.v)
+        push!(states, absent_state)
+
         probs = ones(length(states)) / length(states)
 
     end
