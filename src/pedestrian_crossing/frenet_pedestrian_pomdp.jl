@@ -26,6 +26,117 @@
     desired_velocity::Float64 = 40.0 / 3.6
 end
 
+
+
+function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::Scene, roadway::Roadway, egoid::Int)
+
+    ego = scene[findfirst(scene, egoid)]
+    model.ego_vehicle = ego
+    model.sensor_observations = measure(model.sensor, ego, scene, roadway, model.obstacles)
+    
+    ################ High Level Planner ###################################################
+    if (  true ) #model.tick % model.update_tick_high_level_planner == 0 )
+
+        println("--------------------------POMDP high level planner----------------------- t: ", model.t_current)
+        println("EGO: x/y:", ego.state.posG.x, " / ",  ego.state.posG.y, " v: ", ego.state.v)
+
+        ego_t = ego.state.posF.t
+        ego_s = ego.state.posF.s
+        ego_v = ego.state.v
+        obs = pomdp.state_space[end]   
+        obs_int = pomdp.state_space[end]   
+
+        delta_s = -10.
+        delta_t = -10.
+        for object in model.sensor_observations
+            println("PED: x/y: ", object.state.posG.x, " / ", object.state.posG.y, " v: ", object.state.v)
+            
+            object_posF = Frenet(proj(object.state.posG, get_lane(env.roadway, ego.state), env.roadway, move_along_curves=false),env.roadway)
+            
+            delta_s = object_posF.s - ego_s
+            delta_t = object_posF.t - ego_t
+            delta_theta = object_posF.ϕ - ego.state.posF.ϕ
+            ped_v = object.state.v
+            
+            obs = SingleOCFState(ego_t, ego_v, delta_s, delta_t, delta_theta, ped_v)
+            obs_int = model.pomdp.state_space[state_index(pomdp,obs )]
+            println("delta_s: ", delta_s, " delta_t: ", delta_t)
+            println("Observation cont: ", obs)
+            println("Observation disc: ", obs_int)           
+
+        end
+        
+        pomdp.ego_vehicle = ego
+        pomdp.obstacles = model.obstacles
+
+      
+        # init belief for the first time step
+        if (model.t_current == 0 )
+            # no object or out of state space
+            if ( length(model.sensor_observations) == 0 || (delta_s > pomdp.S_MAX || delta_s < pomdp.S_MIN || delta_t > pomdp.T_MAX || delta_t < pomdp.T_MIN) )
+                model.b = initBeliefAbsentPedestrian(pomdp, ego_t, ego_v)
+                println("init belief absent")
+            else
+                model.b = initBeliefPedestrian(pomdp, obs)
+                #model.b = initBeliefAbsentPedestrian(pomdp, ego_t, ego_v)
+                println("init belief observation")
+
+            end
+        else
+
+#=    
+            ## debug
+
+            if ( length(model.sensor_observations) == 0 || (delta_s > pomdp.S_MAX || delta_s < pomdp.S_MIN || delta_t > pomdp.T_MAX || delta_t < pomdp.T_MIN) )
+                model.b = initBeliefAbsentPedestrian(pomdp, ego_y, ego_v)
+            else
+                model.b = initBeliefPedestrian(pomdp, obs)
+            end
+
+            ## end debug 
+=#
+            action_pomdp = SingleOCFAction(model.a.a_lon, model.a.a_lat)
+            println("action before update: ", action_pomdp)
+
+
+            b_ = update(model.updater, model.b, action_pomdp, obs)  
+            model.b = deepcopy(b_)
+#=
+            b_states = []
+            b_prob = []
+            for (s, prob) in weighted_iterator(b_)
+                if ( prob > 1e-4)
+                    push!(b_states, s)
+                    push!(b_prob, prob)
+                end
+            end
+            model.b = SingleOCFBelief(b_states, b_prob) 
+
+       =#
+
+         #   println(model.b)
+            println("b-length: ", length(model.b))
+            
+          #  act = action(model.policy, model.b) # policy
+            #model.a = LatLonAccel(act.lateral_movement, act.acc)
+          #  println("action after update: ", act)
+
+            if (model.tick > 1 )
+                model.a = LatLonAccel(0.0, 0.0)
+                println("manual intervention")
+            #    println(model.b)
+            end
+        end
+
+    end
+    
+    model.risk = length(model.b)
+    model.tick += 1
+    model.t_current = model.t_current + model.timestep 
+
+end
+
+
 # TODO: implementation in Frenet Frame
 function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, roadway::Roadway, Δt::Float64)
 

@@ -7,16 +7,15 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
     sp_ego_v = clamp(v_ego, 0, v_ego)
   
     x_delta_ego = s.ego_v*pomdp.ΔT + 0.5*a.acc*pomdp.ΔT^2
-   # x_delta_ego = sp_ego_v*pomdp.ΔT + 0.5*a.acc*pomdp.ΔT^2
 
     # 0.5m in 0.5s should be fine   
     sp_ego_y = s.ego_y + a.lateral_movement * pomdp.ΔT  # simplified movement, not exactly correct -> a=1, t = 1 --> 1m movement to the left
     sp_ego_y = clamp(sp_ego_y, pomdp.EGO_Y_MIN, pomdp.EGO_Y_MAX )
 
-#println("pomdp.ΔT : ", pomdp.ΔT )
     # absent or not
-    if (s != pomdp.state_space[end] )
-        # pedestrian is absent
+    if (s.ped_s != -10 && s.ped_T != -10  )
+#    if (s != pomdp.state_space[end] )
+        # pedestrian is not absent
         states = SingleOCFState[]
         sizehint!(states, 100);
         probs = Float64[] 
@@ -76,6 +75,10 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
         end
 
     else
+        (ego_y_state_space,ego_v_state_space) = getEgoDataInStateSpace(pomdp, sp_ego_y, sp_ego_v)
+
+        return initBeliefAbsentPedestrian(pomdp, ego_y_state_space, ego_v_state_space)
+        #=
         # pedestrian is absent
         states = SingleOCFState[]
         sizehint!(states, 2500);
@@ -94,7 +97,7 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
         end
         
         # add absent state
-        push!(states,pomdp.state_space[end])
+        push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0, 0.0))
 
         # add occluded states
         for i = 1:length(pomdp.obstacles)
@@ -115,6 +118,7 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
         end
 
         probs = ones(length(states)) / length(states)
+        =#
     end
     
     return SparseCat(states,probs)
@@ -149,7 +153,7 @@ function getObstructionCorner(obstacle::ConvexPolygon, ego_pos::VecE2)
 end
 
 
-function calulateHiddenPositionsRightSide(obst_s::Float64, obst_T::Float64)
+function calulateHiddenPositionsRightSide(pomdp::SingleOCFPOMDP, obst_s::Float64, obst_T::Float64)
 
     idx = findfirst(x -> x >= obst_s, pomdp.S_RANGE)
     s_grid = pomdp.S_RANGE[idx:end]
@@ -170,7 +174,7 @@ function calulateHiddenPositionsRightSide(obst_s::Float64, obst_T::Float64)
     return sT_pos
 end
 
-function calulateHiddenPositionsLeftSide(obst_s::Float64, obst_T::Float64)
+function calulateHiddenPositionsLeftSide(pomdp::SingleOCFPOMDP, obst_s::Float64, obst_T::Float64)
 
     idx = findfirst(x -> x >= obst_s, pomdp.S_RANGE)
     s_grid = pomdp.S_RANGE[idx:end]

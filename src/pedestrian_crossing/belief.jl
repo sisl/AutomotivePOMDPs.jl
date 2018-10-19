@@ -17,30 +17,29 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
     sizehint!(bp, 100);
     
     bp_sum = 0.0   # to normalize the distribution
-    cnt = 0
     
     (ego_y_state_space, ego_v_state_space) = getEgoDataInStateSpace(pomdp, o.ego_y, o.ego_v)
 
     # object is outside the defined state space
     if (  o.ped_s > pomdp.S_MAX || o.ped_s < pomdp.S_MIN || o.ped_T > pomdp.T_MAX ||  o.ped_T < pomdp.T_MIN )
         absent_state = pomdp.state_space[end]
-        o = pomdp.state_space[end]
-        b = initBeliefAbsentPedestrian(pomdp, ego_y_state_space, ego_v_state_space)
+        o = SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0 ,0.0)
+        #b = initBeliefAbsentPedestrian(pomdp, ego_y_state_space, ego_v_state_space)
         println("Pedestrian is absent: ", o)
     end
 
     for sp_ped in pomdp.state_space_ped
-        #cnt += 1
-        #if ( cnt % 1000 == 0)
-        #    println("Progress: ", cnt/length(pomdp.state_space_ped)*100)
-        #end
-   
+
         if ( sp_ped != pomdp.state_space_ped[end])  # not absent state
             sp = SingleOCFState(ego_y_state_space, ego_v_state_space, sp_ped.ped_s, sp_ped.ped_T, sp_ped.ped_theta ,sp_ped.ped_v)
         else # absent state
-            sp = pomdp.state_space[end]
+            sp = SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0 ,0.0)
+          #  sp = pomdp.state_space[end]
         end
         po = observation_weight(pomdp, sp, o) 
+      #  if po != 0.
+      #      println("non zero sp:", sp, " prob ", po)
+      #  end
 
 
         if po < 0.000000001
@@ -49,9 +48,8 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
 
         b_sum = 0.0   
         for (s, prob) in weighted_iterator(b)
-            s = SingleOCFState(o.ego_y, o.ego_v, s.ped_s, s.ped_T, s.ped_theta ,s.ped_v)
-
-            td = transition(pomdp, s, a)  
+            td = transition(pomdp, s, a) 
+        #   println("transition", td) 
             pp = pdf(td, sp)
             b_sum += pp * prob
         end
@@ -117,39 +115,37 @@ end
 
 function initBeliefAbsentPedestrian(pomdp::SingleOCFPOMDP, ego_y::Float64, ego_v::Float64)
     
-
     states = SingleOCFState[]
-    sizehint!(states, 2500);
+    sizehint!(states, 1000);
     probs = Float64[] 
-    sizehint!(probs, 2500);
+    sizehint!(probs, 1000);
 
     (ego_y_state_space, ego_v_state_space) = getEgoDataInStateSpace(pomdp, ego_y, ego_v)
-
+#=
     # add states on the right side
     for ped_theta in pomdp.PED_THETA_RANGE
-        for ped_v in pomdp.PED_V_RANGE
+        for ped_v = 0.:1.:2.# in pomdp.PED_V_RANGE
             for ped_s in pomdp.S_RANGE
                 push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN, ped_theta, ped_v))
-                push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN+0.5, ped_theta, ped_v))
-                push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN+1.0, ped_theta, ped_v))
+              #  push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN+1.0, ped_theta, ped_v))
 
             end
         end
     end
-    
+    =#
     # add absent state
-    push!(states,pomdp.state_space[end])
+    push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0, 0.0))
 
     # add occluded states
     for i = 1:length(pomdp.obstacles)
         ego_pos = VecE2(pomdp.ego_vehicle.state.posG.x, pomdp.ego_vehicle.state.posG.y) 
         (obst_s, obst_T, right_side) = getObstructionCorner(pomdp.obstacles[i], ego_pos )
-        #println("obst_s: ", obst_s, " obst_T: ", obst_T , " right_side: ", right_side)   
+       # println("obst_s: ", obst_s, " obst_T: ", obst_T , " right_side: ", right_side)   
         if ( right_side ) 
-            occluded_positions = calulateHiddenPositionsRightSide(obst_s, obst_T)
+            occluded_positions = calulateHiddenPositionsRightSide(pomdp, obst_s, obst_T)
             #println(occluded_positions)
             for ped_theta in pomdp.PED_THETA_RANGE
-                for ped_v in pomdp.PED_V_RANGE
+                for ped_v = 0.:1.:2.# in pomdp.PED_V_RANGE
                     for (hidden_s, hidden_T) in occluded_positions
                         push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, hidden_s, hidden_T, ped_theta, ped_v))
                     end
@@ -158,7 +154,8 @@ function initBeliefAbsentPedestrian(pomdp::SingleOCFPOMDP, ego_y::Float64, ego_v
         end
     end
     probs = ones(length(states)) / length(states)
-    
+  
+
     return SparseCat(states,probs)
 end
 
@@ -173,8 +170,8 @@ function initBeliefPedestrian(pomdp::SingleOCFPOMDP, o::SingleOCFObs)
 
     for ped_theta in pomdp.PED_THETA_RANGE
         for ped_v in pomdp.PED_V_RANGE
-            for ds = -2:0.5:2
-                for dT = -2:0.5:2
+            for ds = -1.0:1.0:1.0
+                for dT = -1.0:1.0:1.0
                     obs = SingleOCFState(ego_y_state_space, ego_v_state_space, o.ped_s+ds, o.ped_T+dT, ped_theta, ped_v)
                     obs_int = pomdp.state_space[state_index(pomdp, obs)]
                     push!(states, obs_int) 

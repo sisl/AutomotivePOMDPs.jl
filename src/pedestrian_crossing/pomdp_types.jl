@@ -47,7 +47,7 @@ const SingleOCFObs = SingleOCFState
     lateral_actions::Vector{Float64} = [1.0, 0.0, -1.0]
     ΔT::Float64 = 0.5
     PED_A_RANGE::Vector{Float64} = linspace(-2.0, 2.0, 5)
-    PED_THETA_NOISE::Vector{Float64} = [0]#linspace(-0.39/2., 0.39/2., 3)
+    PED_THETA_NOISE::Vector{Float64} = linspace(-0.39/2., 0.39/2., 3)
     PED_SAFETY_DISTANCE::Float64 = 1.0
     
     EGO_Y_MIN::Float64 = -1.
@@ -56,15 +56,15 @@ const SingleOCFObs = SingleOCFState
 
     EGO_V_MIN::Float64 = 0.
     EGO_V_MAX::Float64 = 14.
-    EGO_V_RANGE::Vector{Float64} = linspace(EGO_V_MIN, EGO_V_MAX, 15)#29)
+    EGO_V_RANGE::Vector{Float64} = linspace(EGO_V_MIN, EGO_V_MAX, 29)
 
     S_MIN::Float64 = 0.
     S_MAX::Float64 = 50.
-    S_RANGE::Vector{Float64} = linspace(S_MIN, S_MAX, 21)#51)
+    S_RANGE::Vector{Float64} = linspace(S_MIN, S_MAX, 51)
 
     T_MIN::Float64 = -5.
     T_MAX::Float64 = 5.
-    T_RANGE::Vector{Float64} = linspace(T_MIN, T_MAX, 21)
+    T_RANGE::Vector{Float64} = linspace(T_MIN, T_MAX, 11)
 
     PED_V_MIN::Float64 = 0.
     PED_V_MAX::Float64 = 2.
@@ -105,19 +105,19 @@ function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleO
     
     r = 0.
 
-        #object_b_def.length = object_b_def.length + pomdp.PED_SAFETY_DISTANCE
+    #object_b_def.length = object_b_def.length + pomdp.PED_SAFETY_DISTANCE
     #object_b_def.width  = object_b_def.width + pomdp.PED_SAFETY_DISTANCE
 
     if (action.acc > 0.0 && sp.ego_v > pomdp.desired_velocity )
-        r += (-1)
+        r += (-3)
     end
 
-    if (action.lateral_movement == 1.0 && sp.ego_y > pomdp.EGO_Y_MAX )
-        r += (-10)
+    if (action.lateral_movement >= 0.1 && sp.ego_y > pomdp.EGO_Y_MAX )
+        r += (-5)
     end
 
-    if (action.lateral_movement == -1.0 && sp.ego_y < pomdp.EGO_Y_MIN )
-        r += (-10)
+    if (action.lateral_movement <= -.1 && sp.ego_y < pomdp.EGO_Y_MIN )
+        r += (-5)
     end
 
     collision = collision_checker(pomdp,sp)
@@ -128,9 +128,7 @@ function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleO
     if sp.ped_s == 0
         r += pomdp.goal_reward
     end
- #   if !collision
- #       r += pomdp.goal_reward
- #   end
+
 
     if action.acc > 0. ||  action.acc < 0.0
         r += pomdp.action_cost_lon * abs(action.acc)^2
