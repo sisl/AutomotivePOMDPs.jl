@@ -90,8 +90,7 @@ const SingleOCFObs = SingleOCFState
     state_space::Vector{SingleOCFState} = getStateSpaceVector(state_space_grid)
     action_space::Vector{SingleOCFAction} = initActionSpace(longitudinal_actions, lateral_actions)
 
-    absent::Bool = true
-    obstacles::Vector{ConvexPolygon} = []
+
     ego_vehicle::Vehicle = Vehicle(VehicleState(VecSE2(0.0, 0.0, 0.0), 0.0), VehicleDef(), 1)
 
     desired_velocity::Float64 = 40.0 / 3.6

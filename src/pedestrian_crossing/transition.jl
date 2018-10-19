@@ -75,10 +75,6 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
         end
 
     else
-        (ego_y_state_space,ego_v_state_space) = getEgoDataInStateSpace(pomdp, sp_ego_y, sp_ego_v)
-
-        return initBeliefAbsentPedestrian(pomdp, ego_y_state_space, ego_v_state_space)
-        #=
         # pedestrian is absent
         states = SingleOCFState[]
         sizehint!(states, 2500);
@@ -95,32 +91,13 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
                 end
             end
         end
-        
+                
         # add absent state
         push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0, 0.0))
-
-        # add occluded states
-        for i = 1:length(pomdp.obstacles)
-            ego_pos = VecE2(pomdp.ego_vehicle.state.posG.x, pomdp.ego_vehicle.state.posG.y) 
-            (obst_s, obst_T, right_side) = getObstructionCorner(pomdp.obstacles[i], ego_pos )
-            #println("obst_s: ", obst_s, " obst_T: ", obst_T , " right_side: ", right_side)   
-            if ( right_side ) 
-                occluded_positions = calulateHiddenPositionsRightSide(obst_s, obst_T)
-                #println(occluded_positions)
-                for ped_theta in pomdp.PED_THETA_RANGE
-                    for ped_v in pomdp.PED_V_RANGE
-                        for (hidden_s, hidden_T) in occluded_positions
-                            push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, hidden_s, hidden_T, ped_theta, ped_v))
-                        end
-                    end
-                end
-            end
-        end
-
         probs = ones(length(states)) / length(states)
-        =#
+
     end
-    
+
     return SparseCat(states,probs)
 
 end

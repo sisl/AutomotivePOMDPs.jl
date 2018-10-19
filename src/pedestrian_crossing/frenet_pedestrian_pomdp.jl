@@ -44,7 +44,6 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
         ego_s = ego.state.posF.s
         ego_v = ego.state.v
         obs = pomdp.state_space[end]   
-        obs_int = pomdp.state_space[end]   
 
         delta_s = -10.
         delta_t = -10.
@@ -59,26 +58,24 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
             ped_v = object.state.v
             
             obs = SingleOCFState(ego_t, ego_v, delta_s, delta_t, delta_theta, ped_v)
-            obs_int = model.pomdp.state_space[state_index(pomdp,obs )]
             println("delta_s: ", delta_s, " delta_t: ", delta_t)
             println("Observation cont: ", obs)
-            println("Observation disc: ", obs_int)           
 
         end
         
         pomdp.ego_vehicle = ego
-        pomdp.obstacles = model.obstacles
+      #  pomdp.obstacles = model.obstacles
 
       
         # init belief for the first time step
         if (model.t_current == 0 )
             # no object or out of state space
+# TODO: change to is_obs_absent   
             if ( length(model.sensor_observations) == 0 || (delta_s > pomdp.S_MAX || delta_s < pomdp.S_MIN || delta_t > pomdp.T_MAX || delta_t < pomdp.T_MIN) )
                 model.b = initBeliefAbsentPedestrian(pomdp, ego_t, ego_v)
                 println("init belief absent")
             else
                 model.b = initBeliefPedestrian(pomdp, obs)
-                #model.b = initBeliefAbsentPedestrian(pomdp, ego_t, ego_v)
                 println("init belief observation")
 
             end
@@ -122,7 +119,7 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
           #  println("action after update: ", act)
 
             if (model.tick > 1 )
-                model.a = LatLonAccel(0.0, 0.0)
+                model.a = LatLonAccel(-1.0, 0.0)
                 println("manual intervention")
             #    println(model.b)
             end
@@ -154,7 +151,12 @@ function AutomotiveDrivingModels.propagate(veh::Vehicle, action::LatLonAccel, ro
     # longitudional distance based on required velocity and lateral offset
 #    delta_x = sqrt(s_new^2 - delta_y^2 )
     y_ = veh.state.posG.y + delta_y
-    x_ = veh.state.posG.x + veh.state.v*Δt + action.a_lon*Δt^2/2# + delta_x
+
+    if v_ > 0
+        x_ = veh.state.posG.x + veh.state.v*Δt + action.a_lon*Δt^2/2# + delta_x
+    else
+        x_ = veh.state.posG.x + veh.state.v*Δt# + delta_x
+    end
 
     return VehicleState(VecSE2(x_, y_, veh.state.posG.θ), roadway, v_)
 end

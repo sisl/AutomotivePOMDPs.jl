@@ -24,7 +24,6 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
     if (  o.ped_s > pomdp.S_MAX || o.ped_s < pomdp.S_MIN || o.ped_T > pomdp.T_MAX ||  o.ped_T < pomdp.T_MIN )
         absent_state = pomdp.state_space[end]
         o = SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0 ,0.0)
-        #b = initBeliefAbsentPedestrian(pomdp, ego_y_state_space, ego_v_state_space)
         println("Pedestrian is absent: ", o)
     end
 
@@ -121,33 +120,23 @@ function initBeliefAbsentPedestrian(pomdp::SingleOCFPOMDP, ego_y::Float64, ego_v
     sizehint!(probs, 1000);
 
     (ego_y_state_space, ego_v_state_space) = getEgoDataInStateSpace(pomdp, ego_y, ego_v)
-#=
-    # add states on the right side
-    for ped_theta in pomdp.PED_THETA_RANGE
-        for ped_v = 0.:1.:2.# in pomdp.PED_V_RANGE
-            for ped_s in pomdp.S_RANGE
-                push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN, ped_theta, ped_v))
-              #  push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN+1.0, ped_theta, ped_v))
 
-            end
-        end
-    end
-    =#
-    # add absent state
     push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, -10.0, -10.0, 0.0, 0.0))
 
     # add occluded states
-    for i = 1:length(pomdp.obstacles)
-        ego_pos = VecE2(pomdp.ego_vehicle.state.posG.x, pomdp.ego_vehicle.state.posG.y) 
-        (obst_s, obst_T, right_side) = getObstructionCorner(pomdp.obstacles[i], ego_pos )
-       # println("obst_s: ", obst_s, " obst_T: ", obst_T , " right_side: ", right_side)   
-        if ( right_side ) 
-            occluded_positions = calulateHiddenPositionsRightSide(pomdp, obst_s, obst_T)
-            #println(occluded_positions)
-            for ped_theta in pomdp.PED_THETA_RANGE
-                for ped_v = 0.:1.:2.# in pomdp.PED_V_RANGE
-                    for (hidden_s, hidden_T) in occluded_positions
-                        push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, hidden_s, hidden_T, ped_theta, ped_v))
+    if ( pomdp.env.params.obstacles_visible )
+        for i = 1:length(pomdp.env.params.obstacles)
+            ego_pos = VecE2(pomdp.ego_vehicle.state.posG.x, pomdp.ego_vehicle.state.posG.y) 
+            (obst_s, obst_T, right_side) = getObstructionCorner(pomdp.env.params.obstacles[i], ego_pos )
+        # println("obst_s: ", obst_s, " obst_T: ", obst_T , " right_side: ", right_side)   
+            if ( right_side ) 
+                occluded_positions = calulateHiddenPositionsRightSide(pomdp, obst_s, obst_T)
+                #println(occluded_positions)
+                for ped_theta in pomdp.PED_THETA_RANGE
+                    for ped_v = 0.:1.:2.# in pomdp.PED_V_RANGE
+                        for (hidden_s, hidden_T) in occluded_positions
+                            push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, hidden_s, hidden_T, ped_theta, ped_v))
+                        end
                     end
                 end
             end
