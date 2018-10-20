@@ -40,7 +40,7 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
         po = observation_weight(pomdp, sp, o) 
 
 
-        if po < 0.000000001
+        if po < 0.000000000001
             continue
         end
 
@@ -52,7 +52,7 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
             b_sum += pp * prob
         end
         
-        if b_sum > 0. 
+        if b_sum > 0. # && b_sum > 1e-14
             push!(states_p, sp)
             push!(bp, po * b_sum) 
             bp_sum += po * b_sum

@@ -44,8 +44,8 @@ const SingleOCFObs = SingleOCFState
     ego_type::VehicleDef = VehicleDef()
     ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0)
     longitudinal_actions::Vector{Float64} = [1.0, 0.0, -1.0, -2.0, -4.0]
-    lateral_actions::Vector{Float64} = [1.0, 0.0, -1.0]
-    ΔT::Float64 = 0.5
+    lateral_actions::Vector{Float64} = [0.0] #[1.0, 0.0, -1.0]
+    ΔT::Float64 = 0.2
     PED_A_RANGE::Vector{Float64} = linspace(-2.0, 2.0, 5)
     PED_THETA_NOISE::Vector{Float64} = linspace(-0.39/2., 0.39/2., 3)
     PED_SAFETY_DISTANCE::Float64 = 1.0
@@ -56,11 +56,11 @@ const SingleOCFObs = SingleOCFState
 
     EGO_V_MIN::Float64 = 0.
     EGO_V_MAX::Float64 = 14.
-    EGO_V_RANGE::Vector{Float64} = linspace(EGO_V_MIN, EGO_V_MAX, 29)
+    EGO_V_RANGE::Vector{Float64} = linspace(EGO_V_MIN, EGO_V_MAX, 15)
 
     S_MIN::Float64 = 0.
     S_MAX::Float64 = 50.
-    S_RANGE::Vector{Float64} = linspace(S_MIN, S_MAX, 51)
+    S_RANGE::Vector{Float64} = linspace(S_MIN, S_MAX, 26)
 
     T_MIN::Float64 = -5.
     T_MAX::Float64 = 5.
@@ -72,15 +72,15 @@ const SingleOCFObs = SingleOCFState
 
     PED_THETA_MIN::Float64 = 1.57-1.57/2
     PED_THETA_MAX::Float64 = 1.57+1.57/2
-    PED_THETA_RANGE::Vector{Float64} = [1.57] #linspace(PED_THETA_MIN, PED_THETA_MAX, 7)
+    PED_THETA_RANGE::Vector{Float64} = [1.57]# linspace(PED_THETA_MIN, PED_THETA_MAX, 7)
 
 
     
-    collision_cost::Float64 = -10.0
+    collision_cost::Float64 = -100.0
     action_cost_lon::Float64 = -1.0
-    action_cost_lat::Float64 = -1.0
-    goal_reward::Float64 = 10.0
-    γ::Float64 = 0.99
+    action_cost_lat::Float64 = 0.0
+    goal_reward::Float64 = 1000.0
+    γ::Float64 = 0.95
     
     state_space_grid::GridInterpolations.RectangleGrid = initStateSpace(EGO_Y_RANGE, EGO_V_RANGE, S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE)
 
@@ -130,7 +130,7 @@ function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleO
 
 
     if action.acc > 0. ||  action.acc < 0.0
-        r += pomdp.action_cost_lon * abs(action.acc)^2
+        r += pomdp.action_cost_lon * abs(action.acc) * 2
     end
         
     if abs(action.lateral_movement) > 0 
