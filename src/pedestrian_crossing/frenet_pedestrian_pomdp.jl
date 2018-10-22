@@ -19,7 +19,9 @@
     pomdp::SingleOCFPOMDP = SingleOCFPOMDP()
     policy::AlphaVectorPolicy{SingleOCFPOMDP,SingleOCFAction} = AlphaVectorPolicy(pomdp, Vector{Vector{Float64}}())
     updater::B = SingleOCFUpdater(pomdp)
-    b::SingleOCFBelief = SingleOCFBelief(Vector{SingleOCFState}(), Vector{Float64}())
+    b::SingleOCFBelief = SingleOCFBelief() #SingleOCFBelief(Vector{SingleOCFState}(), Vector{Float64}())
+    b_dict::Dict{Int64, SingleOCFBelief} = Dict{Int64, SingleOCFBelief}()
+
 
     ego_vehicle::Vehicle = Vehicle(VehicleState(VecSE2(0., 0., 0.), 0.), VehicleDef(), 1)
 
@@ -34,83 +36,42 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
     pomdp.ego_vehicle = ego
     model.ego_vehicle = ego
     model.sensor_observations = measure(model.sensor, ego, scene, roadway, model.obstacles)
-    
+   
+    # initialization of the belief for the absent state
+    if (model.t_current == 0 )
+        model.b_dict[PEDESTRIAN_OFF_KEY] = initBeliefAbsentPedestrian(pomdp, ego.state.posF.t, ego.state.v)
+    end
+
     ################ High Level Planner ###################################################
     if (  true ) #model.tick % model.update_tick_high_level_planner == 0 )
 
         println("--------------------------POMDP high level planner----------------------- t: ", model.t_current)
         println("EGO: x/y:", ego.state.posG.x, " / ",  ego.state.posG.y, " v: ", ego.state.v)
 
-        ego_t = ego.state.posF.t
-        ego_s = ego.state.posF.s
-        ego_v = ego.state.v
-        obs = get_state_absent(pomdp,ego.state.posG.y, ego_v) 
+        # get observations (dictionary) / remove observations outside state space and add absent state
+        observations = get_observations_state_space(model, ego, model.sensor_observations)
+        println(observations)
 
-        delta_s = -10.
-        delta_t = -10.
-        for object in model.sensor_observations
-            println("PED: x/y: ", object.state.posG.x, " / ", object.state.posG.y, " v: ", object.state.v)
-            
-            object_posF = Frenet(proj(object.state.posG, get_lane(env.roadway, ego.state), env.roadway, move_along_curves=false),env.roadway)
-            
-            delta_s = object_posF.s - ego_s
-            delta_t = object_posF.t - ego_t
-            delta_theta = object_posF.ϕ - ego.state.posF.ϕ
-            ped_v = object.state.v
-            
-            obs = SingleOCFState(ego_t, ego_v, delta_s, delta_t, delta_theta, ped_v)
-            println("delta_s: ", delta_s, " delta_t: ", delta_t)
-            println("Observation cont: ", obs)
-
-        end
-        
-      
-        # init belief for the first time step
-        if (model.t_current == 0 )
-            # no object or out of state space
-            if ( length(model.sensor_observations) == 0 || is_observation_absent(pomdp, obs) )
-                model.b = initBeliefAbsentPedestrian(pomdp, ego_t, ego_v)
-                println("init belief absent")
-            else
-                model.b = initBeliefPedestrian(pomdp, obs)
-                println("init belief observation")
-
-            end
-        end
-
-
+        # update belief (dictionary)
         action_pomdp = SingleOCFAction(model.a.a_lon, model.a.a_lat)
-        println("action before update: ", action_pomdp)
+        b_new = update(model.updater, model.b_dict, action_pomdp, observations)
+        model.b_dict = deepcopy(b_new)
 
-        b_ = update(model.updater, model.b, action_pomdp, obs)  
-        model.b = deepcopy(b_)
-
-#=
-            b_states = []
-            b_prob = []
-            for (s, prob) in weighted_iterator(b_)
-                if ( prob > 1e-4)
-                    push!(b_states, s)
-                    push!(b_prob, prob)
-                end
-            end
-            model.b = SingleOCFBelief(b_states, b_prob) 
-
-       =#
-
-         #   println(model.b)
-        println("b-length: ", length(model.b))
-            
+        # dummy implementation for one belief
+        if ( haskey(model.b_dict, 2) )
+            b = model.b_dict[2]
             act = action(model.policy, model.b) # policy
             model.a = LatLonAccel(act.lateral_movement, act.acc)
+            println("action before update: ", action_pomdp)
             println("action after update: ", act)
 
-        if (model.tick > 2 )
-        #    model.a = LatLonAccel(0.0, -4.0)
-        #    println("manual intervention")
-        #    println(model.b)
         end
 
+        if (model.tick > 2 )
+    #        model.a = LatLonAccel(0.0, -4.0)
+     #       println("manual intervention")
+      #      println(model.b)
+        end
 
     end
     
@@ -155,12 +116,10 @@ end
 AutomotiveDrivingModels.rand(model::FrenetPedestrianPOMDP) = model.a
 
 
-
-
 @with_kw mutable struct ObservationCallback
     risk::Vector{Float64}
     sensor_observations::Vector{Vector{Vehicle}}
-    belief::Vector{SingleOCFBelief}
+    b_dict::Vector{Dict{Int64, SingleOCFBelief}}
     ego_vehicle::Vector{Vehicle}
     action::Vector{SingleOCFAction}
 end
@@ -174,7 +133,8 @@ function AutomotiveDrivingModels.run_callback{S,D,I,R,M<:DriverModel}(
     
     push!(callback.risk, models[1].risk)
     push!(callback.sensor_observations, models[1].sensor_observations)
-    push!(callback.belief, models[1].b)
+    push!(callback.b_dict, deepcopy(models[1].b_dict))
+       # println("models[1].b_dict:", models[1].b_dict)
     push!(callback.ego_vehicle, models[1].ego_vehicle)
     act = SingleOCFAction(models[1].a.a_lon, models[1].a.a_lat)
     push!(callback.action, act)

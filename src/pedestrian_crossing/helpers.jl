@@ -1,4 +1,28 @@
 
+function get_observations_state_space(model::FrenetPedestrianPOMDP, ego::Vehicle, sensor_observations::Vector{Vehicle} )
+
+    o = Dict{Int64, SingleOCFObs}()
+    for object in sensor_observations
+            
+        object_posF = Frenet(proj(object.state.posG, get_lane(model.env.roadway, ego.state), 
+                                    model.env.roadway, move_along_curves=false), model.env.roadway)
+            
+        delta_s = object_posF.s - ego.state.posF.s
+        delta_t = object_posF.t - ego.state.posF.t
+        delta_theta = object_posF.ϕ - ego.state.posF.ϕ
+            
+        if ( delta_s < pomdp.S_MAX && delta_s > pomdp.S_MIN && delta_t < pomdp.T_MAX  &&  delta_t > pomdp.T_MIN )
+            o[object.id] = SingleOCFState(ego.state.posF.t, ego.state.v, delta_s, delta_t, delta_theta, object.state.v)
+        end
+
+        #println("PED: x/y: ", object.state.posG.x, " / ", object.state.posG.y, " v: ", object.state.v)
+        #println("delta_s: ", delta_s, " delta_t: ", delta_t)
+    end
+
+    o[PEDESTRIAN_OFF_KEY] = get_state_absent(pomdp, ego.state.posF.t, ego.state.v)
+    return o
+end
+
 function get_state_absent(pomdp::SingleOCFPOMDP, ego_y::Float64, ego_v::Float64)
 
     (ego_y_state_space,ego_v_state_space) = getEgoDataInStateSpace(pomdp, ego_y, ego_v)
@@ -52,7 +76,8 @@ end
 
 
 @with_kw struct BeliefOverlay <: SceneOverlay
-    belief::SingleOCFBelief = SingleOCFBelief()
+   # belief::SingleOCFBelief = SingleOCFBelief()
+    b_dict::Dict{Int64, SingleOCFBelief} = Dict{Int64, SingleOCFBelief}()
     ego_vehicle::Vehicle = Vehicle(VehicleState(VecSE2(0., 0., 0.), 0.), VehicleDef(), 1)
     color::Colorant = RGBA(0.0, 0.0, 1.0, 0.2)
 end
@@ -60,19 +85,22 @@ end
 
 function AutoViz.render!(rendermodel::RenderModel, overlay::BeliefOverlay, scene::Scene, roadway::R) where R
 
-    beliefs = overlay.belief
+    b_dict = overlay.b_dict
     ego = overlay.ego_vehicle
     
-    for (s, prob) in weighted_iterator(beliefs)
-        ped = Vehicle(VehicleState(VecSE2(s.ped_s, s.ped_T, s.ped_theta), 0.), VehicleDef(AutomotivePOMDPs.PEDESTRIAN_DEF), 1)
-        prob_color = RGBA(0.0, 0.0, 1.0, prob*10)
-        add_instruction!(rendermodel, render_vehicle, (ego.state.posG.x+ped.state.posG.x, ego.state.posG.y+ped.state.posG.y, ego.state.posG.θ + ped.state.posG.θ, ped.def.length, ped.def.width, prob_color))
+    for b_id in keys(b_dict)
+        for (s, prob) in weighted_iterator( b_dict[b_id])
+            ped = Vehicle(VehicleState(VecSE2(s.ped_s, s.ped_T, s.ped_theta), 0.), VehicleDef(AutomotivePOMDPs.PEDESTRIAN_DEF), 1)
+            prob_color = RGBA(0.0, 0.0, 1.0, prob*10)
+            add_instruction!(rendermodel, render_vehicle, (ego.state.posG.x+ped.state.posG.x, ego.state.posG.y+ped.state.posG.y, ego.state.posG.θ + ped.state.posG.θ, ped.def.length, ped.def.width, prob_color))
+        end   
     end
+
     return rendermodel
 end
 
 
-function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, risk::Vector{Float64}, belief::Vector{SingleOCFBelief}, ego_vehicle::Vector{Vehicle}, action_pomdp::Vector{SingleOCFAction}, cam=FitToContentCamera(0.0))
+function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor::GaussianSensor, sensor_o::Vector{Vector{Vehicle}}, risk::Vector{Float64}, belief_dict::Vector{Dict{Int64, SingleOCFBelief}}, ego_vehicle::Vector{Vehicle}, action_pomdp::Vector{SingleOCFAction}, cam=FitToContentCamera(0.0))
     duration =rec.nframes*dt::Float64
     fps = Int(1/dt)
     function render_rec(t, dt)
@@ -84,7 +112,7 @@ function animate_record(rec::SceneRecord,dt::Float64, env::CrosswalkEnv, sensor:
         sensor_overlay = GaussianSensorOverlay(sensor=sensor, o=sensor_o[frame_index])
         occlusion_overlay = OcclusionOverlay(obstacles=env.obstacles)
         text_overlay = TextOverlay(text=text_to_visualize,pos=VecE2(20.,10.),incameraframe=true,color=colorant"white",font_size=20)
-        belief_overlay = BeliefOverlay(belief=belief[frame_index], ego_vehicle=ego_vehicle[frame_index])
+        belief_overlay = BeliefOverlay(b_dict=belief_dict[frame_index], ego_vehicle=ego_vehicle[frame_index])
      #   max_speed = 14.0
      #   histogram_overlay = HistogramOverlay(pos = VecE2(15.0, 10.0), val=ego_vehicle[frame_index].state.v/max_speed, label="v speed")
 

@@ -8,6 +8,27 @@ end
 
 const SingleOCFBelief = SparseCat{Vector{SingleOCFState},Vector{Float64}}
 
+function POMDPs.update(up::SingleOCFUpdater, bold::Dict{Int64, SingleOCFBelief}, a::SingleOCFAction, o::Dict{Int64, SingleOCFObs})
+    bnew = Dict{Int64, SingleOCFBelief}()
+
+    for oid in keys(o)
+
+        if haskey(bold, oid) && oid != PEDESTRIAN_OFF_KEY  # old measurment
+            bnew[oid] = update(up, bold[oid], a, o[oid])
+
+        elseif oid == PEDESTRIAN_OFF_KEY  # absent state
+
+            bnew[PEDESTRIAN_OFF_KEY] = update(up, bold[PEDESTRIAN_OFF_KEY], a, o[oid])
+
+        else # ped appeared
+            println("ped appeard")
+            bnew[oid] = update(up, bold[PEDESTRIAN_OFF_KEY], a, o[oid])
+        end
+    end
+
+    return bnew
+end
+
 function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAction, o::SingleOCFObs)
 
     states_p = SingleOCFState[]
@@ -61,6 +82,19 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
     end
 
     if bp_sum == 0.0
+
+
+        if ( !is_observation_absent(pomdp,o) && length(b) == 1)
+            for (s,p) in weighted_iterator(b)
+                if is_state_absent(pomdp,s) 
+                    println("new state not absent")
+
+                    return initBeliefPedestrian(pomdp, o)
+                end
+            end
+        end
+
+
         #return caclulateBeliefBasedOnObservation(pomdp,o)
         error("""
               Failed discrete belief update: new probabilities sum to zero.
@@ -75,6 +109,19 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
     end
 
     return SingleOCFBelief(states_p, bp)  
+
+#=
+    b_states = []
+    b_prob = []
+    for (s, prob) in weighted_iterator(SingleOCFBelief(states_p, bp) )
+        if ( prob > 1e-4)
+            push!(b_states, s)
+            push!(b_prob, prob)
+        end
+    end
+    return SingleOCFBelief(b_states, b_prob)  
+ =#
+
 end
 
 
@@ -144,7 +191,7 @@ function initBeliefAbsentPedestrian(pomdp::SingleOCFPOMDP, ego_y::Float64, ego_v
     (ego_y_state_space, ego_v_state_space) = getEgoDataInStateSpace(pomdp, ego_y, ego_v)
 
     # add absent state
-    absent_state = get_state_absent(pomdp, ego_y_state_space, ego_v_state_space);
+    absent_state = get_state_absent(pomdp, ego_y_state_space, ego_v_state_space)
     push!(states,absent_state)
 
     # add occluded states

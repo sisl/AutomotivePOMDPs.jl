@@ -34,6 +34,7 @@ end
 
 const SingleOCFObs = SingleOCFState
 
+const PEDESTRIAN_OFF_KEY = -1
 
 
 
@@ -111,11 +112,11 @@ function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleO
         r += (-3)
     end
 
-    if (action.lateral_movement >= 0.1 && sp.ego_y > pomdp.EGO_Y_MAX )
+    if (action.lateral_movement >= 0.1 && sp.ego_y >= pomdp.EGO_Y_MAX )
         r += (-5)
     end
 
-    if (action.lateral_movement <= -.1 && sp.ego_y < pomdp.EGO_Y_MIN )
+    if (action.lateral_movement <= -.1 && sp.ego_y <= pomdp.EGO_Y_MIN )
         r += (-5)
     end
 
@@ -128,6 +129,7 @@ function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleO
         r += pomdp.goal_reward
     end
 
+ #   r += -0.1*abs(s.ego_v - sp.ego_v)
 
     if action.acc > 0. ||  action.acc < 0.0
         r += pomdp.action_cost_lon * abs(action.acc) * 2
