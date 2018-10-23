@@ -16,9 +16,9 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
     if ( !is_state_absent(pomdp, s) )
         # pedestrian is not absent
         states = SingleOCFState[]
-        sizehint!(states, 100);
+        sizehint!(states, 30);
         probs = Float64[] 
-        sizehint!(probs, 100);
+        sizehint!(probs, 30);
 
         # ped transition
         for a_ped in pomdp.PED_A_RANGE
@@ -34,35 +34,37 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
                 theta_ped = s.ped_theta + theta_n
           #      println("theta_ped: ", theta_ped, " sp_ped_v*cos(theta_ped): ", sp_ped_v*cos(theta_ped))
                 sp_ped_theta = theta_ped
+                @fastmath begin
                 sp_ped_s = s.ped_s + sp_ped_v*cos(theta_ped) * pomdp.ΔT - x_delta_ego
                 sp_ped_T = s.ped_T + sp_ped_v*sin(theta_ped) * pomdp.ΔT - a.lateral_movement * pomdp.ΔT  # a_lat corresponds to lateral velocity --> a_lat == v_lat
                 
                 sp_ped_s = clamp(sp_ped_s, pomdp.S_MIN, pomdp.S_MAX)
                 sp_ped_T = clamp(sp_ped_T, pomdp.T_MIN, pomdp.T_MAX)
-
+                end
            #     println("s.ped_T: ", s.ped_T , " s.ped_v: ", s.ped_v, " a_ped: ", a_ped, " sp_ped_v: ", sp_ped_v, " a_ped * pomdp.ΔT: ", a_ped * pomdp.ΔT, " sp_ped_s: ", sp_ped_s, " sp_ped_T: ", sp_ped_T)
 
-
+           #=
+                (ego_y_state_space,ego_v_state_space) = getEgoDataInStateSpace(pomdp, sp_ego_y, sp_ego_v)
+                state_vector = SVector(sp_ped_s, sp_ped_T, sp_ped_theta, sp_ped_v) # looks faster
+                @inbounds ind, weight = interpolants(pomdp.state_space_grid_ped, state_vector)
+                for i=1:length(ind)
+                    if weight[i] > 0.1
+                        state = pomdp.state_space_ped[ind[i]]
+                        push!(states, SingleOCFState(ego_y_state_space, ego_v_state_space, state.ped_s, state.ped_T, state.ped_theta, state.ped_v))
+                        push!(probs, weight[i]*a_ped_prob)
+                    end
+                end
+=#
                 state_vector = SVector(sp_ego_y, sp_ego_v, sp_ped_s, sp_ped_T, sp_ped_theta, sp_ped_v) # looks faster
-         #       println("state_vector: ", state_vector)
-                ind, weight = interpolants(pomdp.state_space_grid, state_vector)
+                @inbounds ind, weight = interpolants(pomdp.state_space_grid, state_vector)
                 for i=1:length(ind)
                     if weight[i] > 0.1
                         state = pomdp.state_space[ind[i]]
                         push!(states, state)
                         push!(probs, weight[i]*a_ped_prob)
-                        #=
-                        if !(state in states) # check for doublons
-                            push!(states, state)
-                            push!(probs, weight[i]*a_ped_prob)
-                        else
-                            state_ind = find(x->x==state, states)
-                            probs[state_ind] += weight[i]*a_ped_prob
-                        end
-                        =#
-
                     end
                 end
+
             end
         end
     
@@ -72,104 +74,55 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
             probs += maximum(probs)
             normalize!(probs,1)
         end
+        return SparseCat{Vector{SingleOCFState},Vector{Float64}}(states,probs)
 
     else
         # pedestrian is absent
+        return initBeliefAbsentPedestrianBorder(pomdp, sp_ego_y, sp_ego_v)
+    end
+#=
         states = SingleOCFState[]
-        sizehint!(states, 2500);
+        sizehint!(states, 500);
         probs = Float64[] 
-        sizehint!(probs, 2500);
-
+        sizehint!(probs, 500);
         (ego_y_state_space,ego_v_state_space) = getEgoDataInStateSpace(pomdp, sp_ego_y, sp_ego_v)
 
+        # 
+        s_min = pomdp.S_MIN
+        if ( pomdp.env.params.obstacles_visible )
+            for i = 1:length(pomdp.env.params.obstacles)
+                ego_pos = VecE2(pomdp.ego_vehicle.state.posG.x, pomdp.ego_vehicle.state.posG.y) 
+                (obst_s, obst_T, right_side) = getObstructionCorner(pomdp.env.params.obstacles[i], ego_pos )
+                if ( right_side ) 
+                    s_min = clamp(obst_s, pomdp.S_MIN, pomdp.S_MAX)
+                end
+            end
+        end
+#println(s_min)
         # add states on the right side
         for ped_theta in pomdp.PED_THETA_RANGE
             for ped_v in pomdp.PED_V_RANGE
                 for ped_s in pomdp.S_RANGE
-                    push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN, ped_theta, ped_v))
+                    if ( ped_s > 100)
+                        push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN, ped_theta, ped_v))
+                    end
                 end
             end
         end
                 
         # add absent state
-#TODO: maybe nicer implementation        
-        absent_state = get_state_absent(pomdp, ego_y_state_space, pomdp.ego_vehicle.state.v)
+       # absent_state = get_state_absent(pomdp, ego_y_state_space, pomdp.ego_vehicle.state.v)
+        absent_state = get_state_absent(pomdp, pomdp.ego_vehicle.state.posF.t, pomdp.ego_vehicle.state.v)
         push!(states, absent_state)
 
-        probs = ones(length(states)) / length(states)
+        probs = ones(length(states))
+        probs[1:end - 1] = pomdp.pedestrian_birth / length(states)
+        probs[end] = 1.0 - pomdp.pedestrian_birth
+
+        #probs = ones(length(states)) / length(states)
 
     end
 
-    return SparseCat(states,probs)
-
-end
-
-
-
-function getObstructionCorner(obstacle::ConvexPolygon, ego_pos::VecE2)
- 
-    x = Vector{Float64}(obstacle.npts)
-    y = Vector{Float64}(obstacle.npts)
-    for i = 1:obstacle.npts
-        x[i] = obstacle.pts[i].x
-        y[i] = obstacle.pts[i].y
-    end
-    
-    delta_s = maximum(x) - ego_pos.x
-    if delta_s > 0 
-        right_side = true
-        if ( ego_pos.y > mean(y) )
-            delta_t = -(ego_pos.y -  maximum(y))
-            right_side = true
-        else
-            delta_t = minimum(y) - ego_pos.y 
-            right_side = false
-        end
-        return (delta_s, delta_t, right_side) 
-    else
-        return (1000., 1000., false)
-    end
-end
-
-
-function calulateHiddenPositionsRightSide(pomdp::SingleOCFPOMDP, obst_s::Float64, obst_T::Float64)
-
-    idx = findfirst(x -> x >= obst_s, pomdp.S_RANGE)
-    s_grid = pomdp.S_RANGE[idx:end]
-   
-    idx = findlast(x -> x < obst_T, pomdp.T_RANGE)
-    T_grid = pomdp.T_RANGE[2:idx]
-
-    sT_pos = []
-    thetha = atan(obst_T, obst_s)
-    for s in s_grid
-        dT = tan(thetha)*(s-obst_s)
-        for T in T_grid
-            if T < obst_T+dT
-                push!(sT_pos, [s, T])
-            end
-        end
-    end
-    return sT_pos
-end
-
-function calulateHiddenPositionsLeftSide(pomdp::SingleOCFPOMDP, obst_s::Float64, obst_T::Float64)
-
-    idx = findfirst(x -> x >= obst_s, pomdp.S_RANGE)
-    s_grid = pomdp.S_RANGE[idx:end]
-   
-    idx = findfirst(x -> x >= obst_T, pomdp.T_RANGE)
-    T_grid = pomdp.T_RANGE[idx:end-1]
-    
-    sT_pos = []
-    thetha = atan(obst_T, obst_s)
-    for s in s_grid
-        dT = tan(thetha)*(s-obst_s)
-        for T in T_grid
-            if T > obst_T+dT
-                push!(sT_pos, [s, T])
-            end
-        end
-    end
-    return sT_pos
+    return SparseCat{Vector{SingleOCFState},Vector{Float64}}(states,probs)
+=#
 end

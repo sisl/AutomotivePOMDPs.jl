@@ -7,7 +7,7 @@ depends on ADM VehicleState type
 
 #### State type
 
- struct SingleOCFState
+ struct SingleOCFState <: FieldVector{6, Float64}
     ego_y::Float64
     ego_v::Float64    
     ped_s::Float64
@@ -16,7 +16,7 @@ depends on ADM VehicleState type
     ped_v::Float64
 end
 
-struct SingleOCFPedState   
+struct SingleOCFPedState <: FieldVector{4, Float64}
     ped_s::Float64
     ped_T::Float64
     ped_theta::Float64
@@ -25,7 +25,7 @@ end
 
 #### Action type
 
- struct SingleOCFAction
+ struct SingleOCFAction <: FieldVector{2, Float64}
     acc::Float64
     lateral_movement::Float64
 end
@@ -78,17 +78,18 @@ const PEDESTRIAN_OFF_KEY = -1
 
     
     collision_cost::Float64 = -100.0
-    action_cost_lon::Float64 = -1.0
+    action_cost_lon::Float64 = 0.0
     action_cost_lat::Float64 = 0.0
-    goal_reward::Float64 = 1000.0
+    goal_reward::Float64 = 100.0
     γ::Float64 = 0.95
     
     state_space_grid::GridInterpolations.RectangleGrid = initStateSpace(EGO_Y_RANGE, EGO_V_RANGE, S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE)
-
-    state_space_ped::Vector{SingleOCFPedState} = initStateSpacePed(S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE)
-
-
     state_space::Vector{SingleOCFState} = getStateSpaceVector(state_space_grid)
+
+    state_space_grid_ped::GridInterpolations.RectangleGrid = initStateSpacePed(S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE)
+    state_space_ped::Vector{SingleOCFPedState} = getStateSpacePedVector(state_space_grid_ped)
+
+
     action_space::Vector{SingleOCFAction} = initActionSpace(longitudinal_actions, lateral_actions)
 
 
@@ -96,6 +97,7 @@ const PEDESTRIAN_OFF_KEY = -1
 
     desired_velocity::Float64 = 40.0 / 3.6
 
+    pedestrian_birth::Float64 = 0.99
 end
 
 
@@ -108,10 +110,12 @@ function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleO
     #object_b_def.length = object_b_def.length + pomdp.PED_SAFETY_DISTANCE
     #object_b_def.width  = object_b_def.width + pomdp.PED_SAFETY_DISTANCE
 
+    # keep velocity
     if (action.acc > 0.0 && sp.ego_v > pomdp.desired_velocity )
         r += (-3)
     end
 
+    # do not leave lane
     if (action.lateral_movement >= 0.1 && sp.ego_y >= pomdp.EGO_Y_MAX )
         r += (-5)
     end
@@ -119,22 +123,30 @@ function POMDPs.reward(pomdp::SingleOCFPOMDP, s::SingleOCFState, action::SingleO
     if (action.lateral_movement <= -.1 && sp.ego_y <= pomdp.EGO_Y_MIN )
         r += (-5)
     end
+    
+    # stay in the center of the road
+    if ( abs(s.ego_y) > 0 )
+        r += (-5) * abs(s.ego_y)
+    end
 
-    collision = collision_checker(pomdp,sp)
-
-    if collision
+    
+    # is there a collision?
+    if collision_checker(pomdp,sp)
         r += pomdp.collision_cost
     end
+    
+    # is the goal reached?
     if sp.ped_s == 0
         r += pomdp.goal_reward
     end
 
- #   r += -0.1*abs(s.ego_v - sp.ego_v)
 
+    # costs for longitudinal actions
     if action.acc > 0. ||  action.acc < 0.0
         r += pomdp.action_cost_lon * abs(action.acc) * 2
     end
         
+    # costs for lateral actions
     if abs(action.lateral_movement) > 0 
         r += pomdp.action_cost_lat * abs(action.lateral_movement)
     end
@@ -198,18 +210,22 @@ end
 
 function initStateSpacePed(S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE)
 
-    ped_grid = RectangleGrid(S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE) 
+    return RectangleGrid(S_RANGE, T_RANGE, PED_THETA_RANGE, PED_V_RANGE) 
+
+end
+
+function getStateSpacePedVector(ped_grid)
+
     state_space_ped = SingleOCFPedState[]
-    
+        
     for i = 1:length(ped_grid)
         s = ind2x(ped_grid,i)
         push!(state_space_ped,SingleOCFPedState(s[1], s[2], s[3], s[4]))
     end
     # add absent state
-    push!(state_space_ped,SingleOCFPedState(-10., -10., 0., 0.))
+   # push!(state_space_ped,SingleOCFPedState(-10., -10., 0., 0.))
     return state_space_ped
 end
-
 
 function getStateSpaceVector(grid_space)
     

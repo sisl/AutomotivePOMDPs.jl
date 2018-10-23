@@ -26,6 +26,8 @@
     ego_vehicle::Vehicle = Vehicle(VehicleState(VecSE2(0., 0., 0.), 0.), VehicleDef(), 1)
 
     desired_velocity::Float64 = 40.0 / 3.6
+
+    policy_dec::DecPolicy = DecPolicy(qmdp_policy, pomdp, qmdp_policy.action_map, min)
 end
 
 
@@ -60,21 +62,23 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
         # dummy implementation for one belief
         if ( haskey(model.b_dict, 2) )
             b = model.b_dict[2]
-            act = action(model.policy, model.b) # policy
-            model.a = LatLonAccel(act.lateral_movement, act.acc)
-            println("action before update: ", action_pomdp)
-            println("action after update: ", act)
+        #    act = action(model.policy, model.b) # policy
+        #    model.a = LatLonAccel(0.0, act.acc)
+        #    println("action before update: ", action_pomdp)
+        #    println("action after update: ", act)
 
         end
+      #  act2 = action_values(model.policy_dec, model.b_dict)
+      #  println("action combined: ", act2)
 
         if (model.tick > 2 )
-    #        model.a = LatLonAccel(0.0, -4.0)
-     #       println("manual intervention")
-      #      println(model.b)
+         #   model.a = LatLonAccel(0.0, -2.0)
+         #   println("manual intervention")
         end
 
     end
-    
+   # model.b_dict[PEDESTRIAN_OFF_KEY] = initBeliefAbsentPedestrian(pomdp, ego.state.posF.t, ego.state.v)
+
     model.risk = length(model.b)
     model.tick += 1
     model.t_current = model.t_current + model.timestep 

@@ -72,6 +72,81 @@ function getEgoDataInStateSpace(pomdp::SingleOCFPOMDP, y::Float64, v::Float64)
 end
 
 
+function getObstructionCorner(obstacle::ConvexPolygon, ego_pos::VecE2)
+ 
+    x = Vector{Float64}(obstacle.npts)
+    y = Vector{Float64}(obstacle.npts)
+    for i = 1:obstacle.npts
+        x[i] = obstacle.pts[i].x
+        y[i] = obstacle.pts[i].y
+    end
+    
+    delta_s = maximum(x) - ego_pos.x
+    if delta_s > 0 
+        right_side = true
+        if ( ego_pos.y > mean(y) )
+            delta_t = -(ego_pos.y -  maximum(y))
+            right_side = true
+        else
+            delta_t = minimum(y) - ego_pos.y 
+            right_side = false
+        end
+        return (delta_s, delta_t, right_side) 
+    else
+        return (1000., 1000., false)
+    end
+end
+
+
+function calulateHiddenPositionsRightSide(pomdp::SingleOCFPOMDP, obst_s::Float64, obst_T::Float64)
+
+    sT_pos = []
+    if ( obst_s < pomdp.S_MAX)
+        idx = findfirst(x -> x >= obst_s, pomdp.S_RANGE)
+        s_grid = pomdp.S_RANGE[idx:end]
+    
+        idx = findlast(x -> x < obst_T, pomdp.T_RANGE)
+        T_grid = pomdp.T_RANGE[2:idx]
+
+        thetha = atan(obst_T, obst_s)
+        for s in s_grid
+            dT = tan(thetha)*(s-obst_s)
+            for T in T_grid
+                if T < obst_T+dT
+                    push!(sT_pos, [s, T])
+                end
+            end
+        end
+    end
+
+    return sT_pos
+end
+
+function calulateHiddenPositionsLeftSide(pomdp::SingleOCFPOMDP, obst_s::Float64, obst_T::Float64)
+
+    sT_pos = []
+    if ( obst_s < pomdp.S_MAX)
+        idx = findfirst(x -> x >= obst_s, pomdp.S_RANGE)
+        s_grid = pomdp.S_RANGE[idx:end]
+    
+        idx = findfirst(x -> x >= obst_T, pomdp.T_RANGE)
+        T_grid = pomdp.T_RANGE[idx:end-1]
+        
+        thetha = atan(obst_T, obst_s)
+        for s in s_grid
+            dT = tan(thetha)*(s-obst_s)
+            for T in T_grid
+                if T > obst_T+dT
+                    push!(sT_pos, [s, T])
+                end
+            end
+        end
+    end
+
+    return sT_pos
+end
+
+
 
 
 
