@@ -49,6 +49,7 @@ function update_stop!(model::DriverModel, veh::Vehicle, roadway::Roadway)
     if veh.state.v ≈ 0. && isapprox(dist_to_end - model.stop_delta, 0, atol=0.5) # parameterize rtol?
         model.stop = true
     end
+    model.stop = false
 end
 
 """

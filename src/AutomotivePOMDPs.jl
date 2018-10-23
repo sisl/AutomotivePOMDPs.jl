@@ -155,6 +155,8 @@ export
     interpolate_state,
     scene_to_states,
     states_to_scene,
+    normalized_off_the_grid_pos,
+    split_o,
     n_dims
 
 # single crosswalk

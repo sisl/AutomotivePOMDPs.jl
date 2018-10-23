@@ -50,6 +50,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
             lane = get_lane(pomdp.env.roadway, new_car)
             route = find_route(pomdp.env, random_route(rng, pomdp.env.roadway, lane))
             pomdp.models[new_car.id] = pomdp.car_models[SVector(route[1], route[end])]
+            reset_hidden_state!(pomdp.models[new_car.id])
             push!(sp, new_car)
         end
     end
@@ -60,6 +61,7 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
         new_ped_cw = get_lane(pomdp.env.roadway, new_ped)
         new_ped_conflict_lanes = get_conflict_lanes(new_ped_cw, pomdp.env.roadway)
         pomdp.models[new_ped.id] = IntelligentPedestrian(dt = pomdp.ΔT, crosswalk=new_ped_cw, conflict_lanes=new_ped_conflict_lanes)
+        reset_hidden_state!(pomdp.models[new_ped.id])
         push!(sp, new_ped)
     end
     actions = Array{Any}(undef, length(sp))
@@ -116,6 +118,7 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
                 lane = get_lane(pomdp.env.roadway, new_car)
                 route = find_route(pomdp.env, random_route(rng, pomdp.env.roadway, lane))
                 pomdp.models[new_car.id] = pomdp.car_models[SVector(route[1], route[end])]
+                reset_hidden_state!(pomdp.models[new_car.id])
             end
             clean_scene!(pomdp.env, scene)
         end
@@ -129,6 +132,7 @@ function initial_scene(pomdp::UrbanPOMDP, rng::AbstractRNG, no_ego::Bool=false)
             new_ped_cw = get_lane(pomdp.env.roadway, new_ped)
             new_ped_conflict_lanes = get_conflict_lanes(new_ped_cw, pomdp.env.roadway)
             pomdp.models[new_ped.id] = IntelligentPedestrian(dt = pomdp.ΔT, crosswalk=new_ped_cw, conflict_lanes=new_ped_conflict_lanes)
+            reset_hidden_state!(pomdp.models[new_ped.id])
             push!(scene, new_ped)
         end
     end
@@ -521,8 +525,7 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
     o = to_global_coordinates!(o, pomdp)
     scene = Scene()
     # extract
-    n_obstacles = pomdp.max_obstacles
-    ego, car_map, ped_map, obs_map = split_o(o, pomdp,  n_obstacles=n_obstacles)
+    ego, car_map, ped_map, obs_map = split_o(o, pomdp)
 
     # project to roadway
     params = pomdp.env.params
@@ -556,21 +559,33 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
 end
 
 # given a big observation vector, split to an entity-wise representation
-function split_o(obs::UrbanObs, pomdp::UrbanPOMDP; n_features::Int64=4, n_obstacles::Int64=3)
-    car_map, ped_map, obs_map = OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}(), OrderedDict{String, Vector{Float64}}() #XXX Dictionary creation is sloooooow
+function split_o(obs::UrbanObs, pomdp::UrbanPOMDP)
+    car_map, ped_map, obs_map = OrderedDict{Int64, Vector{Float64}}(), OrderedDict{Int64, Vector{Float64}}(), OrderedDict{Int64, Vector{Float64}}() #XXX Dictionary creation is sloooooow
+    n_features = pomdp.n_features
     ego = obs[1:n_features]
+    absent = normalized_off_the_grid_pos(pomdp, ego[1], ego[2])
 #     println("ego idx ", 1, ":", n_features)
     for (j,i) in enumerate(1:pomdp.max_cars)
-        car_map["car$j"] = obs[i*n_features+1:(i+1)*n_features]
+        if obs[i*n_features+1:(i+1)*n_features] != absent
+            car_map[j+1] = obs[i*n_features+1:(i+1)*n_features]
+        end
 #         println("car$j idx ", i*n_features+1:(i+1)*n_features)
     end
     for (j,i) in enumerate(pomdp.max_cars + 1:pomdp.max_cars + pomdp.max_peds)
-        ped_map["ped$j"] = obs[i*n_features+1:(i+1)*n_features]
+        if obs[i*n_features+1:(i+1)*n_features] != absent
+            ped_map[100+j] = obs[i*n_features+1:(i+1)*n_features]
+        end
 #         println("ped$j idx ", i*n_features+1:(i+1)*n_features)
     end
-    for (j,i)  in enumerate(pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + n_obstacles)
-        obs_map["obs$j"] = obs[i*n_features+1:(i+1)*n_features]
+    for (j,i)  in enumerate(pomdp.max_cars + pomdp.max_peds + 1:pomdp.max_cars + pomdp.max_peds + pomdp.max_obstacles)
+        obs_map[j] = obs[i*n_features+1:(i+1)*n_features]
 #         println("obs$j idx ", i*n_features+1:(i+1)*n_features)
     end
     return ego, car_map, ped_map, obs_map
+end
+
+function normalized_off_the_grid_pos(pomdp::UrbanPOMDP,normalized_ego_x::Float64, normalized_ego_y::Float64)
+    pos_off = get_off_the_grid(pomdp)
+    max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
+    return [pos_off.posG.x/max_ego_dist - normalized_ego_x, pos_off.posG.y/max_ego_dist - normalized_ego_y, pos_off.posG.θ, 0.]
 end

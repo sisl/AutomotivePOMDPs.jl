@@ -65,10 +65,10 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
         a_lon = min(a_lon_idm, stop_at_end(model, ego, roadway))
     end
     # to get out of the Emergency break 
-    if !model.priority && !passed && engaged(model, scene, roadway, egoid) &&
-                            model.stop && right_of_way
-        a_lon = a_lon_idm 
-    end
+    # if !model.priority && !passed && engaged(model, scene, roadway, egoid) &&
+    #                         model.stop && right_of_way
+    #     a_lon = a_lon_idm 
+    # end
 
     model.a = LonAccelDirection(a_lon, model.navigator.dir)    
 
@@ -80,10 +80,15 @@ end
 function engaged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(egoid, scene)]
     lane = get_lane(roadway, ego)
-    if isempty(lane.entrances)
-        return false 
+    inter_width = 7.0 #todo parameterized
+    if normsquared(VecE2(model.intersection_pos - ego.state.posG)) < inter_width^2
+        return true 
     end
-    return true 
+    return false 
+    # if isempty(lane.entrances)
+    #     return false
+    # end
+    # return true
 end
 
 function has_passed(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
