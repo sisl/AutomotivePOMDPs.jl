@@ -80,49 +80,5 @@ function POMDPs.transition(pomdp::SingleOCFPOMDP, s::SingleOCFState, a::SingleOC
         # pedestrian is absent
         return initBeliefAbsentPedestrianBorder(pomdp, sp_ego_y, sp_ego_v)
     end
-#=
-        states = SingleOCFState[]
-        sizehint!(states, 500);
-        probs = Float64[] 
-        sizehint!(probs, 500);
-        (ego_y_state_space,ego_v_state_space) = getEgoDataInStateSpace(pomdp, sp_ego_y, sp_ego_v)
 
-        # 
-        s_min = pomdp.S_MIN
-        if ( pomdp.env.params.obstacles_visible )
-            for i = 1:length(pomdp.env.params.obstacles)
-                ego_pos = VecE2(pomdp.ego_vehicle.state.posG.x, pomdp.ego_vehicle.state.posG.y) 
-                (obst_s, obst_T, right_side) = getObstructionCorner(pomdp.env.params.obstacles[i], ego_pos )
-                if ( right_side ) 
-                    s_min = clamp(obst_s, pomdp.S_MIN, pomdp.S_MAX)
-                end
-            end
-        end
-#println(s_min)
-        # add states on the right side
-        for ped_theta in pomdp.PED_THETA_RANGE
-            for ped_v in pomdp.PED_V_RANGE
-                for ped_s in pomdp.S_RANGE
-                    if ( ped_s > 100)
-                        push!(states,SingleOCFState(ego_y_state_space, ego_v_state_space, ped_s, pomdp.T_MIN, ped_theta, ped_v))
-                    end
-                end
-            end
-        end
-                
-        # add absent state
-       # absent_state = get_state_absent(pomdp, ego_y_state_space, pomdp.ego_vehicle.state.v)
-        absent_state = get_state_absent(pomdp, pomdp.ego_vehicle.state.posF.t, pomdp.ego_vehicle.state.v)
-        push!(states, absent_state)
-
-        probs = ones(length(states))
-        probs[1:end - 1] = pomdp.pedestrian_birth / length(states)
-        probs[end] = 1.0 - pomdp.pedestrian_birth
-
-        #probs = ones(length(states)) / length(states)
-
-    end
-
-    return SparseCat{Vector{SingleOCFState},Vector{Float64}}(states,probs)
-=#
 end

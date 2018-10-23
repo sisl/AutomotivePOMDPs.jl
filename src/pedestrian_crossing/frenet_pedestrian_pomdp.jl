@@ -68,8 +68,9 @@ function AutomotiveDrivingModels.observe!(model::FrenetPedestrianPOMDP, scene::S
         #    println("action after update: ", act)
 
         end
-      #  act2 = action_values(model.policy_dec, model.b_dict)
-      #  println("action combined: ", act2)
+        act2 = action_values(model.policy_dec, model.b_dict)
+        println("action combined: ", act2)
+        model.a = LatLonAccel(0.0, act2[1])
 
         if (model.tick > 2 )
          #   model.a = LatLonAccel(0.0, -2.0)

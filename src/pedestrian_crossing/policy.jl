@@ -19,6 +19,7 @@ function action_values(policy::DecPolicy, dec_belief::Dict)
  end
  
  function action_values(p::AlphaVectorPolicy, b::SparseCat)
+    #=
     num_vectors = length(p.alphas)
     utilities = zeros(n_actions(p.pomdp), num_vectors)
     action_counts = zeros(n_actions(p.pomdp))
@@ -28,7 +29,21 @@ function action_values(policy::DecPolicy, dec_belief::Dict)
         utilities[ai, i] += sparse_cat_dot(p.pomdp, p.alphas[i], b)
     end
     utilities ./= action_counts
+    println(bs)
     return maximum(utilities, dims=2)
+    =#
+    alphas = p.alphas 
+    util = zeros(n_actions(pomdp)) 
+    for i=1:n_actions(pomdp)
+        res = 0.0
+        for (j,s) in enumerate(b.vals)
+            si = state_index(pomdp, s)
+            res += alphas[i][si]*b.probs[j]
+        end
+        util[i] = res
+    end
+    ihi = indmax(util)
+    return p.action_map[ihi]
  end
  
  # perform dot product between an alpha vector and a sparse cat object

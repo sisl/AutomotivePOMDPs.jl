@@ -97,7 +97,7 @@ const PEDESTRIAN_OFF_KEY = -1
 
     desired_velocity::Float64 = 40.0 / 3.6
 
-    pedestrian_birth::Float64 = 0.99
+    pedestrian_birth::Float64 = 0.8
 end
 
 

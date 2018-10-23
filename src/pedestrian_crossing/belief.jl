@@ -14,7 +14,7 @@ function POMDPs.update(up::SingleOCFUpdater, bold::Dict{Int64, SingleOCFBelief},
     for oid in keys(o)
 
         if haskey(bold, oid) && oid != PEDESTRIAN_OFF_KEY  # old measurment
-            @time bnew[oid] = update(up, bold[oid], a, o[oid])
+            bnew[oid] = update(up, bold[oid], a, o[oid])
 
         elseif oid == PEDESTRIAN_OFF_KEY  # absent state
 
@@ -23,7 +23,6 @@ function POMDPs.update(up::SingleOCFUpdater, bold::Dict{Int64, SingleOCFBelief},
             #bnew[PEDESTRIAN_OFF_KEY] = initBeliefAbsentPedestrianBorder(pomdp, o[oid].ego_y, o[oid].ego_v) 
 
         else # ped appeared
-            println("ped appeard")
             bnew[oid] = update(up, bold[PEDESTRIAN_OFF_KEY], a, o[oid])
         end
     end
@@ -69,7 +68,6 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
         b_sum = 0.0   
         for (s, prob) in weighted_iterator(b)
             td = transition(pomdp, s, a) 
-        #   println("transition", td) 
             pp = pdf(td, sp)
             b_sum += pp * prob
         end
@@ -84,18 +82,15 @@ function POMDPs.update(up::SingleOCFUpdater, b::SingleOCFBelief, a::SingleOCFAct
 
     if bp_sum == 0.0
 
-
+        # pedestrian appeared inside the state space, initialize belief with the observation
         if ( !is_observation_absent(pomdp,o) && length(b) == 1)
             for (s,p) in weighted_iterator(b)
                 if is_state_absent(pomdp,s) 
-
                     return initBeliefPedestrian(pomdp, o)
                 end
             end
         end
 
-
-        #return caclulateBeliefBasedOnObservation(pomdp,o)
         error("""
               Failed discrete belief update: new probabilities sum to zero.
             #  b = $b
@@ -162,7 +157,7 @@ function initBeliefAbsentPedestrianBorder(pomdp::SingleOCFPOMDP, ego_y::Float64,
             end
         end
     end
-#println(s_min)
+
     # add states on the right side
     for ped_theta in pomdp.PED_THETA_RANGE
         for ped_v in pomdp.PED_V_RANGE
