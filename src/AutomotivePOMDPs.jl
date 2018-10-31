@@ -156,6 +156,7 @@ export
     scene_to_states,
     states_to_scene,
     normalized_off_the_grid_pos,
+    get_normalized_absent_state,
     split_o,
     n_dims
 

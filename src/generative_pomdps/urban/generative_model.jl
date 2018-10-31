@@ -352,6 +352,17 @@ function to_global_coordinates!(o::UrbanObs, pomdp::UrbanPOMDP)
     return o
 end
 
+
+function get_normalized_absent_state(pomdp::UrbanPOMDP, ego::Vector{Float64})
+    ego_x, ego_y, theta, v = ego
+    pos_off =  get_off_the_grid(pomdp)
+    max_ego_dist = get_end(pomdp.env.roadway[pomdp.ego_goal])
+    return [pos_off.posG.x/max_ego_dist - ego_x,
+                    pos_off.posG.y/max_ego_dist - ego_y,
+                    pos_off.posG.θ/float(pi),
+                    0. ]
+end
+
 function measure_lidar(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
     observe!(pomdp.sensor, sp, pomdp.env.roadway, EGO_ID)
     return vcat(pomdp.sensor.ranges/pomdp.sensor.max_range, pomdp.sensor.range_rates/pomdp.env.params.speed_limit)

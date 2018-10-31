@@ -119,11 +119,11 @@ end
 # end
 
 
-function POMDPs.action(policy::Policy, b::Dict{Int64, B}) where B
-    val = fuse_value_min(policy, b)
-    max_ind = argmax(val)
-    return policy.action_map[max_ind]
-end
+# function POMDPs.action(policy::Policy, b::Dict{Int64, B}) where B
+#     val = fuse_value_min(policy, b)
+#     max_ind = argmax(val)
+#     return policy.action_map[max_ind]
+# end
 
 
 
