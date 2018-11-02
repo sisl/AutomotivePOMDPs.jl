@@ -36,50 +36,6 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     a_lon =0.
     a_lon_idm = model.navigator.a
     passed = has_passed(model, scene, roadway, egoid)
-    is_engaged = engaged(model, scene, roadway, egoid)
-    right_of_way = model.priorities[(model.navigator.route[1].tag,model.navigator.route[end].tag)]
-    is_clogged = is_intersection_clogged(model, scene, roadway, egoid)
-    ttc = ttc_check(model, scene, roadway, egoid)
-    if !model.stop
-        model.stop = isapprox(ego.state.v, 0.)
-    end
-    
-    if isempty(model.intersection) || passed 
-        a_lon = a_lon_idm 
-    elseif !passed 
-        if right_of_way
-            if is_clogged && !passed && is_engaged && !model.stop && !isapprox(ego.state.v, 0.)
-                # println("Vehicle $egoid : emergency break")
-                a_lon = -model.navigator.d_max
-            else
-                a_lon = a_lon_idm
-            end
-        else # left turn
-            if !ttc && !is_engaged  # before left turn
-                a_lon = min(a_lon_idm, stop_at_end(model, ego, roadway))
-            elseif is_clogged && !passed && is_engaged && !isapprox(ego.state.v, 0.) #!ttc && !passed && is_engaged || (is_clogged && is_engaged)
-                # println("Vehicle $egoid : emergency break")
-                a_lon = -model.navigator.d_max
-            elseif ttc 
-                a_lon = a_lon_idm 
-            end
-        end
-    end
-    # println("veh $egoid: ttc $ttc") 
-    # println(" ID ", egoid, " stop ", model.stop, " priority ", model.priority)
-    model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
-    model
-end
-
-
-#=
-function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(egoid, scene)]
-    AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
-    dir = model.navigator.dir
-    a_lon =0.
-    a_lon_idm = model.navigator.a
-    passed = has_passed(model, scene, roadway, egoid)
     model.priority = ttc_check(model, scene, roadway, egoid)
     right_of_way = model.priorities[(model.navigator.route[1].tag,model.navigator.route[end].tag)]
     if isempty(model.intersection) || right_of_way # no intersection, go
@@ -120,12 +76,11 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
     model
 end
-=#
 
 function engaged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(egoid, scene)]
     lane = get_lane(roadway, ego)
-    inter_width = 7.5 #todo parameterized
+    inter_width = 7.0 #todo parameterized
     if normsquared(VecE2(model.intersection_pos - ego.state.posG)) < inter_width^2
         return true 
     end
@@ -158,7 +113,7 @@ function ttc_check(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway,
             posF = veh.state.posF
             int_x, int_y, int_θ = model.intersection_pos
             lane = get_lane(roadway, veh)
-            int_proj = Frenet(proj(model.intersection_pos, lane, roadway, move_along_curves=false), roadway) 
+            int_proj = Frenet(model.intersection_pos, lane, roadway)
             if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width^2 # vehicle is in the middle
                 ttc = 0.
             else
@@ -179,12 +134,11 @@ function ttc_check(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway,
 end
 
 function is_intersection_clogged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int64)
-    inter_width = 5.0 #todo parameterized
+    inter_width = 2.0 #todo parameterized
     for veh in scene 
         if veh.id == egoid
             continue
         end
-        # println("veh id $(veh.id) : ", sqrt(normsquared(VecE2(model.intersection_pos - veh.state.posG))))
         if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width^2
             return true 
         end
