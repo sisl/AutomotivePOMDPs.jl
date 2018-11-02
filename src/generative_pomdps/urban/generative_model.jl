@@ -71,6 +71,9 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
     return sp
 end
 
+function POMDPModelTools.generate_sori(p::UrbanPOMDP, s, a, rng::AbstractRNG)
+    return generate_sor(p, s, a, rng)..., deepcopy(p.models)
+end
 
 #TODO move to helpers
 

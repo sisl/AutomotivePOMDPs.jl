@@ -141,7 +141,7 @@ function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}
         return false 
     end
     for lane in conflict_lanes
-        ped_f = Frenet(ped.state.posG, lane, roadway)
+        ped_f = Frenet(proj(ped.state.posG, lane, roadway, move_along_curves=false), roadway)
         if abs(ped_f.t) < lane.width/2 && get_lane(roadway, ped).tag == crosswalk.tag
             return true
         end
@@ -161,7 +161,7 @@ function is_free(crosswalk::Lane, scene::Scene, roadway::Roadway)
             continue 
         end
         posG = veh.state.posG 
-        cw_posF = Frenet(posG, crosswalk, roadway)
+        cw_posF = Frenet(proj(posG, crosswalk, roadway,move_along_curves=false), roadway)
         lane = get_lane(roadway, veh)
         t_car = cw_posF.t 
         if abs(cw_posF.t) < crosswalk.width/2 + veh.def.length/2*sin(cw_posF.ϕ)

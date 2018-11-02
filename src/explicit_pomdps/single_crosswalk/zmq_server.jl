@@ -1,4 +1,4 @@
-using POMDPs, StatsBase, POMDPToolbox, QMDP, DeepRL, AutomotiveDrivingModels, AutoViz, SARSOP, Images
+using POMDPs, StatsBase, POMDPToolbox, QMDP, RLInterface, AutomotiveDrivingModels, AutoViz, SARSOP, Images
 using ArgParse
 s = ArgParseSettings()
 @add_arg_table s begin
@@ -40,4 +40,4 @@ pomdp.vel_obs_noise = 0.5
 ip = "127.0.0.1"
 port = parsed_args["port"]
 
-DeepRL.run_env_server(ip, port, pomdp)
+RLInterface.run_env_server(ip, port, pomdp)

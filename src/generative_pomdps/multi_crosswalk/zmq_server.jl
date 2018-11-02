@@ -1,4 +1,4 @@
-using POMDPs, POMDPToolbox, DeepRL, Parameters
+using POMDPs, POMDPToolbox, RLInterface, Parameters
 using AutomotiveDrivingModels, AutoUrban, AutoViz, Reel
 using ArgParse
 
@@ -21,5 +21,5 @@ ip = "127.0.0.1"
 port = parsed_args["port"]
 
 # env = KMarkovEnvironment(pomdp, k=4)
-# DeepRL.run_env_server(ip, port, env)
-DeepRL.run_env_server(ip, port, pomdp)
+# RLInterface.run_env_server(ip, port, env)
+RLInterface.run_env_server(ip, port, pomdp)

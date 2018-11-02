@@ -6,7 +6,7 @@ using POMDPModelTools
 using POMDPSimulators
 using POMDPPolicies
 using BeliefUpdaters
-using DeepRL
+using RLInterface
 using Parameters
 using GridInterpolations
 using StaticArrays
