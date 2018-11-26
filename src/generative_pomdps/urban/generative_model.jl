@@ -539,8 +539,8 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
     o = to_global_coordinates!(o, pomdp)
     scene = Scene()
     # extract
-    ego, car_map, ped_map, obs_map = split_o(o, pomdp)
-
+    ego, car_map, ped_map, obs_map = split_o(o, pomdp, false)
+    # println("cars observed : ", keys(car_map), "ped observed :", keys(ped_map))
     # project to roadway
     params = pomdp.env.params
     intersection_params = TInterParams(params.x_min, params.x_max, params.y_min, params.inter_x,
@@ -562,6 +562,7 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
     end
     for (str_id, vec_state) in ped_map
         ped_state = VehicleState(VecSE2(vec_state[1], vec_state[2], vec_state[3]), pomdp.env.ped_roadway, vec_state[4])
+        # println("ped_state ", ped_state)
         if !off_the_grid(ped_state, pomdp)
             id = next_ped_id(pomdp, scene)
             ped = Vehicle(ped_state, pomdp.ped_type, id)
@@ -573,20 +574,28 @@ function obs_to_scene(pomdp::UrbanPOMDP, obs::UrbanObs)
 end
 
 # given a big observation vector, split to an entity-wise representation
-function split_o(obs::UrbanObs, pomdp::UrbanPOMDP)
+function split_o(obs::UrbanObs, pomdp::UrbanPOMDP, normalized=true)
     car_map, ped_map, obs_map = OrderedDict{Int64, Vector{Float64}}(), OrderedDict{Int64, Vector{Float64}}(), OrderedDict{Int64, Vector{Float64}}() #XXX Dictionary creation is sloooooow
     n_features = pomdp.n_features
     ego = obs[1:n_features]
-    absent = normalized_off_the_grid_pos(pomdp, ego[1], ego[2])
+    if normalized
+        absent = normalized_off_the_grid_pos(pomdp, ego[1], ego[2])
+    else 
+        pos_off = get_off_the_grid(pomdp)
+        absent= [pos_off.posG.x, pos_off.posG.y, pos_off.posG.θ, pos_off.v]
+    end
+    # println("ego ", ego)
+    # println("absent state :", absent)
 #     println("ego idx ", 1, ":", n_features)
     for (j,i) in enumerate(1:pomdp.max_cars)
-        if obs[i*n_features+1:(i+1)*n_features] != absent
+        if !isapprox(obs[i*n_features+1:(i+1)*n_features], absent, atol=1.0)
             car_map[j+1] = obs[i*n_features+1:(i+1)*n_features]
         end
 #         println("car$j idx ", i*n_features+1:(i+1)*n_features)
     end
     for (j,i) in enumerate(pomdp.max_cars + 1:pomdp.max_cars + pomdp.max_peds)
-        if obs[i*n_features+1:(i+1)*n_features] != absent
+        if !isapprox(obs[i*n_features+1:(i+1)*n_features], absent, atol=1.0)
+            # println(norm(obs[i*n_features+1:(i+1)*n_features] - absent))
             ped_map[100+j] = obs[i*n_features+1:(i+1)*n_features]
         end
 #         println("ped$j idx ", i*n_features+1:(i+1)*n_features)

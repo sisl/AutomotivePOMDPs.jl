@@ -28,7 +28,6 @@ function AutomotiveDrivingModels.reset_hidden_state!(model::TTCIntersectionDrive
     model
 end
 
-
 function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(egoid, scene)]
     AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
@@ -40,15 +39,15 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
     right_of_way = model.priorities[(model.navigator.route[1].tag,model.navigator.route[end].tag)]
     is_clogged = is_intersection_clogged(model, scene, roadway, egoid)
     ttc = ttc_check(model, scene, roadway, egoid)
-    if !model.stop
-        model.stop = isapprox(ego.state.v, 0.)
-    end
+    # if !model.stop
+    #     model.stop = isapprox(ego.state.v, 0.)
+    # end
     
     if isempty(model.intersection) || passed 
         a_lon = a_lon_idm 
     elseif !passed 
         if right_of_way
-            if is_clogged && !passed && is_engaged && !model.stop && !isapprox(ego.state.v, 0.)
+            if is_clogged && !passed && is_engaged && !isapprox(ego.state.v, 0.)
                 # println("Vehicle $egoid : emergency break")
                 a_lon = -model.navigator.d_max
             else
@@ -65,62 +64,12 @@ function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::S
             end
         end
     end
+    # println("veh $egoid | clogged $is_clogged | passed $passed | engaged $is_engaged | stop $(isapprox(ego.state.v, 0.))| right of way $right_of_way")
     # println("veh $egoid: ttc $ttc") 
     # println(" ID ", egoid, " stop ", model.stop, " priority ", model.priority)
     model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
     model
 end
-
-
-#=
-function AutomotiveDrivingModels.observe!(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
-    ego = scene[findfirst(egoid, scene)]
-    AutomotiveDrivingModels.observe!(model.navigator, scene, roadway, egoid) # set the direction
-    dir = model.navigator.dir
-    a_lon =0.
-    a_lon_idm = model.navigator.a
-    passed = has_passed(model, scene, roadway, egoid)
-    model.priority = ttc_check(model, scene, roadway, egoid)
-    right_of_way = model.priorities[(model.navigator.route[1].tag,model.navigator.route[end].tag)]
-    if isempty(model.intersection) || right_of_way # no intersection, go
-        a_lon = model.navigator.a
-    else
-        if !model.priority && !model.stop && !passed# reach stop line
-            a_lon = min(a_lon_idm, stop_at_end(model, ego, roadway))
-        elseif !model.priority && model.stop && !engaged(model, scene, roadway, egoid) # wait
-            a_lon = -model.navigator.d_max # negative to make sure v stays 0
-        else
-            a_lon = a_lon_idm # just idm
-        end
-    end
-
-    if !model.stop
-        update_stop!(model, ego, roadway)
-    end
-    
-    passed = has_passed(model, scene, roadway, egoid)
-    a_lon_idm = model.navigator.a
-    if !model.priority && !passed && engaged(model, scene, roadway, egoid) # emergency break 
-        a_lon = -model.navigator.d_max
-        if ego.state.v ≈ 0.0 
-            model.stop = true
-        end
-    elseif !model.priority && !passed && !right_of_way # !model.stop# reach stop line
-        a_lon = min(a_lon_idm, stop_at_end(model, ego, roadway))
-    end
-    # to get out of the Emergency break 
-    # if !model.priority && !passed && engaged(model, scene, roadway, egoid) &&
-    #                         model.stop && right_of_way
-    #     a_lon = a_lon_idm 
-    # end
-
-    model.a = LonAccelDirection(a_lon, model.navigator.dir)    
-
-    # println(" ID ", egoid, " stop ", model.stop, " priority ", model.priority)
-    model.a = LonAccelDirection(a_lon, dir) # add noise to break ties #XXX remove with priorities
-    model
-end
-=#
 
 function engaged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int)
     ego = scene[findfirst(egoid, scene)]
@@ -180,12 +129,13 @@ end
 
 function is_intersection_clogged(model::TTCIntersectionDriver, scene::Scene, roadway::Roadway, egoid::Int64)
     inter_width = 5.0 #todo parameterized
+    ego = scene[findfirst(egoid, scene)]
     for veh in scene 
         if veh.id == egoid
             continue
         end
         # println("veh id $(veh.id) : ", sqrt(normsquared(VecE2(model.intersection_pos - veh.state.posG))))
-        if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width^2
+        if normsquared(VecE2(model.intersection_pos - veh.state.posG)) < inter_width^2 && !is_behind(ego, veh, roadway)
             return true 
         end
     end

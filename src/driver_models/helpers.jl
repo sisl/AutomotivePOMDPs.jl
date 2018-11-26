@@ -43,7 +43,7 @@ function get_ttc_model(env::UrbanEnv, r::SVector{2, LaneTag})
         intersection_exits = get_exit_lanes(env.roadway)
         intersection=Lane[route[1], route[2]]
     end
-    navigator = RouteFollowingIDM(route=route, a_max=2., σ=1.)
+    navigator = RouteFollowingIDM(route=route, a_max=1., σ=1., v_des=6.0)
     intersection_driver = TTCIntersectionDriver(navigator = navigator,
                                             intersection = intersection,
                                             intersection_pos = VecSE2(env.params.inter_x,

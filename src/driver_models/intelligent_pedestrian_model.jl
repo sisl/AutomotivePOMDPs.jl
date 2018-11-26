@@ -45,8 +45,9 @@ end
 function update_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}, roadway::Roadway)
     # check if the pedestrian is in the conflict zone
     for lane in conflict_lanes
-        ped_f = Frenet(ped.state.posG, lane, roadway)
+        ped_f = Frenet(proj(ped.state.posG, lane, roadway, move_along_curves=false), roadway)
         if abs(ped_f.t) < lane.width/2 && get_lane(roadway, ped).tag == crosswalk.tag
+            # println(" position on lane : ", ped_f)
             return true
         end
     end
@@ -79,12 +80,15 @@ function update_wait(ped::Vehicle,
         end 
         # check if vehicle is on the crosswalk 
         posG = veh.state.posG 
-        cw_posF = Frenet(posG, model.crosswalk, roadway)
+        cw_posF = Frenet(proj(posG, model.crosswalk, roadway, move_along_curves=false), roadway)
         lane = get_lane(roadway, veh)
         # if lane ∈ model.conflict_lanes
-            # println("vehicle position on cw $(cw_posF)") 
-        t_car = cw_posF.t 
-        # if t_car - 0.5*veh.def.length < ped.state.posF.t < t_car + 0.5*veh.def.length
+        # println("vehicle position on cw $(cw_posF)") 
+        # println("pedestrian position $(ped.state.posF)")
+        # println(" difference: $(cw_posF.s - ped.state.posF.s)")
+        # t_car = cw_posF.t 
+        # println( abs(cw_posF.t) < model.crosswalk.width/2 + veh.def.length/2 - model.dtol)
+        # println( (cw_posF.s - ped.state.posF.s)*cos(ped.state.posF.ϕ) > 0.)
         if abs(cw_posF.t) < model.crosswalk.width/2 + veh.def.length/2 - model.dtol &&
                                 (cw_posF.s - ped.state.posF.s)*cos(ped.state.posF.ϕ) > 0.
             # println("vehicle $(veh.id) is on the crosswalk")

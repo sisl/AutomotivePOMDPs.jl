@@ -90,7 +90,8 @@ end
 
 function has_passed(model::CrosswalkDriver, ego::Vehicle, roadway::Roadway)
     cw_length = get_end(model.crosswalk)
-    cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+    # cw_width = model.crosswalk.width
+    cw_center = get_posG(Frenet(model.crosswalk, cw_length/2, 0.), roadway)
     cw_to_car = get_front(ego) - cw_center 
     car_vec = get_front(ego) - ego.state.posG
     has_passed = dot(cw_to_car, car_vec) > 0.
@@ -148,7 +149,7 @@ function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}
     end
     # at this point, the pedestrian is not on the road
     # check if the pedestrian is going to cross or not
-    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0. && get_lane(roadway, ped).tag == crosswalk.tag && is_free(crosswalk, scene, roadway) && !isapprox(ped.state.v, 0.)
+    if AutomotivePOMDPs.direction_from_center(ped, crosswalk) > 0. && get_lane(roadway, ped).tag == crosswalk.tag && is_free(crosswalk, scene, roadway) #&& !isapprox(ped.state.v, 0.)
         return true
     end
     return false

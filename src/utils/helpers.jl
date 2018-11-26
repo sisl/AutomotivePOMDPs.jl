@@ -231,8 +231,11 @@ function  get_conflict_lanes(crosswalk::Lane, roadway::Roadway)
     # find lane intersecting with crosswalk
     cw_seg = lane_to_segment(crosswalk, roadway)
     conflict_lanes = Lane[]
-    lanes = get_lanes(roadway)
+    lanes = get_all_lanes(roadway)
     for lane in lanes
+        if  is_crosswalk(lane)
+            continue
+        end
         lane_seg = lane_to_segment(lane, roadway)
         if intersects(lane_seg, cw_seg) && !(lane ∈ conflict_lanes)
             push!(conflict_lanes, lane)
