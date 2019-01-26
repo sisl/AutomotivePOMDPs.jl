@@ -18,10 +18,13 @@ Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveSensors.jl"))
 Pkg.add(PackageSpec(url="https://github.com/JuliaPOMDP/RLInterface.jl"))
 Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotivePOMDPs"))
 ```
+## Code to run
+
+Run `docs/Urban POMDP tutoial.ipynb` for a visualization of the simulation environment.
 
 ## Scenarios
 
-This package export the following POMDP Models:
+This package exports the following POMDP Models:
 - `SingleOCPOMDP`: Occluded crosswalk with one single pedestrian. Discrete states and observations with explicit transition and observation model.
 - `SingleOIPOMDP`: Occluded intersection with one single car. Discrete states and observations with explicit transition and observation model.
 - `OCPOMDP`: Occluded crosswalk with a flow of pedestrian. Generative model implementation with continuous state and observations
@@ -31,8 +34,8 @@ This package export the following POMDP Models:
 These models are defined according to the [POMDPs.jl]() interface. To see how they are parameterized, toggle the documentation using `?` or
 use the function `fieldnames` if documentation is not yet written.
 
-Snapshot of the `UrbanPOMDP` scenario. The ego vehicle in blue receives LIDAR measurements and must execute a left turn through the intersection.
-![urban_lidar](urban_lidar.png)
+Video of the `UrbanPOMDP` scenario:
+![urban_lidar](urbanpomdp.gif)
 
 ## Sensor Models
 
@@ -42,15 +45,9 @@ Snapshot of the `UrbanPOMDP` scenario. The ego vehicle in blue receives LIDAR me
 ## TODOs
 
 - [ ] Move geometry and road topology to AutoUrban
-- [ ] Discretizer: build an approximate explicit POMDP formulation by sampling from the continuous state formulation.
+- [ ] Move helpers function to AutomotiveDrivingModels.jl
 
 ## Dependencies
 
 - AutomotiveDrivingModels.jl
 - POMDPs.jl
-
-## Code to run
-
-Run `test.ipynb` for a visualization of the different scenarios.
-
-## Folder structure
