@@ -16,7 +16,7 @@ Pkg.add(PackageSpec(url="https://github.com/sisl/AutoViz.jl"))
 Pkg.add(PackageSpec(url="https://github.com/sisl/AutoUrban.jl"))
 Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveSensors.jl"))
 Pkg.add(PackageSpec(url="https://github.com/JuliaPOMDP/RLInterface.jl"))
-Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotivePOMDPs"))
+Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotivePOMDPs.jl"))
 ```
 ## Code to run
 
