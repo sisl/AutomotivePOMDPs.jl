@@ -203,7 +203,7 @@ function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, f
 
     id = next_ped_id(pomdp, scene)
 
-    return Vehicle(ped_initialstate, PEDESTRIAN_DEF, id)
+    return Vehicle(ped_initialstate, pomdp.ped_type, id)
 end
 
 function POMDPs.initialstate_distribution(pomdp::UrbanPOMDP)
