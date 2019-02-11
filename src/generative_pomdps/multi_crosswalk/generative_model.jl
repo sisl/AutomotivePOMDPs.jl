@@ -28,7 +28,7 @@ end
 ### TRANSITION MODEL ##############################################################################
 
 function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::AbstractRNG)
-    actions = Array{Any}(length(s))
+    actions = Array{Any}(undef, length(s))
     pomdp.models[1].a = a
     sp = deepcopy(s) #XXX bad
     max_id = 0
@@ -42,7 +42,7 @@ function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::Abstrac
         new_ped = initial_pedestrian(pomdp, sp, rng)
         pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
         push!(sp, new_ped)
-        actions = Array{Any}(length(sp))
+        actions = Array{Any}(undef, length(sp))
     end
     get_actions!(actions, sp, pomdp.env.roadway, pomdp.models)
     tick!(sp, pomdp.env.roadway, actions, pomdp.ΔT)
@@ -100,7 +100,6 @@ function initial_ego(pomdp::OCPOMDP, rng::AbstractRNG)
     x0 = pomdp.ego_start
     y0 = 0. # parameterize
     v0 = rand(rng, Uniform(6., pomdp.env.params.speed_limit)) #TODO parameterize
-
     return Vehicle(VehicleState(VecSE2(x0, y0, 0.0), env.roadway.segments[1].lanes[1], env.roadway, v0),
                    VehicleDef(), 1)
 end

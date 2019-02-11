@@ -12,7 +12,7 @@ const OCState = Records.Frame{Records.Entity{AutomotiveDrivingModels.VehicleStat
 const OCObs = Array{Float64, 1}
 #### Action type
 
-mutable struct OCAction
+struct OCAction
     acc::Float64
 end
 
@@ -31,76 +31,76 @@ end
 
 #### POMDP type
 
-mutable struct OCPOMDP <: POMDP{OCState, OCAction, OCObs}
-    env::CrosswalkEnv
-    sensor::LidarSensor
-    models::Dict{Int64, DriverModel}
-    ego_type::VehicleDef
-    ped_type::VehicleDef
-    max_acc::Float64
-    ego_start::Float64
-    ped_start::Float64
-    ego_goal::Float64
-    ped_goal::Float64
-    ΔT::Float64 # decision frequency
-    p_birth::Float64 # probability of appearance
-    max_peds::Int64
-    no_ped_prob::Float64 # probability that there is no pedestrian (for training)
-    no_ped::Bool
-    v_noise::Float64
-    pos_obs_noise::Float64
-    vel_obs_noise::Float64
-    collision_cost::Float64
-    action_cost::Float64
-    goal_reward::Float64
-    γ::Float64 # discount factor
+@with_kw mutable struct OCPOMDP <: POMDP{OCState, OCAction, OCObs}
+    env::CrosswalkEnv = CrosswalkEnv(CrosswalkParams(obstacles_visible=true))
+    sensor::AbstractSensor = GaussianSensor()
+    models::Dict{Int64, DriverModel} = Dict{Int64, DriverModel}(1=>EgoDriver(OCAction(0.)))
+    ego_type::VehicleDef =  VehicleDef()
+    ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0)
+    max_acc::Float64 = 2.0
+    ego_start::Float64 = 5.0
+    ped_start::Float64 = -env.params.crosswalk_length/4
+    ego_goal::Float64 = env.params.roadway_length/2 + 2*env.params.crosswalk_width
+    ped_goal::Float64 = env.params.crosswalk_length/4
+    ΔT::Float64 = 0.5 # decision frequency
+    p_birth::Float64 = 0.3 # probability of appearance
+    max_peds::Int64 = 10
+    no_ped_prob::Float64 = 0.3 # probability that there is no pedestrian (for training)
+    no_ped::Bool = false
+    v_noise::Float64 = 1.0
+    pos_obs_noise::Float64 = 0.5
+    vel_obs_noise::Float64 = 0.5
+    collision_cost::Float64 = -1.0
+    action_cost::Float64 = 0.0
+    goal_reward::Float64 = 1.0
+    γ::Float64 = 0.95 # discount factor
 end
 
-function OCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
-                   sensor::LidarSensor = LidarSensor(50, max_range=30., angle_spread=float(pi)),
-                   models::Dict{Int64, DriverModel} = Dict{Int64, DriverModel}(1=>EgoDriver(OCAction(0.))),
-                   ego_type::VehicleDef = VehicleDef(),
-                   ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0),#,env.params.crosswalk_width),
-                   max_acc::Float64 = 2.0,
-                   ego_start::Float64 = 5.,
-                   ped_start::Float64 = -env.params.crosswalk_length/4,
-                   ego_goal::Float64 = env.params.roadway_length/2 + 2*env.params.crosswalk_width,
-                   ped_goal::Float64 = env.params.crosswalk_length/4,
-                   ΔT::Float64  = 0.5,
-                   p_birth::Float64 = 0.3,
-                   max_peds::Int64=10,
-                   no_ped_prob::Float64 = 0.3,
-                   no_ped::Bool = false,
-                   v_noise::Float64 = 1.,
-                   pos_obs_noise::Float64 = 0.5,
-                   vel_obs_noise::Float64 = 0.5,
-                   collision_cost::Float64 = -1.,
-                   action_cost::Float64 = 0.0,
-                   goal_reward::Float64 = 1.,
-                   γ::Float64  = 0.95)
-    return OCPOMDP(env,
-                   sensor,
-                   models,
-                   ego_type,
-                   ped_type,
-                   max_acc,
-                   ego_start,
-                   ped_start,
-                   ego_goal,
-                   ped_goal,
-                   ΔT,
-                   p_birth,
-                   max_peds,
-                   no_ped_prob,
-                   no_ped,
-                   v_noise,
-                   pos_obs_noise,
-                   vel_obs_noise,
-                   collision_cost,
-                   action_cost,
-                   goal_reward,
-                   γ)
-end
+# function OCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
+#                    sensor::LidarSensor = LidarSensor(50, max_range=30., angle_spread=float(pi)),
+#                    models::Dict{Int64, DriverModel} = Dict{Int64, DriverModel}(1=>EgoDriver(OCAction(0.))),
+#                    ego_type::VehicleDef = VehicleDef(),
+#                    ped_type::VehicleDef = VehicleDef(AgentClass.PEDESTRIAN, 1.0, 1.0),#,env.params.crosswalk_width),
+#                    max_acc::Float64 = 2.0,
+#                    ego_start::Float64 = 5.,
+#                    ped_start::Float64 = -env.params.crosswalk_length/4,
+#                    ego_goal::Float64 = env.params.roadway_length/2 + 2*env.params.crosswalk_width,
+#                    ped_goal::Float64 = env.params.crosswalk_length/4,
+#                    ΔT::Float64  = 0.5,
+#                    p_birth::Float64 = 0.3,
+#                    max_peds::Int64=10,
+#                    no_ped_prob::Float64 = 0.3,
+#                    no_ped::Bool = false,
+#                    v_noise::Float64 = 1.,
+#                    pos_obs_noise::Float64 = 0.5,
+#                    vel_obs_noise::Float64 = 0.5,
+#                    collision_cost::Float64 = -1.,
+#                    action_cost::Float64 = 0.0,
+#                    goal_reward::Float64 = 1.,
+#                    γ::Float64  = 0.95)
+#     return OCPOMDP(env,
+#                    sensor,
+#                    models,
+#                    ego_type,
+#                    ped_type,
+#                    max_acc,
+#                    ego_start,
+#                    ped_start,
+#                    ego_goal,
+#                    ped_goal,
+#                    ΔT,
+#                    p_birth,
+#                    max_peds,
+#                    no_ped_prob,
+#                    no_ped,
+#                    v_noise,
+#                    pos_obs_noise,
+#                    vel_obs_noise,
+#                    collision_cost,
+#                    action_cost,
+#                    goal_reward,
+#                    γ)
+# end
 
 ### HELPERS
 
