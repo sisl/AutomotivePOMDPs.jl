@@ -197,14 +197,7 @@ function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState,
             o[2*veh.id] = ped.v + vel_noise*randn(rng)
         end
     end
-    return o
-end
-
-function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, rng::AbstractRNG)
-    return generate_o(pomdp, s, OCAction(0.), s, rng::AbstractRNG)
-end
-
-function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
+    # rescale
     o[1] /= pomdp.ego_goal
     o[2] /= pomdp.env.params.speed_limit
     for i=2:pomdp.max_peds+1
@@ -213,6 +206,20 @@ function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
     end
     return o
 end
+
+function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, rng::AbstractRNG)
+    return generate_o(pomdp, s, OCAction(0.), s, rng::AbstractRNG)
+end
+
+# function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
+#     o[1] /= pomdp.ego_goal
+#     o[2] /= pomdp.env.params.speed_limit
+#     for i=2:pomdp.max_peds+1
+#         o[2*i - 1] /= pomdp.ped_goal
+#         o[2*i] /= 2. # XXX parameterized
+#     end
+#     return o
+# end
 
 ### All together ##################################################################################
 
