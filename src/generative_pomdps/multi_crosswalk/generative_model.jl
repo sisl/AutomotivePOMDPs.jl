@@ -31,19 +31,20 @@ function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::Abstrac
     actions = Array{Any}(undef, length(s))
     pomdp.models[1].a = a
     sp = deepcopy(s) #XXX bad
-    max_id = 0
-    for veh in sp
-        if veh.id > max_id
-            max_id = veh.id
-        end
-    end
-    if rand(rng) < pomdp.p_birth && max_id < pomdp.max_peds+1 && !pomdp.no_ped
-        # println("Spawning new pedestrians")
-        new_ped = initial_pedestrian(pomdp, sp, rng)
-        pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
-        push!(sp, new_ped)
-        actions = Array{Any}(undef, length(sp))
-    end
+    # max_id = 0
+    # for veh in sp
+    #     if veh.id > max_id
+    #         max_id = veh.id
+    #     end
+    # end
+    # if rand(rng) < pomdp.p_birth && max_id < pomdp.max_peds+1 && !pomdp.no_ped
+    # if rand(rng) < 0.01 && max_id < pomdp.max_peds+1 && !pomdp.no_ped    
+    #     # println("Spawning new pedestrians")
+    #     new_ped = initial_pedestrian(pomdp, sp, rng)
+    #     pomdp.models[new_ped.id] = ConstantPedestrian(dt = pomdp.ΔT)#TODO parameterized
+    #     push!(sp, new_ped)
+    #     actions = Array{Any}(undef, length(sp))
+    # end
     get_actions!(actions, sp, pomdp.env.roadway, pomdp.models)
     tick!(sp, pomdp.env.roadway, actions, pomdp.ΔT)
     clean_scene!(pomdp.env, sp)
