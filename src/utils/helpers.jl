@@ -387,3 +387,12 @@ function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, ac
 
    return VehicleState(posG, roadway, v₂)
 end
+
+"""
+Returns a Frenet object of the end of the road
+Args: Roadway, LaneTag
+Returns: Frenet
+"""
+function get_end_frenet(roadway::Roadway, tag::LaneTag) 
+    return Frenet(roadway[tag], get_end(roadway[tag]))
+end
