@@ -127,9 +127,6 @@ return the end longitudinal position of a lane
 """
 function get_end(lane::Lane)
     s_end = round(lane.curve[end].s)
-    if s_end % 2 == 1 #XXX hack
-        s_end -= 1
-    end
     return s_end
 end
 
