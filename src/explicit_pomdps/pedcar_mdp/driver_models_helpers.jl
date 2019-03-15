@@ -150,7 +150,7 @@ function AutomotiveDrivingModels.observe!(model::RouteFollowingIDM,
     model.a = clamp(acc, -model.d_max, model.a_max)
     # fore = is_neighbor_fore_along_lane(car, ego, roadway)
     # v_car = car.v
-    # if fore.ind != 0
+    # if fore.ind != nothing
     #     headway, v_oth = fore.Δs, car.v
     # else
     #     headway, v_oth = NaN, NaN
@@ -217,7 +217,7 @@ function is_neighbor_fore_along_lane(
     max_distance_fore::Float64 = 250.0, # max distance to search forward [m]
     )
 
-    best_ind = 0
+    best_ind = nothing
     best_dist = max_distance_fore
     tag_target = tag_start
     lane = roadway[tag_target]
@@ -254,7 +254,7 @@ function is_neighbor_fore_along_lane(
                 end
             end
         end
-        if best_ind != 0
+        if best_ind != nothing
             break
         end
 

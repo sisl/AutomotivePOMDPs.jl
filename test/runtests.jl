@@ -1,5 +1,6 @@
 using AutomotivePOMDPs
 using Test
 
-# write your own tests here
-@test 1 == 2
+include("collisionchecker_tests.jl")
+include("crosswalk_tests.jl")
+include("urbanpomdp_tests.jl")
