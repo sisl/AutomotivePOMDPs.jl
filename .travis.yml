@@ -45,6 +45,14 @@ jobs:
                                 Pkg.add("Documenter"); 
                                 Pkg.add(PackageSpec(url="https://github.com/sisl/Records.jl")); 
                                 Pkg.add(PackageSpec(url="https://github.com/sisl/Vec.jl"));
+                                Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveDrivingModels.jl"));
+                                Pkg.add(PackageSpec(url="https://github.com/sisl/AutoViz.jl"));
+                                Pkg.add(PackageSpec(url="https://github.com/sisl/AutoUrban.jl"));
+                                Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveSensors.jl"));
+                                Pkg.add("POMDPs");
+                                using POMDPs;
+                                POMDPs.add_registry();
+                                Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotivePOMDPs.jl"));
                                 Pkg.develop(PackageSpec(path=pwd()));
                                 Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl
