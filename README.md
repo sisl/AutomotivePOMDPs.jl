@@ -1,5 +1,8 @@
 # AutomotivePOMDPs: Driving Scenarios formulated as POMDPs
 
+[![Build Status](https://travis-ci.org/sisl/AutomotivePOMDPs.jl.svg?branch=master)](https://travis-ci.org/sisl/AutomotivePOMDPs.jl)
+[![Coverage Status](https://coveralls.io/repos/github/sisl/AutomotivePOMDPs.jl/badge.svg?branch=master)](https://coveralls.io/github/sisl/AutomotivePOMDPs.jl?branch=master)
+
 contact: Maxime Bouton, [boutonm@stanford.edu](boutonm@stanford.edu)
 
 This repository consists of different driving scenarios formulated as POMDPs. It provides a generative model for computing policies. A few of them have explicit transition and observation models.
@@ -15,7 +18,9 @@ Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveDrivingModels.jl"))
 Pkg.add(PackageSpec(url="https://github.com/sisl/AutoViz.jl"))
 Pkg.add(PackageSpec(url="https://github.com/sisl/AutoUrban.jl"))
 Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveSensors.jl"))
-Pkg.add(PackageSpec(url="https://github.com/JuliaPOMDP/RLInterface.jl"))
+Pkg.add("POMDPs")
+using POMDPs
+POMDPs.add_registry()
 Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotivePOMDPs.jl"))
 ```
 ## Code to run
