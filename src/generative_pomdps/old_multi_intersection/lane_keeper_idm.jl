@@ -92,7 +92,7 @@ function AutomotiveDrivingModels.observe!(model::IntelligentDriverModel2D, scene
                                         VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())
     v_ego = scene[vehicle_index].state.v
 
-    if fore.ind != 0
+    if fore.ind != nothing
         headway, v_oth = fore.Δs, scene[fore.ind].state.v
     else
         headway, v_oth = NaN, NaN

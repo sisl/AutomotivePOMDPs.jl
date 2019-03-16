@@ -123,7 +123,7 @@ function ungrow_wait_list!(model::CrosswalkDriver, scene::Scene, roadway::Roadwa
     for i=1:n
         pedid = model.wait_list[i]
         ped_ind = findfirst(pedid, scene)
-        if ped_ind == 0
+        if ped_ind == nothing
             push!(to_remove, i)
             continue
         end

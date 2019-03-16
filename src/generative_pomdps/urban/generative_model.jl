@@ -42,7 +42,8 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
     end
     actions = Array{Any}(undef, length(s))
     pomdp.models[1].a = a
-    is_ego_here = clamp(findfirst(EGO_ID, s),0, 1)
+    ego_ind = findfirst(EGO_ID, s)
+    is_ego_here =  ego_ind == nothing ? 0 : 1
     sp = deepcopy(s) #XXX bad
     if rand(rng) < pomdp.car_birth && n_cars(s) < pomdp.max_cars + is_ego_here
         new_car = initial_car(pomdp, sp, rng)

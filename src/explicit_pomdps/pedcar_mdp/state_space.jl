@@ -103,7 +103,7 @@ function ind2state(mdp::PedCarMDP, si::Int64)
     car, ped, ego = nothing, nothing, nothing
     # find route first
     ns = 0 
-    route_ind = 0
+    route_ind = nothing
     route_shift = 0
     for (i, route) in enumerate(routes)
         n_cars = n_car_states(mdp.env, route, mdp.pos_res, mdp.vel_res)
@@ -115,7 +115,7 @@ function ind2state(mdp::PedCarMDP, si::Int64)
         end
     end
     # find car, ped, ego
-    if route_ind == 0 # route was not found, car is off the grid
+    if route_ind == nothing # route was not found, car is off the grid
         si_ = si - ns # shift by all the states that were added before
         car = get_off_the_grid(mdp)
         # retrieve ped and ego

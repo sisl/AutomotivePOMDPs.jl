@@ -22,14 +22,14 @@ end
 function get_mdp_state(mdp::CarMDP, pomdp::UrbanPOMDP, s::Scene, car_id = 2)
     car_i = findfirst(car_id, s)
     car = Vehicle(get_off_the_grid(mdp), mdp.car_type, car_id)
-    if car_i != 0
+    if car_i != nothing
         car = s[car_i]
     end
     ego = get_ego(s)
     sroute = SVector{0, Lane}()
     # find route 
     sroute = nothing
-    if haskey(pomdp.models, car_id) && car_i != 0
+    if haskey(pomdp.models, car_id) && car_i != nothing
         # find the exact route from the list of routes
         curr_route = [l.tag for l in pomdp.models[car_id].navigator.route]
         for route in get_car_routes(mdp.env)

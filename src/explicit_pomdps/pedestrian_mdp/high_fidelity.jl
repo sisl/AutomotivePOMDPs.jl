@@ -22,7 +22,7 @@ end
 function get_mdp_state(mdp::PedMDP, s::Scene, ped_id::Int64)
     ped_i = findfirst(ped_id, s)
     ped = Vehicle(get_off_the_grid(mdp), mdp.ped_type, ped_id)
-    if ped_i != 0
+    if ped_i != nothing
         ped = s[ped_i]
     end
     ego = get_ego(s)
