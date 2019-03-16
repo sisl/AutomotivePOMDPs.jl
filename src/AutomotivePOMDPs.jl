@@ -258,7 +258,6 @@ include("explicit_pomdps/interpolation.jl")
 export
     # decomposition stuff
     TwoCars,
-    PedCar,
     ObsPed,
     ObsCar,
     TwoCarsScenario,
