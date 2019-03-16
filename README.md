@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/sisl/AutomotivePOMDPs.jl.svg?branch=master)](https://travis-ci.org/sisl/AutomotivePOMDPs.jl)
 [![Coverage Status](https://coveralls.io/repos/github/sisl/AutomotivePOMDPs.jl/badge.svg?branch=master)](https://coveralls.io/github/sisl/AutomotivePOMDPs.jl?branch=master)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://sisl.github.io/AutomotivePOMDPs.jl/latest)
 
 contact: Maxime Bouton, [boutonm@stanford.edu](boutonm@stanford.edu)
 
