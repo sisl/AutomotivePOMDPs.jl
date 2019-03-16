@@ -130,8 +130,6 @@ function get_end(lane::Lane)
     return s_end
 end
 
-
-
 """
 return the list of entrance lanes, i.e. the one that does not have any entrances
 """
@@ -217,6 +215,11 @@ function get_exit_lanes(lanes::Vector{Lane}, roadway::Roadway)
     return exits
 end
 
+"""
+    lane_to_segment(lane::Lane, roadway::Roadway)
+Converts a lane to a LineSegment.
+It only works for straight lanes!
+"""
 function lane_to_segment(lane::Lane, roadway::Roadway)
     # only works for straight lanes
     lane_a = lane.curve[1].pos #get_posG(Frenet(lane, 0.), roadway)
@@ -224,6 +227,10 @@ function lane_to_segment(lane::Lane, roadway::Roadway)
     return LineSegment(lane_a, lane_b)
 end
 
+"""
+    get_conflict_lanes(crosswalk::Lane, roadway::Roadway)
+Find the lanes in roadway that intersects with a crosswalk
+"""
 function  get_conflict_lanes(crosswalk::Lane, roadway::Roadway)
     # find lane intersecting with crosswalk
     cw_seg = lane_to_segment(crosswalk, roadway)
@@ -243,6 +250,7 @@ end
 
 
 """
+    random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
 Generate a random route starting from start_lane to a random end node
 """
 function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)

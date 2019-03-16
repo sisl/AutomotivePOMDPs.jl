@@ -73,7 +73,7 @@ function clean_scene!(env::IntersectionEnv, scene::Scene)
         if veh.id == 1; continue; end
         fore = get_neighbor_fore_along_lane(scene, findfirst(veh.id, scene), env.roadway,
                                             VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())
-        if fore.ind != 0
+        if fore.ind != nothing
             headway, v_oth = fore.Δs, scene[fore.ind].state.v
         else
             headway, v_oth = NaN, NaN
@@ -161,7 +161,7 @@ function can_push(env, scene::Scene, car::Vehicle)
     end
     fore = get_neighbor_fore_along_lane(scene, findfirst(car.id, scene), env.roadway,
                                         VehicleTargetPointFront(), VehicleTargetPointRear(), VehicleTargetPointFront())
-    if fore.ind != 0
+    if fore.ind != nothing
         headway, v_oth = fore.Δs, scene[fore.ind].state.v
     else
         headway, v_oth = NaN, NaN

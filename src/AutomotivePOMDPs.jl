@@ -54,7 +54,8 @@ export
         next_ped_id,
         EGO_ID,
         CAR_ID,
-        PED_ID
+        PED_ID,
+        EgoDriver
 
 include("constants.jl")
 include("utils/helpers.jl")
@@ -257,7 +258,6 @@ include("explicit_pomdps/interpolation.jl")
 export
     # decomposition stuff
     TwoCars,
-    PedCar,
     ObsPed,
     ObsCar,
     TwoCarsScenario,

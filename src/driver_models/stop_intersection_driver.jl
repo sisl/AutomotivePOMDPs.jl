@@ -121,7 +121,7 @@ function ungrow_wait_list!(model::StopIntersectionDriver, scene::Scene, roadway:
     for i=1:n
         vehid = model.wait_list[i]
         veh_ind = findfirst(vehid, scene)
-        if veh_ind == 0
+        if veh_ind == nothing
             push!(to_remove, i)
             continue
         end
