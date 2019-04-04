@@ -2,6 +2,7 @@ module AutomotivePOMDPs
 
 using POMDPs
 using StatsBase
+using Distributions
 using POMDPModelTools
 using POMDPSimulators
 using POMDPPolicies
