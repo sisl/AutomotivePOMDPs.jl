@@ -80,10 +80,10 @@ mutable struct IDOverlay <: SceneOverlay
     end
 end
 
-function AutoViz.render!(rendermodel::RenderModel, overlay::IDOverlay, scene::Scene, env::OccludedEnv)
+function AutoViz.render!(rendermodel::RenderModel, overlay::IDOverlay, scene::Scene, env::E) where E
     font_size = overlay.font_size
     for veh in scene
-        add_instruction!(rendermodel, render_text, ("$(veh.id)", veh.state.posG.x, veh.state.posG.y, font_size, colorant"black"), incameraframe=true)
+        add_instruction!(rendermodel, render_text, ("$(veh.id)", veh.state.posG.x, veh.state.posG.y, font_size, overlay.color), incameraframe=true)
     end
     return rendermodel
 end

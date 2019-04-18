@@ -8,6 +8,7 @@ mutable struct EgoDriver{A} <: DriverModel{A}
 end
 
 Base.rand(model::EgoDriver) = model.a
+AutomotiveDrivingModels.observe!(m::EgoDriver, s::EntityFrame{S,D,I}, roadway::R, egoid::Int64) where {S,D,I,R} = m
 
 mutable struct GenerativeDist
     problem::POMDP
@@ -16,7 +17,6 @@ end
 function Base.rand(rng::AbstractRNG, d::GenerativeDist)
     return initialstate(d.problem, rng)
 end
-
 
 """
     is_crash(scene::Scene)
