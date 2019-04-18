@@ -43,7 +43,6 @@ export
         get_exit_lanes,
         get_ego,
         is_crash,
-        collision_checker,
         direction_from_center,
         random_route,
         is_observable_dyna,
@@ -60,7 +59,6 @@ export
 
 include("constants.jl")
 include("utils/helpers.jl")
-include("utils/collision_checker.jl")
 include("utils/occlusions.jl")
 include("utils/rendering.jl")
 
