@@ -50,11 +50,11 @@ function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::Abstrac
             route = random_route(rng, pomdp.env.roadway, lane)
             intersection_entrances = get_start_lanes(pomdp.env.roadway)
             if !(route[1] ∈ intersection_entrances)
-                intersection = Lane[]
-                intersection_exits = Lane[]
+                intersection = Lane{Float64}[]
+                intersection_exits = Lane{Float64}[]
             else
                 intersection_exits = get_exit_lanes(pomdp.env.roadway)
-                intersection=Lane[route[1], route[2]]
+                intersection=Lane{Float64}[route[1], route[2]]
             end
             pomdp.models[new_car.id] = StopIntersectionDriver(navigator=RouteFollowingIDM(route=route),
                                                        intersection=intersection,
@@ -108,11 +108,11 @@ function initial_scene(pomdp::OIPOMDP, rng::AbstractRNG, no_ego::Bool=false)
                 route = random_route(rng, pomdp.env.roadway, lane)
                 intersection_entrances = get_start_lanes(pomdp.env.roadway)
                 if !(route[1] ∈ intersection_entrances)
-                    intersection = Lane[]
-                    intersection_exits = Lane[]
+                    intersection = Lane{Float64}[]
+                    intersection_exits = Lane{Float64}[]
                 else
                     intersection_exits = get_exit_lanes(pomdp.env.roadway)
-                    intersection=Lane[route[1], route[2]]
+                    intersection=Lane{Float64}[route[1], route[2]]
                 end
                 pomdp.models[new_car.id] = StopIntersectionDriver(navigator=RouteFollowingIDM(route=route),
                                                            intersection=intersection,

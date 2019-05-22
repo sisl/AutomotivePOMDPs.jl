@@ -2,11 +2,11 @@ function get_stop_model(env::UrbanEnv, r::SVector{2, LaneTag})
     route = [env.roadway[tag] for tag in find_route(env, r)]
     intersection_entrances = get_start_lanes(env.roadway)
     if !(route[1] ∈ intersection_entrances)
-        intersection = Lane[]
-        intersection_exits = Lane[]
+        intersection = Lane{Float64}[]
+        intersection_exits = Lane{Float64}[]
     else
         intersection_exits = get_exit_lanes(env.roadway)
-        intersection=Lane[route[1], route[2]]
+        intersection=Lane{Float64}[route[1], route[2]]
     end
     navigator = RouteFollowingIDM(route=route, a_max=3., σ=1.)
     intersection_driver = StopIntersectionDriver(navigator= navigator,
