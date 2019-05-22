@@ -11,7 +11,7 @@ function POMDPs.transition(mdp::CarMDP, s::CarMDPState, a::CarMDPAction)
     ego_ps, ego_probs = interpolate_state(mdp, ego_p, ego_v_space)
     # car transition
     car_probs = Float64[]
-    car_routes = Vector{Lane}[]
+    car_routes = Vector{Lane{Float64}}[]
     if s.car.posG == mdp.off_grid
         car_ps, car_routes = car_starting_states(mdp)
         push!(car_ps, get_off_the_grid(mdp))

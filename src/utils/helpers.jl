@@ -133,8 +133,8 @@ end
 """
 return the list of entrance lanes, i.e. the one that does not have any entrances
 """
-function get_start_lanes(roadway::Roadway)
-    lanes = Lane[]
+function get_start_lanes(roadway::Roadway{T}) where T<:Real
+    lanes = Lane{T}[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
             if isempty(lane.entrances) && !is_crosswalk(lane) && !(lane.tag ∈ [LaneTag(15,1), LaneTag(16, 1), LaneTag(6,1), LaneTag(13, 1), LaneTag(14,1)])
@@ -155,8 +155,8 @@ is_crosswalk(lane::Lane) = lane.width > 3.0  #XXX hack
     get_lanes(roadway::Roadway)
 return all the lanes in a roadway that are not crosswalk and not in the ego path 
 """
-function get_lanes(roadway::Roadway)
-    lanes = Lane[]
+function get_lanes(roadway::Roadway{T}) where T<:Real
+    lanes = Lane{T}[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
             if !is_crosswalk(lane) && !(lane.tag ∈ [LaneTag(15,1), LaneTag(16, 1), LaneTag(6,1), LaneTag(13, 1), LaneTag(14,1)]) #XXX hack
@@ -171,8 +171,8 @@ end
     get_all_lanes(roadway::Roadway)
 returns a list of all the lanes present in `roadway`
 """
-function get_all_lanes(roadway::Roadway)
-    lanes = Lane[]
+function get_all_lanes(roadway::Roadway{T}) where T<:Real
+    lanes = Lane{T}[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
             push!(lanes, lane)
@@ -184,8 +184,8 @@ end
 """
 return the list of exit lanes, i.e. the one that does not have any exits
 """
-function get_exit_lanes(roadway::Roadway)
-    lanes = Lane[]
+function get_exit_lanes(roadway::Roadway{T}) where T
+    lanes = Lane{T}[]
     for i=1:length(roadway.segments)
         for lane in roadway.segments[i].lanes
             if isempty(lane.exits)
@@ -199,8 +199,8 @@ end
 """
 Given a list of lanes returns the list of exits
 """
-function get_exit_lanes(lanes::Vector{Lane}, roadway::Roadway)
-    exits = Lane[]
+function get_exit_lanes(lanes::Vector{Lane{T}}, roadway::Roadway{T}) where T <: Real
+    exits = Lane{T}[]
     for lane in lanes
         for exit in lane.exits
             tag = exit.target.tag
@@ -231,10 +231,10 @@ end
     get_conflict_lanes(crosswalk::Lane, roadway::Roadway)
 Find the lanes in roadway that intersects with a crosswalk
 """
-function  get_conflict_lanes(crosswalk::Lane, roadway::Roadway)
+function  get_conflict_lanes(crosswalk::Lane{T}, roadway::Roadway{T}) where T<:Real
     # find lane intersecting with crosswalk
     cw_seg = lane_to_segment(crosswalk, roadway)
-    conflict_lanes = Lane[]
+    conflict_lanes = Lane{T}[]
     lanes = get_all_lanes(roadway)
     for lane in lanes
         if  is_crosswalk(lane)
@@ -253,8 +253,8 @@ end
     random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
 Generate a random route starting from start_lane to a random end node
 """
-function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane)
-    lanes = Lane[start_lane]
+function random_route(rng::AbstractRNG, roadway::Roadway, start_lane::Lane{T}) where T
+    lanes = Lane{T}[start_lane]
     cur_lane = start_lane
     while !isempty(cur_lane.exits)
         rand_exit = rand(rng, cur_lane.exits)

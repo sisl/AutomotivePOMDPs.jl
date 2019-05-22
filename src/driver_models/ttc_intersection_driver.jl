@@ -1,7 +1,7 @@
 @with_kw mutable struct TTCIntersectionDriver <: DriverModel{LonAccelDirection}
     a::LonAccelDirection = LonAccelDirection(0., 1)
     navigator::RouteFollowingIDM = RouteFollowingIDM()
-    intersection::Vector{Lane} = Lane[]
+    intersection::Vector{Lane{Float64}} = Lane{Float64}[]
     intersection_pos::VecSE2 = VecE2(0., 0., 0.)
     ttc_threshold::Float64 = 4.5
     horizon::Float64 = 20.0 # distance from the intersection to start the logic

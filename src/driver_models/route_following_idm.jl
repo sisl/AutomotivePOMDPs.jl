@@ -2,7 +2,7 @@
 Follow a given route, longitudinal acceleration is controlled by the IntelligentDriverModel
 """
 @with_kw mutable struct RouteFollowingIDM <: LaneFollowingDriver
-    route::Vector{Lane} = Lane[]
+    route::Vector{Lane{Float64}} = Lane{Float64}[]
     dir::Int64 = 1
     a::Float64 = NaN # predicted acceleration
     σ::Float64 = NaN # optional stdev on top of the model, set to zero or NaN for deterministic behavior
@@ -67,7 +67,7 @@ function set_direction!(model::RouteFollowingIDM, lane::Lane, roadway::Roadway)
     model.dir = get_direction(lane, model.route)
 end
 
-function get_direction(lane::Lane, route::Vector{Lane})
+function get_direction(lane::Lane{T}, route::Vector{Lane{T}}) where T<:Real
     dir = 1
     ind = findfirst(isequal(lane), route)
     if ind == nothing 

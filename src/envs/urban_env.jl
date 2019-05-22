@@ -35,7 +35,7 @@ Urban Environment with intersections and crosswalk
 mutable struct UrbanEnv <: OccludedEnv
     roadway::Roadway
     ped_roadway::Roadway
-    crosswalks::Vector{Lane}
+    crosswalks::Vector{Lane{Float64}}
     obstacles::Vector{ConvexPolygon}
     params::UrbanParams
     priorities::Dict{Tuple{LaneTag, LaneTag}, Bool}

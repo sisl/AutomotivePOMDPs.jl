@@ -2,8 +2,8 @@
     a::LonAccelDirection = LonAccelDirection(0., 1)
     navigator::RouteFollowingIDM = RouteFollowingIDM()
     crosswalk::Lane = Lane()
-    conflict_lanes::Vector{Lane} = Lane[]
-    intersection_entrances::Vector{Lane} = Lane[]
+    conflict_lanes::Vector{Lane{Float64}} = Lane{Float64}[]
+    intersection_entrances::Vector{Lane{Float64}} = Lane{Float64}[]
     ped_model::ConstantPedestrian = ConstantPedestrian()
     ped_start::Float64 = 4.0 # assume a 5meter buffer before a pedestrian reaches the road
     stop_delta::Float64 = 0.7
@@ -135,7 +135,7 @@ function ungrow_wait_list!(model::CrosswalkDriver, scene::Scene, roadway::Roadwa
     deleteat!(model.wait_list, to_remove)
 end
 
-function is_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}, scene::Scene, roadway::Roadway)
+function is_crossing(ped::Vehicle, crosswalk::Lane{T}, conflict_lanes::Vector{Lane{T}}, scene::Scene, roadway::Roadway) where T
     # check if the pedestrian is in the conflict zone
     ped_lane = get_lane(roadway, ped)
     if ped_lane.tag != crosswalk.tag

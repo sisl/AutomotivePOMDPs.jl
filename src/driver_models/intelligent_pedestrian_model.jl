@@ -7,7 +7,7 @@
     motion::DriverModel = ConstantPedestrian(v_noise = v_noise, dt = dt)
     ttc_threshold::Float64 = 4.5
     crosswalk::Lane = Lane()
-    conflict_lanes::Vector{Lane} = Lane[]
+    conflict_lanes::Vector{Lane{Float64}} = Lane{Float64}[]
     dtol::Float64 = 0.1
     # states
     wait::Bool = true
@@ -42,7 +42,7 @@ function AutomotiveDrivingModels.observe!(model::IntelligentPedestrian,
     end     
 end
 
-function update_crossing(ped::Vehicle, crosswalk::Lane, conflict_lanes::Vector{Lane}, roadway::Roadway)
+function update_crossing(ped::Vehicle, crosswalk::Lane{T}, conflict_lanes::Vector{Lane{T}}, roadway::Roadway) where T
     # check if the pedestrian is in the conflict zone
     for lane in conflict_lanes
         ped_f = Frenet(proj(ped.state.posG, lane, roadway, move_along_curves=false), roadway)

@@ -1,9 +1,9 @@
 @with_kw mutable struct StopIntersectionDriver <: DriverModel{LonAccelDirection}
     a::LonAccelDirection = LonAccelDirection(0., 1)
     navigator::RouteFollowingIDM = RouteFollowingIDM()
-    intersection::Vector{Lane} = Lane[]
-    intersection_entrances::Vector{Lane} = Lane[]
-    intersection_exits::Vector{Lane} = Lane[]
+    intersection::Vector{Lane{Float64}} = Lane{Float64}[]
+    intersection_entrances::Vector{Lane{Float64}} = Lane{Float64}[]
+    intersection_exits::Vector{Lane{Float64}} = Lane{Float64}[]
     horizon::Float64 = 20.0 # distance from the intersection to start the logic
     stop_delta::Float64 = 0. # precision for stopping slightly before the line
     accel_tol::Float64 = 1e-2 # if |a| < accel_tol then a = 0.

@@ -162,7 +162,7 @@ function AutomotiveDrivingModels.observe!(model::RouteFollowingIDM,
 end
 
 
-function is_crossing(ped::VehicleState, crosswalk::Lane, conflict_lanes::Vector{Lane}, roadway::Roadway)
+function is_crossing(ped::VehicleState, crosswalk::Lane{T}, conflict_lanes::Vector{Lane{T}}, roadway::Roadway) where T<:Real
     ped_lane = get_lane(roadway, ped)
     if ped_lane.tag != crosswalk.tag
         return false 
