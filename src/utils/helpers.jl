@@ -108,20 +108,6 @@ end
 ### ROADWAY STUFF
 
 """
-    get_lane(roadway::Roadway, vehicle::Vehicle)
-    get_lane(roadway::Roadway, vehicle::VehicleState)
-return the lane where `vehicle` is in.
-"""
-function get_lane(roadway::Roadway, vehicle::Vehicle)
-    lane_tag = vehicle.state.posF.roadind.tag
-    return roadway[lane_tag]
-end
-function get_lane(roadway::Roadway, vehicle::VehicleState)
-    lane_tag = vehicle.posF.roadind.tag
-    return roadway[lane_tag]
-end
-
-"""
     get_end(lane::Lane)
 return the end longitudinal position of a lane 
 """
@@ -363,7 +349,7 @@ mutable struct LonAccel
     a_lon::Float64
 end
 
-function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, action::LonAccel,  roadway::Roadway, Δt::Float64) where {D<:Union{VehicleDef, BicycleModel}}
+function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, action::LonAccel,  roadway::Roadway, ΔT::Float64) where {D<:Union{VehicleDef, BicycleModel}}
     a_lat = action.a_lat
    a_lon = action.a_lon
 
