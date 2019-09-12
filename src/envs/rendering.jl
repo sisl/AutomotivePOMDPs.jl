@@ -11,7 +11,7 @@ function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
         pts[2,i] = pt.pos.y
     end
 
-    add_instruction!(rendermodel, render_dashed_line, (pts, colorant"white", env.crosswalk.width, 1.0, 1.0, 0.0, Cairo.CAIRO_LINE_CAP_BUTT))
+    add_instruction!(rendermodel, render_dashed_line, (pts, AutoViz._colortheme["CROSSWALK"], env.crosswalk.width, 0.7, 0.5, 0.0, Cairo.CAIRO_LINE_CAP_BUTT))
     for obs in env.obstacles
         pts = Array{Float64}(undef, 2, obs.npts)
         for (i, pt) in enumerate(obs.pts)
@@ -40,7 +40,7 @@ function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
             pts[1,i] = pt.pos.x
             pts[2,i] = pt.pos.y
         end
-        add_instruction!(rendermodel, render_dashed_line, (pts, colorant"white", cw.width, 0.5, 0.7, 0.0, Cairo.CAIRO_LINE_CAP_BUTT))
+        add_instruction!(rendermodel, render_dashed_line, (pts, AutoViz._colortheme["CROSSWALK"], cw.width, 0.7, 0.5, 0.0, Cairo.CAIRO_LINE_CAP_BUTT))
     end
     # obstacles
     for obs in env.obstacles
@@ -49,8 +49,11 @@ function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
             pts[1,i] = pt.x
             pts[2,i] = pt.y
         end
-
-        add_instruction!(rendermodel, render_fill_region, (pts, colorant"gray"))
+        ox, oy = get_center(obs)
+        ow = get_width(obs)
+        oh = get_height(obs)
+        add_instruction!(rendermodel, render_fancy_obs, (ox, oy, pi, ow, oh))
+        # add_instruction!(rendermodel, render_fill_region, (pts, AutoViz._colortheme["OBSTACLES"]))
     end
 
     # render stop line
@@ -59,7 +62,48 @@ function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
     stop_pts = zeros(2,2)
     stop_pts[1,:] =  [(x_pos - env.params.lane_width/2) , (x_pos + env.params.lane_width/2)]
     stop_pts[2,:] =  [y_pos, y_pos]
-    add_instruction!(rendermodel, render_line, (stop_pts, colorant"white", 1.0, Cairo.CAIRO_LINE_CAP_BUTT))
+    add_instruction!(rendermodel, render_line, (stop_pts, AutoViz._colortheme["CROSSWALK"], 1.0, Cairo.CAIRO_LINE_CAP_BUTT))
 
     return rendermodel
+end
+
+const OBSFILE = joinpath(@__DIR__, "..", "..", "icons", "building_topview.svg")
+const OBSDATA = parse_file(OBSFILE)
+
+function render_fancy_obs(
+    ctx           :: CairoContext,
+    x             :: Real, # x-pos of the center of the obstacle
+    y             :: Real, # y-pos of the center of the obstacle
+    yaw           :: Real, # heading angle [rad]
+    length        :: Real, #  length
+    width         :: Real #  width
+    )
+
+    if length < width
+        l = width
+        w = length
+        th = yaw - pi/2
+    else
+        l = length
+        w = width
+        th = yaw
+    end
+    save(ctx)
+    obsdata = parse_file(OBSFILE)
+
+    r = Rsvg.handle_new_from_data(string(obsdata))
+
+    
+    d = Rsvg.handle_get_dimensions(r)
+    # scaling factor
+    xdir, ydir = length/d.width, width/d.height
+
+    translate(ctx, x, y)
+    Cairo.scale(ctx, xdir, ydir)
+    rotate(ctx, th)
+    translate(ctx, -d.width/2, -d.height/2)
+
+    Rsvg.handle_render_cairo(ctx, r)
+
+    restore(ctx)
 end

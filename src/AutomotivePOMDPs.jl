@@ -20,6 +20,14 @@ using Reel
 using Random
 using DataStructures
 using LinearAlgebra
+using LightXML
+using Rsvg
+using Cairo
+
+# Rendering settings
+AutoViz._colortheme["CROSSWALK"] = colorant"white"
+AutoViz._colortheme["OBSTACLES"] = colorant"gray"
+AutoViz._colortheme["STOPLINE"] = colorant"white"
 
 """
 Abstract type to define driving environment with occlusion 
