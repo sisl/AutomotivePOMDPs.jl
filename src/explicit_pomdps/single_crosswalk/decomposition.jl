@@ -1,25 +1,25 @@
 # Functions relating to the decomposition method
 
 # Aliases
-const DecBelief = Dict{Int64, SingleOCDistribution}
+const DecBelief = Dict{Int64, SparseCat}
 const DecState = Dict{Int64, SingleOCState}
 const DecObs = Dict{Int64, SingleOCObs}
 
 """
-    POMDPs.value(policy::AlphaVectorPolicy, b::SingleOCDistribution)
+    POMDPs.value(policy::AlphaVectorPolicy, b::SparseCat)
 Return the value of the belief according to the QMDP policy
 """
-function POMDPs.value(policy::AlphaVectorPolicy, b::SingleOCDistribution)
+function POMDPs.value(policy::AlphaVectorPolicy, b::SparseCat)
     val = zeros(n_actions(policy.pomdp))
-    for (i,s) in enumerate(b.it)
-        val += value(policy, s)*b.p[i]
+    for (i,s) in enumerate(b.vals)
+        val += value(policy, s)*b.probs[i]
         # si = stateindex(pomdp, s)
         # val += policy.alphas[si, :]*b.p[i]
     end
     return val
 end
 
-# function POMDPs.value(policy::SARSOPPolicy, b::SingleOCDistribution)
+# function POMDPs.value(policy::SARSOPPolicy, b::SparseCat)
 #     pomdp = policy.pomdp
 #     actions = policy.alphas.alpha_actions
 #     vectors = alphas(policy)
@@ -69,7 +69,7 @@ function POMDPs.value(policy::AlphaVectorPolicy, s::SingleOCState)
                 yg, v_pedg = ind2x(ped_grid, ped_indices[j])
                 ped = yv_to_state(pomdp, yg, v_pedg)
             end
-            state = SingleOCState(is_crash(pomdp,ego,ped),ego,ped)
+            state = SingleOCState(collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type),ego,ped)
             si = stateindex(pomdp, state)
             sum_weight += ego_weights[i]*ped_weights[j]
             val += [a[si] for a in policy.alphas]*ego_weights[i]*ped_weights[j]
@@ -79,14 +79,14 @@ function POMDPs.value(policy::AlphaVectorPolicy, s::SingleOCState)
     return val
 end
 
-function POMDPs.action(policy::AlphaVectorPolicy, b::SingleOCDistribution)
+function POMDPs.action(policy::AlphaVectorPolicy, b::SparseCat)
     alphas = policy.alphas' #size |A|x|S|
     util = zeros(n_actions(policy.pomdp)) # size |A|
     for i=1:n_actions(policy.pomdp)
         res = 0.0
-        for (j,s) in enumerate(b.it)
+        for (j,s) in enumerate(b.vals)
             si = stateindex(policy.pomdp, s)
-            res += alphas[i][si]*b.p[j]
+            res += alphas[i][si]*b.probs[j]
         end
         util[i] = res
     end
@@ -128,7 +128,7 @@ end
 
 
 """
-    fuse_value(policy::Policy, b::Dict{Int64,SingleOCDistribution})
+    fuse_value(policy::Policy, b::Dict{Int64,SparseCat})
 Fuse the value of different belief by summing them
 """
 function fuse_value(policy::Policy, b::Dict{Int64,B}) where B
@@ -142,7 +142,7 @@ function fuse_value(policy::Policy, b::Dict{Int64,B}) where B
 end
 
 """
-    fuse_value_min(policy::Policy, b::Dict{Int64,SingleOCDistribution})
+    fuse_value_min(policy::Policy, b::Dict{Int64,SparseCat})
 Fuse the value of different belief by taking the min of the two for each action
 """
 function fuse_value_min(policy::Policy, b::Dict{Int64, B}) where B
@@ -258,7 +258,7 @@ function interpolate_state(s::SingleOCState, pomdp::SingleOCPOMDP)
                 yg, v_pedg = ind2x(ped_grid, ped_indices[j])
                 ped = yv_to_state(pomdp, yg, v_pedg)
             end
-            state = SingleOCState(is_crash(pomdp,ego,ped),ego,ped)
+            state = SingleOCState(collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type),ego,ped)
             push!(states, state)
             push!(weights, ego_weights[i]*ped_weights[j])
         end
@@ -280,7 +280,7 @@ function scene_to_states(scene::Scene, pomdp::SingleOCPOMDP)
     end
     for i=1:scene.n - 1
         ped = scene.entities[i+1]
-        states[ped.id] = SingleOCState(is_crash(pomdp, ego, ped.state), ego, ped.state)
+        states[ped.id] = SingleOCState(collision_checker(ego, ped.state, pomdp.ego_type, pomdp.ped_type), ego, ped.state)
     end
     return states
 end
@@ -302,10 +302,10 @@ function states_to_scene(states::Dict{Int64, SingleOCState}, pomdp::SingleOCPOMD
 end
 
 """
-    rand_scene(rng::AbstractRNG, b::Dict{Int64, SingleOCDistribution}, env::CrosswalkEnv)
+    rand_scene(rng::AbstractRNG, b::Dict{Int64, SparseCat}, env::CrosswalkEnv)
 Sample a scene from a belief representation
 """
-function rand_scene(rng::AbstractRNG, b::Dict{Int64, SingleOCDistribution}, pomdp::SingleOCPOMDP)
+function rand_scene(rng::AbstractRNG, b::Dict{Int64, SparseCat}, pomdp::SingleOCPOMDP)
     scene = Scene()
     for id in keys(b)
         s = rand(rng, b[id])
@@ -324,7 +324,7 @@ end
 Initialize a belief considering two pedestrians
 """
 function initialize_two_beliefs(pomdp::SingleOCPOMDP)
-    b = Dict{Int64, SingleOCDistribution}()
+    b = Dict{Int64, SparseCat}()
     b[2] = initialstate_distribution(pomdp)
     b[3] = initialstate_distribution(pomdp)
     return b

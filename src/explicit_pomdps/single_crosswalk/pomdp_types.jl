@@ -9,6 +9,8 @@ mutable struct SingleOCState
     ped::VehicleState
 end
 
+const TERMINAL_STATE = SingleOCState(false, VehicleState(), VehicleState())
+
 # copy b to a
 function Base.copyto!(a::SingleOCState, b::SingleOCState)
     a.crash = b.crash
@@ -22,6 +24,10 @@ end
 
 function Base.:(==)(a::SingleOCState, b::SingleOCState)
     return a.crash == b.crash && a.ego == b.ego && a.ped == b.ped
+end
+
+function Base.isapprox(veh1::VehicleState, veh2::VehicleState; kwargs...)
+    isapprox(veh1.posG, veh2.posG, kwargs...) && isapprox(veh1.posG, veh2.posG, kwargs...) && isapprox(veh1.v, veh2.v, kwargs...) 
 end
 
 #### Observaton type
@@ -147,54 +153,27 @@ function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction
     else
         r += pomdp.action_cost
     end
+    if isterminal(pomdp, s)
+        return 0.0
+    end
     return r
 end
 
 function POMDPs.isterminal(pomdp::SingleOCPOMDP, s::SingleOCState)
-    return s.crash || s.ego.posG.x >= pomdp.x_goal
-end
-
-######## DISTRIBUTION ############################################################################
-
-"""
-Concrete type to represent a distribution over state for the SingleOCcludedCrosswalk POMDP Problem
-"""
-mutable struct SingleOCDistribution
-    p::Vector{Float64}
-    it::Vector{SingleOCState}
-end
-
-SingleOCDistribution() = SingleOCDistribution(Float64[], SingleOCState[])
-
-POMDPs.iterator(d::SingleOCDistribution) = d.it
-
-# transition and observation pdf
-function POMDPs.pdf(d::SingleOCDistribution, s::SingleOCState)
-    for (i, sp) in enumerate(d.it)
-        if sp==s
-            return d.p[i]
-        end
-    end
-    return 0.
-end
-
-function POMDPs.rand(rng::AbstractRNG, d::SingleOCDistribution)
-    ns = sample(d.it, Weights(d.p)) # sample a neighbor state according to the distribution c
-    return ns
-end
-
-"""
-    most_likely_state(d::SingleOCDistribution)
-returns the most likely state given distribution d
-"""
-function most_likely_state(d::SingleOCDistribution)
-    val, ind = fargmax(d.p)
-    return d.it[ind]
+    return s == TERMINAL_STATE
 end
 
 ### HELPERS
 
 
+"""
+    most_likely_state(d::SparseCat)
+returns the most likely state given distribution d
+"""
+function most_likely_state(d::SparseCat)
+    val, ind = argmax(d.probs)
+    return d.vals[ind]
+end
 
 
 

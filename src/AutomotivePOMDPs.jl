@@ -36,7 +36,6 @@ export
         IDOverlay,
 
         # helpers
-        get_lane,
         get_end,
         get_lanes,
         get_start_lanes,

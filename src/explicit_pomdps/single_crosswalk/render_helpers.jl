@@ -1,4 +1,10 @@
 
+function POMDPModelTools.render(pomdp::SingleOCPOMDP, step::Union{NamedTuple, Dict})
+    scene = state_to_scene(pomdp, step.s)
+    AutoViz.render(scene, pomdp.env, cam = CarFollowCamera(EGO_ID, 20.0))
+end
+
+
 function animate(t, dt)
     frame_index = Int(floor(t/dt)) + 1
     return render(rec[frame_index-nframes(rec)], env.roadway, [CarFollowingStatsOverlay(1)], cam=cam)
@@ -18,7 +24,7 @@ function animate_states(pomdp::SingleOCPOMDP, states::Vector{SingleOCState}, ove
     return duration, fps, render_states
 end
 
-function animate_hist(pomdp::SingleOCPOMDP, hist::POMDPHistory{SingleOCState,SingleOCAction,SingleOCState, B}, overlays::Vector{SceneOverlay}=SceneOverlay[]) where B
+function animate_hist(pomdp::SingleOCPOMDP, hist::SimHistory, overlays::Vector{SceneOverlay}=SceneOverlay[]) where B
     duration = n_steps(hist)*pomdp.ΔT
     fps = Int(1/pomdp.ΔT)
     cam = FitToContentCamera(0.)
