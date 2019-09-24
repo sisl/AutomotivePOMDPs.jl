@@ -11,9 +11,9 @@ using POMDPTesting
     env = CrosswalkEnv(params)
     pomdp = SingleOCPOMDP(env = env,
                         collision_cost=-1.5)
-    @test trans_prob_consistency_check(pomdp)
+    trans_prob_consistency_check(pomdp)
 
-    @test obs_prob_consistency_check(pomdp)
+    obs_prob_consistency_check(pomdp)
 end
 
 @testset begin "crosswalk"
