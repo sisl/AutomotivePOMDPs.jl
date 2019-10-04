@@ -1,10 +1,12 @@
 using PGFPlots, GridInterpolations, Colors, ColorBrewer
 using AutomotivePOMDPs
+using AutomotiveDrivingModels
 using POMDPPolicies
 using SARSOP
 using LinearAlgebra
 using POMDPs
 using POMDPModelTools
+using POMDPPolicies
 
 function get_XY_grid(pomdp::SingleOCPOMDP)
     env = pomdp.env
@@ -22,11 +24,11 @@ function get_grid_data(policy::AlphaVectorPolicy, grid::RectangleGrid, pomdp::Si
     values = zeros(n_actions(pomdp),length(grid))
     for i=1:length(grid)
         x, y = ind2x(grid, i)
-        ego = xv_to_state(pomdp, x, v_ego)
-        ped = yv_to_state(pomdp, y, v_ped)
+        ego = AutomotivePOMDPs.xv_to_state(pomdp, x, v_ego)
+        ped = AutomotivePOMDPs.yv_to_state(pomdp, y, v_ped)
         s = SingleOCState(collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type), ego, ped)
-        si = state_index(pomdp, s)
-        values[:,i] =  policy.alphas[si, :]
+        # si = stateindex(pomdp, s)
+        values[:,i] =  actionvalues(policy, Deterministic(s))
     end
     return values
 end
@@ -43,54 +45,24 @@ end
 
 function get_belief(pomdp::SingleOCPOMDP, x::Float64, y::Float64, sig::Float64, n_bins::Int64, v_ego::Float64, v_ped::Float64)
     y_noise = LinRange(y-2*sig, y+2*sig, n_bins)
-    belief = SparseCat(Vector{SingleOCState}(n_bins), Vector{Float64}(n_bins))
+    belief = SparseCat(Vector{SingleOCState}(undef, n_bins), Vector{Float64}(undef, n_bins))
     for i=1:n_bins
-        ego = xv_to_state(pomdp, x, v_ego)
-        ped = yv_to_state(pomdp, y_noise[i], v_ped)
+        ego = AutomotivePOMDPs.xv_to_state(pomdp, x, v_ego)
+        ped = AutomotivePOMDPs.yv_to_state(pomdp, y_noise[i], v_ped)
         s = SingleOCState(collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type), ego, ped)
         weight = 1/(sig*sqrt(2*pi))*exp(-(y_noise[i] - y)^2/(2*sig^2))
-        belief.it[i] = s
-        belief.p[i] = weight
+        belief.vals[i] = s
+        belief.probs[i] = weight
     end
-    normalize!(belief.p, 1)
+    normalize!(belief.probs, 1)
     return belief
 end
-
-# function compute_acts(pomdp::SingleOCPOMDP, policy::AlphaVectorPolicy, sig::Float64 = 0.01, v_ego::Float64 = 5., v_ped::Float64 = 1., n_bins::Int64 = 20, n_pts::Int64 = 100)
-#     X, Y = get_XY_grid(pomdp::SingleOCPOMDP)
-#     X = X[1:21]
-#     grid = RectangleGrid(X, Y)
-#     values = get_grid_data(policy, grid, pomdp, v_ego, v_ped)
-
-#     xrange = LinRange(X[1], X[end], n_pts)
-#     yrange = LinRange(Y[1], Y[end], n_pts)
-#     action_map = zeros(n_pts, n_pts)
-#     n_acts = n_actions(pomdp)
-
-#     for (i,x) in enumerate(xrange)
-#         for (j,y) in enumerate(yrange)
-#             y_noise, weights = get_belief(y, sig, n_bins)
-#             acts_xy = zeros(1, n_acts)
-#             for k=1:n_acts
-#                 for l=1:n_bins
-#                     val = interpolate(grid, values[k,:], [x,y_noise[l]])
-#                     acts_xy[k] += weights[l]*val
-#                 end
-#             end
-#             max, indmax = findmax(acts_xy)
-#             action_map[i,j] = policy.action_map[indmax].acc
-#         end
-#     end
-#     acts = action_map
-#     acts = acts'
-#     acts = acts[end:-1:1,1:end]
-#     return acts
-# end
 
 function compute_acts(pomdp::SingleOCPOMDP, policy::AlphaVectorPolicy, sig::Float64 = 0.01, v_ego::Float64 = 5., v_ped::Float64 = 1., n_bins::Int64 = 20, n_pts::Int64 = 100)
     X, Y = get_XY_grid(pomdp::SingleOCPOMDP)
     X = X[1:21]
     grid = RectangleGrid(X, Y)
+    values = get_grid_data(policy, grid, pomdp, v_ego, v_ped)
 
     xrange = LinRange(X[1], X[end], n_pts)
     yrange = LinRange(Y[1], Y[end], n_pts)
@@ -99,9 +71,16 @@ function compute_acts(pomdp::SingleOCPOMDP, policy::AlphaVectorPolicy, sig::Floa
 
     for (i,x) in enumerate(xrange)
         for (j,y) in enumerate(yrange)
-            belief = get_belief(x, y, sig, n_bins, v_ego, v_ped)
-            max_val, ind_max = findmax(actionvalues(policy, belief))
-            action_map[i,j] = policy.action_map[ind_max].acc
+            y_noise, weights = get_belief(y, sig, n_bins)
+            acts_xy = zeros(n_acts)
+            for k=1:n_acts
+                for l=1:n_bins
+                    val = interpolate(grid, values[k,:], [x,y_noise[l]])
+                    acts_xy[k] += weights[l]*val
+                end
+            end
+            max, indmax = findmax(acts_xy)
+            action_map[i,j] = policy.action_map[indmax].acc
         end
     end
     acts = action_map
@@ -109,6 +88,29 @@ function compute_acts(pomdp::SingleOCPOMDP, policy::AlphaVectorPolicy, sig::Floa
     acts = acts[end:-1:1,1:end]
     return acts
 end
+
+# function compute_acts(pomdp::SingleOCPOMDP, policy::AlphaVectorPolicy, sig::Float64 = 0.01, v_ego::Float64 = 5., v_ped::Float64 = 1., n_bins::Int64 = 20, n_pts::Int64 = 100)
+#     X, Y = get_XY_grid(pomdp::SingleOCPOMDP)
+#     X = X[1:21]
+#     grid = RectangleGrid(X, Y)
+
+#     xrange = LinRange(X[1], X[end], n_pts)
+#     yrange = LinRange(Y[1], Y[end], n_pts)
+#     action_map = zeros(n_pts, n_pts)
+#     n_acts = n_actions(pomdp)
+
+#     for (i,x) in enumerate(xrange)
+#         for (j,y) in enumerate(yrange)
+#             belief = get_belief(pomdp, x, y, sig, n_bins, v_ego, v_ped)
+#             max_val, ind_max = findmax(actionvalues(policy, belief))
+#             action_map[i,j] = policy.action_map[ind_max].acc
+#         end
+#     end
+#     acts = action_map
+#     acts = acts'
+#     acts = acts[end:-1:1,1:end]
+#     return acts
+# end
 
 function policy_plot(pomdp::SingleOCPOMDP, policy::Policy, ;
                      sig::Float64 = 0.01, v_ego::Float64 = 5., v_ped::Float64 = 1., n_bins::Int64 = 20, n_pts::Int64 = 100)
@@ -118,7 +120,7 @@ function policy_plot(pomdp::SingleOCPOMDP, policy::Policy, ;
     y = RGB{Float64}(1., 1., 0.) # yellow
     g = RGB{Float64}(0., 1., 0.) # green
     colors = [r;o;y;g]
-    cmap = ColorMaps.RGBArrayMap(colors)
+    cmap = ColorMaps.RGBArrayMap(colormap("RdBu"))
     X, Y = get_XY_grid(pomdp::SingleOCPOMDP)
     X = X[1:21]
     ax =Axis(Plots.Image(acts, (X[1], X[end]), (Y[1], Y[end]), colormap = cmap),
