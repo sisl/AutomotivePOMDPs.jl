@@ -15,9 +15,9 @@ pomdp = SingleOCPOMDP(env = env,
                       p_birth = 0.3,
                       collision_cost=-1.5)
 
-@show n_states(pomdp)
-@show n_actions(pomdp)
-@show n_observations(pomdp)
+@show length(states(pomdp))
+@show length(actions(pomdp))
+@show length(observations(pomdp))
 
 sarsop_solver = SARSOPSolver(precision = 1e-3,
                       randomization=true,

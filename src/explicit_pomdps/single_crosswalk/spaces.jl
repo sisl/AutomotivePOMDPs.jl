@@ -72,7 +72,7 @@ function POMDPs.stateindex(pomdp::SingleOCPOMDP, s::SingleOCState)
 end
 
 
-function POMDPs.n_states(pomdp::SingleOCPOMDP)
+function n_states(pomdp::SingleOCPOMDP)
     env = pomdp.env
     rl = env.params.roadway_length
     cw = env.params.crosswalk_width
@@ -106,10 +106,6 @@ end
 #### ACTION SPACE
 function POMDPs.actions(pomdp::SingleOCPOMDP)
     return [SingleOCAction(-2*pomdp.max_acc), SingleOCAction(-pomdp.max_acc), SingleOCAction(0.0), SingleOCAction(pomdp.max_acc)]
-end
-
-function POMDPs.n_actions(pomdp::SingleOCPOMDP)
-    return 4
 end
 
 function POMDPs.actionindex(pomdp::SingleOCPOMDP, a::SingleOCAction)

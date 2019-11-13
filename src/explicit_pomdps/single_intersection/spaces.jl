@@ -30,7 +30,7 @@ function POMDPs.states(pomdp::SingleOIPOMDP)
     return state_space
 end
 
-function POMDPs.n_states(pomdp)
+function n_states(pomdp::SingleOIPOMDP)
     N = 0
     n_vel = Int(floor(pomdp.env.params.speed_limit/pomdp.vel_res)) + 1
     n_s_ego = Int(floor((pomdp.s_goal - pomdp.s_start)/pomdp.pos_res)) + 1
@@ -88,7 +88,6 @@ POMDPs.actions(pomdp::SingleOIPOMDP) = [SingleOIAction(-4.0),
                            SingleOIAction(0.),
                            SingleOIAction(1.5),
                            SingleOIAction(3.0)]
-POMDPs.n_actions(pomdp::SingleOIPOMDP) = 5
 
 function POMDPs.actionindex(pomdp::SingleOIPOMDP, a::SingleOIAction)
     if a.acc == -4.0
