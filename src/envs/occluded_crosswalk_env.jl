@@ -31,8 +31,8 @@ end
 Define the crosswalk environment
 """
 mutable struct CrosswalkEnv <: OccludedEnv
-    roadway::Roadway
-    crosswalk::Lane
+    roadway::Roadway{Float64}
+    crosswalk::Lane{Float64}
     obstacles::Vector{ConvexPolygon}
     params::CrosswalkParams
 end

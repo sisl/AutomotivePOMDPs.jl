@@ -99,7 +99,7 @@ function SingleOCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
                    collision_cost::Float64 = -1.,
                    action_cost::Float64 = 0.0,
                    goal_reward::Float64 = 1.,
-                   γ::Float64  = 0.95)
+                   γ::Float64  = 0.9)
     return SingleOCPOMDP(env,
                    ego_type,
                    ped_type,
@@ -125,20 +125,23 @@ end
 
 ### REWARD MODEL ##################################################################################
 
-function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction, sp::SingleOCState)
-    r = 0.
-    if sp.crash
-        r += pomdp.collision_cost
-    end
-    if sp.ego.posG.x >= pomdp.x_goal
-        r += pomdp.goal_reward
-    elseif a.acc > 0.
-        r += pomdp.action_cost
-    else
-        r += pomdp.action_cost
-    end
-    return r
-end
+# function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction, sp::SingleOCState)
+#     r = 0.
+#     if sp == TERMINAL_STATE
+#         return r 
+#     end
+#     if sp.crash
+#         r += pomdp.collision_cost
+#     end
+#     if sp.ego.posG.x >= pomdp.x_goal
+#         r += pomdp.goal_reward
+#     elseif a.acc > 0.
+#         r += pomdp.action_cost
+#     else
+#         r += pomdp.action_cost
+#     end
+#     return r
+# end
 
 # other method for SARSOP
 function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction)
@@ -161,6 +164,7 @@ end
 
 function POMDPs.isterminal(pomdp::SingleOCPOMDP, s::SingleOCState)
     return s == TERMINAL_STATE
+    # return s.ego.posG.x >= pomdp.x_goal || s.crash
 end
 
 ### HELPERS
@@ -174,8 +178,6 @@ function most_likely_state(d::SparseCat)
     val, ind = argmax(d.probs)
     return d.vals[ind]
 end
-
-
 
 function POMDPs.discount(pomdp::SingleOCPOMDP)
     return pomdp.γ

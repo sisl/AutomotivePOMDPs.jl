@@ -132,7 +132,10 @@ end
 Check if the current state of the pedestrian is in the grid
 """
 function off_the_grid(pomdp::SingleOCPOMDP, ped::VehicleState)
-    return ped == get_off_the_grid(pomdp)
+    env = pomdp.env
+    obstacle = env.obstacles[1]
+    obs_center = get_center(obstacle)
+    return ped.posG ≈ obs_center
 end
 
 """

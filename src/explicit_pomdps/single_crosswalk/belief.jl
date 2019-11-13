@@ -8,7 +8,7 @@
 #     return b0
 # end
 
-# #for sarsop for exploration
+#for sarsop for exploration
 # function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP)
 #      state_space = states(pomdp)
 #      states_to_add = SingleOCState[]
@@ -19,7 +19,7 @@
 #      end
 #      probs = ones(length(states_to_add))
 #      normalize!(probs, 1)
-#      return SingleOCDistribution(probs, states_to_add)
+#      return SparseCat(states_to_add, probs)
 #  end
 
 """

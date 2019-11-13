@@ -105,7 +105,7 @@ function ped_transition(pomdp::SingleOCPOMDP, ped::VehicleState, dt::Float64 = p
                 push!(states, state)
                 push!(probs, weight[i])
             else
-                state_ind = findall(x->x==state, states)
+                state_ind = findfirst(isequal(state), states)
                 probs[state_ind] += weight[i]
             end
         end
@@ -113,7 +113,7 @@ function ped_transition(pomdp::SingleOCPOMDP, ped::VehicleState, dt::Float64 = p
     # add roughening
     normalize!(probs, 1)
     probs .+= maximum(probs)
-    normalize!(probs)
+    normalize!(probs, 1)
     return probs, states
 end
 

@@ -1,7 +1,7 @@
 
 function POMDPModelTools.render(pomdp::SingleOCPOMDP, step::Union{NamedTuple, Dict})
     scene = state_to_scene(pomdp, step.s)
-    AutoViz.render(scene, pomdp.env, cam = CarFollowCamera(EGO_ID, 20.0))
+    AutoViz.render(scene, pomdp.env, [TextOverlay(text=["$(step.a)"], font_size=20)], cam = CarFollowCamera(EGO_ID, 20.0))
 end
 
 

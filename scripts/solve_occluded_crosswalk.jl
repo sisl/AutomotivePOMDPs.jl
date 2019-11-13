@@ -1,30 +1,40 @@
 using Revise
 using AutomotivePOMDPs
 using SARSOP
+using QMDP
 using POMDPs
 using AutomotiveDrivingModels
 using POMDPPolicies
 using BeliefUpdaters
-
+includet("scripts/old_policy_plot.jl")
 
 params = CrosswalkParams(obstacles_visible = true)
 env = CrosswalkEnv(params)
 pomdp = SingleOCPOMDP(env = env,
+                      no_ped_prob = 0.0,
+                      p_birth = 0.3,
                       collision_cost=-1.5)
 
 @show n_states(pomdp)
 @show n_actions(pomdp)
 @show n_observations(pomdp)
 
-solver = SARSOPSolver(precision = 1e-3,
+sarsop_solver = SARSOPSolver(precision = 1e-3,
                       randomization=true,
-                      timeout = 1000.0,
+                      timeout = 8*3600.0,
                       pomdp_filename = "crosswalk.pomdpx",
-                      policy_filename = "crosswalk.policy")
+                      policy_filename = "crosswalk_long.policy",
+                      policy_interval = 3*3600.0)
 
-policy = solve(solver, pomdp)
+# qmdp_solver = QMDPSolver(belres = 1e-4, verbose=true)
 
-policy = load_policy(pomdp, "crosswalk.policy")
+# qmdp_policy = solve(qmdp_solver, pomdp);
+
+# pomdp.collision_cost = -1.5
+
+sarsop_policy = solve(sarsop_solver, pomdp);
+
+sarsop_policy = load_policy(pomdp, "crosswalk_long.policy");
 
 
 
@@ -33,19 +43,103 @@ policy = load_policy(pomdp, "crosswalk.policy")
 # a = action(policy, b0)
 # actionvalues(policy, b0)
 
-# using POMDPGifs, POMDPSimulators, Random
+using POMDPGifs, POMDPSimulators, Random
 
-# rng = MersenneTwister(1);
-# hr = HistoryRecorder(max_steps=40, rng=rng)
-# s0 = initialstate(pomdp, rng)
-# up = DiscreteUpdater(pomdp)
-# b0 = initialstate_distribution(pomdp)
-# hist = simulate(hr, pomdp, policy, up, b0, s0)
-# makegif(pomdp, hist, filename=joinpath("./", "crosswalk.gif"), spec="s,a", fps=2);
+rng = MersenneTwister(1);
+hr = HistoryRecorder(max_steps=40, rng=rng);
+s0 = initialstate(pomdp, rng);
+up = DiscreteUpdater(pomdp);
+b0 = initialstate_distribution(pomdp);
+hist = simulate(hr, pomdp, sarsop_policy, up, b0, s0);
+makegif(pomdp, hist, filename=joinpath("./", "crosswalk.gif"), spec="s,a", fps=2);
 
-includet("../legacy/policy_plot.jl")
+# includet("legacy/policy_plot.jl")
 
-p = policy_plot(pomdp, policy)
+
+function uncertainty_plots(pomdp, policy)
+    plots = []
+    for sig in [1e-3, 0.5, 1.0, 2.0]
+        p = policy_plot(pomdp, policy, sig=sig, n_bins=5, n_pts=150)
+        push!(plots, p)
+    end
+    return plots
+end
+
+qp = QMDPPolicy(qmdp_policy);
+sp = SARSOPPolicy(sarsop_policy);
+qmdp_plots = uncertainty_plots(pomdp, qp);
+sarsop_plots = uncertainty_plots(pomdp, sp);
+g = GroupPlot(4, 4, groupStyle="horizontal sep = 1.75cm, vertical sep = 1.5cm");
+push!.(Ref(g), qmdp_plots);
+push!.(Ref(g), sarsop_plots);
+g;
+save("qmdp_sarsop_policies.tex", g)
+g
+
+save("policy_plots2.pdf", g)
+
+qmdp_plots[end]
+
+sarsop_plots[1]
+
+
+using Profile
+using ProfileView
+Profile.clear()
+
+
+p = policy_plot(pomdp, sp, sig=1.0, n_bins=5, n_pts=100, v_ego=5.0)
+
+ProfileView.view()
+
+policy = sarsop_policy
+
+v_ego = 5.0
+v_ped = 1.0
+X, Y = get_XY_grid(pomdp);
+X = X[1:21]
+grid = RectangleGrid(X, Y);
+vals = get_grid_data(policy, grid, pomdp, v_ego, v_ped);
+acts = actions(pomdp)
+action_map2 = [acts[ci[1]].acc for ci in  vec(argmax(vals, dims=1))]
+action_map2 = reshape(action_map2, (21, 11))
+acts = action_map2
+acts = acts'
+acts = acts[end:-1:1,1:end]
+
+
+acts2 = compute_acts3(pomdp, policy)
+
+
+
+cmap = ColorMaps.RGBArrayMap(colormap("RdBu"))
+PGFPlots.Image(acts, (X[1], X[end]), (Y[1], Y[end]), colormap=cmap)
+
+value_plots = [];
+for i=1:length(actions(pomdp))
+    xyval = reshape(vals[i, :], (21, 11))
+    xyval = xyval'
+    xyval = xyval[end:-1:1,1:end]
+    p = PGFPlots.Image(xyval, (X[1], X[end]), (Y[1], Y[end]), colormap=cmap)
+    push!(value_plots, p)
+end;
+g = GroupPlot(4, 1);
+push!.(Ref(g), value_plots);
+g
+
+xyval = reshape(maximum(vals, dims=1), (21, 11))
+xyval = xyval'
+xyval = xyval[end:-1:1,1:end]
+p = PGFPlots.Image(xyval, (X[1], X[end]), (Y[1], Y[end]), colormap=cmap)
+
+length(X)
+length(Y)
+
+
+v_ego = 5.0
+v_ped = 1
+
+
 
 PGFPlots.save("sarsop_cw.pdf", p)
 
