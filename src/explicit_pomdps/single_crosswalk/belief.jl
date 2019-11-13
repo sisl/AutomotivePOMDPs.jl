@@ -1,5 +1,3 @@
-const SingleOCBelief =  SingleOCDistribution
-
 # function POMDPs.initialize_belief(pomdp::SingleOCPOMDP)
 #     b0 = DiscreteBelief(n_states(pomdp))
 #     d0 = initialstate_distribution(pomdp::SingleOCPOMDP)
@@ -10,7 +8,7 @@ const SingleOCBelief =  SingleOCDistribution
 #     return b0
 # end
 
-# #for sarsop for exploration
+#for sarsop for exploration
 # function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP)
 #      state_space = states(pomdp)
 #      states_to_add = SingleOCState[]
@@ -21,7 +19,7 @@ const SingleOCBelief =  SingleOCDistribution
 #      end
 #      probs = ones(length(states_to_add))
 #      normalize!(probs, 1)
-#      return SingleOCDistribution(probs, states_to_add)
+#      return SparseCat(states_to_add, probs)
 #  end
 
 """
@@ -63,7 +61,7 @@ function initial_distribution_no_ped(pomdp::SingleOCPOMDP)
     end
     probs = ones(length(states))
     probs = normalize!(probs, 1)
-    return SingleOCBelief(probs, states)
+    return SparseCat(states, probs)
 end
 
 
@@ -101,11 +99,11 @@ function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP)
     end
     n_off_grid = length(states) - n_in_grid
     probs = ones(length(states))
-    probs[1:n_in_grid] = p_birth/n_in_grid
-    probs[n_in_grid + 1:end] = (1.0 - p_birth)/n_off_grid
+    probs[1:n_in_grid] .= p_birth/n_in_grid
+    probs[n_in_grid + 1:end] .= (1.0 - p_birth)/n_off_grid
     normalize!(probs, 1)
     @assert sum(probs) ≈ 1.
-    return SingleOCBelief(probs, states)
+    return SparseCat(states, probs)
 end
 
 function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP, ego::VehicleState)
@@ -140,7 +138,7 @@ function POMDPs.initialstate_distribution(pomdp::SingleOCPOMDP, ego::VehicleStat
     probs[n_in_grid + 1:end] = (1.0 - p_birth)/n_off_grid
     # normalize!(probs, 1)
     @assert sum(probs) ≈ 1.
-    return SingleOCBelief(probs, states)
+    return SparseCat(states, probs)
 end
 
 mutable struct SingleOCUpdater <: Updater
@@ -149,8 +147,8 @@ end
 
 
 # Updates the belief given the current action and observation
-function POMDPs.update(bu::SingleOCUpdater, bold::SingleOCBelief, a::SingleOCAction, o::SingleOCObs)
-    bnew = SingleOCBelief()
+function POMDPs.update(bu::SingleOCUpdater, bold::SparseCat, a::SingleOCAction, o::SingleOCObs)
+    bnew = SparseCat(SingleOCState[], Float64[])
     pomdp = bu.pomdp
     # initialize spaces
     pomdp_states = ordered_states(pomdp)
@@ -166,10 +164,10 @@ function POMDPs.update(bu::SingleOCUpdater, bold::SingleOCBelief, a::SingleOCAct
             continue
         end
         b_sum = 0.0 # belief for state sp
-        for (j, s) in enumerate(bold.it)
+        for (j, s) in enumerate(bold.vals)
             td = transition(pomdp, s, a)
             pp = pdf(td, sp)
-            b_sum += pp * bold.p[j]
+            b_sum += pp * bold.probs[j]
         end
         if b_sum != 0.
             push!(bnew.it, sp)
@@ -193,12 +191,12 @@ end
 
 """
     vec2dis(bvec::Vector{Float64}, state_space::Vector{SingleOCState} = state_space)
-Convert a discrete belief representation to a more compact one using the SingleOCDistribution type
+Convert a discrete belief representation to a more compact one using the SparseCat type
 """
 function vec2dis(bvec::Vector{Float64}, state_space::Vector{SingleOCState} = state_space)
     bsparse = sparsevec(bvec)
     n = nnz(bsparse)
-    bdis = SingleOCDistribution(zeros(n), Vector{SingleOCState}(n))
+    bdis = SparseCat(Vector{SingleOCState}(n), zeros(n))
     for i = 1:n
         ind = bsparse.nzind[i]
         bdis.p[i] = bsparse.nzval[i]
@@ -208,32 +206,32 @@ function vec2dis(bvec::Vector{Float64}, state_space::Vector{SingleOCState} = sta
 end
 
 """
-    dis2vec!(pomdp::SingleOCPOMDP, bdis::SingleOCDistribution, bvec::Vector{Float64})
-convert an SingleOCDistribution to a full vector representation
+    dis2vec!(pomdp::SingleOCPOMDP, bdis::SparseCat, bvec::Vector{Float64})
+convert an SparseCat to a full vector representation
 """
-function dis2vec!(pomdp::SingleOCPOMDP, bdis::SingleOCDistribution, bvec::Vector{Float64})
-    for i =1:length(bdis.p)
-        ind = stateindex(pomdp, bdis.it[i])
+function dis2vec!(pomdp::SingleOCPOMDP, bdis::SparseCat, bvec::Vector{Float64})
+    for i =1:length(bdis.probs)
+        ind = stateindex(pomdp, bdis.vals[i])
         bvec[ind] = bdis.p[i]
     end
 end
 
 """
-    get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinRange{Float64} = get_Y_grid(pomdp), V_ped::LinRange{Float64} = get_V_ped_grid(pomdp))
+    get_belief_image(pomdp::SingleOCPOMDP, d0::SparseCat, Y::LinRange{Float64} = get_Y_grid(pomdp), V_ped::LinRange{Float64} = get_V_ped_grid(pomdp))
 returns a probability matrix where the index are the pedestrian position and velSingleOCity, the values are the probability of such y,v pair
 """
-function get_belief_image(pomdp::SingleOCPOMDP, d0::SingleOCDistribution, Y::LinRange{Float64} = get_Y_grid(pomdp), V_ped::LinRange{Float64} = get_V_ped_grid(pomdp))
+function get_belief_image(pomdp::SingleOCPOMDP, d0::SparseCat, Y::LinRange{Float64} = get_Y_grid(pomdp), V_ped::LinRange{Float64} = get_V_ped_grid(pomdp))
     Y = get_Y_grid(pomdp)
     V_ped = get_V_ped_grid(pomdp)
     P = zeros(length(Y), length(V_ped))
     p_off_grid = 0.
-    for (i,s) in enumerate(d0.it)
+    for (i,s) in enumerate(d0.vals)
         if off_the_grid(pomdp, s.ped)
-            p_off_grid += d0.p[i]
+            p_off_grid += d0.probs[i]
         else
             y_ind = get_y_index(pomdp, s.ped.posG.y)
             v_ped_ind = get_v_ped_index(pomdp, s.ped.v)
-            P[y_ind, v_ped_ind] += d0.p[i]
+            P[y_ind, v_ped_ind] += d0.probs[i]
         end
     end
     @assert sum(P) + p_off_grid ≈ 1.0
@@ -242,12 +240,12 @@ end
 
 """
     tuple_to_belief(pomdp::SingleOCPOMDP, t::Tuple{Array{Float64,1},Array{Float64,2}})
-convert tuple representation to SingleOCDistribution object
+convert tuple representation to SparseCat object
 """
 function tuple_to_belief(pomdp::SingleOCPOMDP, t::Tuple{Array{Float64,1},Array{Float64,2}})
     Y_grid = get_Y_grid(pomdp)
     V_ped = get_V_ped_grid(pomdp)
-    b = SingleOCDistribution()
+    b = SparseCat(SingleOCState[], Float64[])
     P = t[2]
     ego_x, ego_v, p_off = t[1][1], t[1][2], t[1][3]
     ego = xv_to_state(pomdp, ego_x, ego_v)
@@ -256,15 +254,15 @@ function tuple_to_belief(pomdp::SingleOCPOMDP, t::Tuple{Array{Float64,1},Array{F
         for j=1:m
             if P[j, i] != 0
             ped = yv_to_state(pomdp, Y_grid[j], V_ped[i])
-            s = SingleOCState(is_crash(pomdp, ego, ped), ego, ped)
-            push!(b.it, s)
-            push!(b.p, P[j, i])
+            s = SingleOCState(collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type), ego, ped)
+            push!(b.vals, s)
+            push!(b.probs, P[j, i])
             end
         end
     end
     s_off = SingleOCState(false, ego, get_off_the_grid(pomdp))
-    push!(b.it, s_off)
-    push!(b.p, p_off)
+    push!(b.vals, s_off)
+    push!(b.probs, p_off)
     # sanity check
     @assert sum(b.p) ≈ 1.0
     @assert length(b.p) == length(b.it)
@@ -272,11 +270,11 @@ function tuple_to_belief(pomdp::SingleOCPOMDP, t::Tuple{Array{Float64,1},Array{F
 end
 
 """
-    belief_to_tuple(pomdp::SingleOCPOMDP, b::SingleOCDistribution)
+    belief_to_tuple(pomdp::SingleOCPOMDP, b::SparseCat)
 only valid after first step when ego car is known
 convert a belief representation into a tuple [ego.x, ego.v, p_off], belief image
 """
-function belief_to_tuple(pomdp::SingleOCPOMDP, b::SingleOCDistribution)
+function belief_to_tuple(pomdp::SingleOCPOMDP, b::SparseCat)
     vec = zeros(3)
     ego_x, ego_v = b.it[1].ego.posG.x, b.it[1].ego.v
     img, p_off = get_belief_image(pomdp, b, get_Y_grid(pomdp), get_V_ped_grid(pomdp))

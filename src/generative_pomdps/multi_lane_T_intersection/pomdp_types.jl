@@ -104,7 +104,6 @@ function POMDPs.discount(pomdp::OIPOMDP)
 end
 
 POMDPs.actions(pomdp::OIPOMDP) = [OIAction(-4.0), OIAction(-2.0), OIAction(0.0), OIAction(2.0)]
-POMDPs.n_actions(pomdp::OIPOMDP) = 4
 
 function POMDPs.actionindex(pomdp::OIPOMDP, a::OIAction)
     if a.acc == -4.0

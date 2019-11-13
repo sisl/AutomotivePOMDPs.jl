@@ -14,10 +14,10 @@ function state_to_scene(pomdp::SingleOCPOMDP, s::SingleOCState)
 end
 
 """
-    rand_scene(rng::AbstractRNG, b::Dict{Int64, SingleOCDistribution}, env::CrosswalkEnv)
+    rand_scene(rng::AbstractRNG, b::Dict{Int64, SparseCat}, env::CrosswalkEnv)
 Sample a scene from a belief representation
 """
-function rand_scene(rng::AbstractRNG, b::Dict{Int64, SingleOCDistribution}, env::CrosswalkEnv)
+function rand_scene(rng::AbstractRNG, b::Dict{Int64, SparseCat}, env::CrosswalkEnv)
     scene = Scene()
     for id in keys(b)
         s = rand(rng, b[id])

@@ -90,7 +90,6 @@ function POMDPs.discount(mdp::PedMDP)
 end
 
 POMDPs.actions(mdp::PedMDP) = [PedMDPAction(-4.0), PedMDPAction(-2.0), PedMDPAction(0.0), PedMDPAction(2.0)]
-POMDPs.n_actions(mdp::PedMDP) = 4
 
 function POMDPs.actionindex(mdp::PedMDP, action::PedMDPAction)
     if action.acc == -4.0

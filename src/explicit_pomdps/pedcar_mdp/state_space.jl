@@ -2,7 +2,7 @@
 Define a discrete state space for the PedCarMDP problem
 =#
 
-function POMDPs.n_states(mdp::PedCarMDP)
+function n_states(mdp::PedCarMDP)
     n_ego = n_ego_states(mdp.env, mdp.pos_res, mdp.vel_res)
     n_ped = n_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
     routes = get_car_routes(mdp.env)

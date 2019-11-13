@@ -27,7 +27,7 @@ end
 
 ### TRANSITION MODEL ##############################################################################
 
-function POMDPs.generate_s(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::AbstractRNG)
+function POMDPs.gen(::DDNNode{:sp}, pomdp::OCPOMDP, s::OCState, a::OCAction, rng::AbstractRNG)
     actions = Array{Any}(undef, length(s))
     pomdp.models[1].a = a
     sp = deepcopy(s) #XXX bad
@@ -100,7 +100,7 @@ function initial_ego(pomdp::OCPOMDP, rng::AbstractRNG)
     env = pomdp.env
     x0 = pomdp.ego_start
     y0 = 0. # parameterize
-    v0 = rand(rng, Uniform(6., pomdp.env.params.speed_limit)) #TODO parameterize
+    v0 = rand(rng, Distributions.Uniform(6., pomdp.env.params.speed_limit)) #TODO parameterize
     return Vehicle(VehicleState(VecSE2(x0, y0, 0.0), env.roadway.segments[1].lanes[1], env.roadway, v0),
                    VehicleDef(), 1)
 end
@@ -113,7 +113,7 @@ Create a new pedestrian entity at its initial state
 function initial_pedestrian(pomdp::OCPOMDP, scene::Scene, rng::AbstractRNG, first_scene::Bool = false)
     env = pomdp.env
     # lateral position
-    d_lat = Uniform(env.params.roadway_length - env.params.crosswalk_width + 2, env.params.roadway_length + env.params.crosswalk_width-1)
+    d_lat = Distributions.Uniform(env.params.roadway_length - env.params.crosswalk_width + 2, env.params.roadway_length + env.params.crosswalk_width-1)
     x0 = 0.5*rand(rng, d_lat)
 
     # vertical position
@@ -126,7 +126,7 @@ function initial_pedestrian(pomdp::OCPOMDP, scene::Scene, rng::AbstractRNG, firs
     θ = π/2
 
     #velocity
-    v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
+    v0 = rand(rng, Distributions.Uniform(0., env.params.ped_max_speed))
     cw_roadway = Roadway([RoadSegment(2, [env.crosswalk])]);
     ped_initialstate = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, cw_roadway, v0);
 
@@ -175,7 +175,7 @@ end
 # end
 
 # uncomment for vector representation
-function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState, rng::AbstractRNG)
+function POMDPs.gen(::DDNNode{:o}, pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState, rng::AbstractRNG)
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
     o = zeros(2 + 2*pomdp.max_peds)
@@ -208,8 +208,8 @@ function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, a::OCAction, sp::OCState,
     return o
 end
 
-function POMDPs.generate_o(pomdp::OCPOMDP, s::OCState, rng::AbstractRNG)
-    return generate_o(pomdp, s, OCAction(0.), s, rng::AbstractRNG)
+function POMDPs.initialobs(pomdp::OCPOMDP, s::OCState, rng::AbstractRNG)
+    return gen(DDNNode(:o), pomdp, s, OCAction(0.), s, rng::AbstractRNG)
 end
 
 # function POMDPs.convert_o(::Type{Vector{Float64}}, o::OCObs, pomdp::OCPOMDP)
@@ -224,9 +224,9 @@ end
 
 ### All together ##################################################################################
 
-function POMDPs.generate_sor(pomdp::OCPOMDP, s::OCState, a::OCAction, rng::AbstractRNG)
-    sp = generate_s(pomdp, s, a, rng)
-    o = generate_o(pomdp, s, a, sp, rng)
+function POMDPs.gen(::DDNOut{(:sp,:o,:r)}, pomdp::OCPOMDP, s::OCState, a::OCAction, rng::AbstractRNG)
+    sp = gen(DDNOut(:sp), pomdp, s, a, rng)
+    o = gen(DDNNode(:o), pomdp, s, a, sp, rng)
     r = reward(pomdp, s, a, sp)
     return sp, o, r
 end

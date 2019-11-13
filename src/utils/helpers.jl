@@ -108,20 +108,6 @@ end
 ### ROADWAY STUFF
 
 """
-    get_lane(roadway::Roadway, vehicle::Vehicle)
-    get_lane(roadway::Roadway, vehicle::VehicleState)
-return the lane where `vehicle` is in.
-"""
-function get_lane(roadway::Roadway, vehicle::Vehicle)
-    lane_tag = vehicle.state.posF.roadind.tag
-    return roadway[lane_tag]
-end
-function get_lane(roadway::Roadway, vehicle::VehicleState)
-    lane_tag = vehicle.posF.roadind.tag
-    return roadway[lane_tag]
-end
-
-"""
     get_end(lane::Lane)
 return the end longitudinal position of a lane 
 """
@@ -222,8 +208,8 @@ It only works for straight lanes!
 """
 function lane_to_segment(lane::Lane, roadway::Roadway)
     # only works for straight lanes
-    lane_a = lane.curve[1].pos #get_posG(Frenet(lane, 0.), roadway)
-    lane_b = lane.curve[end].pos #get_posG(Frenet(lane, get_end(lane)), roadway)
+    lane_a = lane.curve[1].pos #posg(Frenet(lane, 0.), roadway)
+    lane_b = lane.curve[end].pos #posg(Frenet(lane, get_end(lane)), roadway)
     return LineSegment(lane_a, lane_b)
 end
 
@@ -363,7 +349,7 @@ mutable struct LonAccel
     a_lon::Float64
 end
 
-function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, action::LonAccel,  roadway::Roadway, Δt::Float64) where {D<:Union{VehicleDef, BicycleModel}}
+function AutomotiveDrivingModels.propagate(veh::Entity{VehicleState, D, Int}, action::LonAccel,  roadway::Roadway, ΔT::Float64) where {D<:Union{VehicleDef, BicycleModel}}
     a_lat = action.a_lat
    a_lon = action.a_lon
 

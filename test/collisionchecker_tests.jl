@@ -27,7 +27,7 @@ function collisions(xspace, yspace, thetaspace)
 end
 
 
-@testset begin "collision checker"
+@testset  "collision checker" begin
     ## Series of test 1: Far field 
     thetaspace = LinRange(0.0, 2*float(pi), 10)
     xspace = LinRange(15.0, 300.0, 10)

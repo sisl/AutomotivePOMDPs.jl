@@ -9,6 +9,8 @@ mutable struct SingleOCState
     ped::VehicleState
 end
 
+const TERMINAL_STATE = SingleOCState(false, VehicleState(), VehicleState())
+
 # copy b to a
 function Base.copyto!(a::SingleOCState, b::SingleOCState)
     a.crash = b.crash
@@ -22,6 +24,10 @@ end
 
 function Base.:(==)(a::SingleOCState, b::SingleOCState)
     return a.crash == b.crash && a.ego == b.ego && a.ped == b.ped
+end
+
+function Base.isapprox(veh1::VehicleState, veh2::VehicleState; kwargs...)
+    isapprox(veh1.posG, veh2.posG, kwargs...) && isapprox(veh1.posG, veh2.posG, kwargs...) && isapprox(veh1.v, veh2.v, kwargs...) 
 end
 
 #### Observaton type
@@ -93,7 +99,7 @@ function SingleOCPOMDP(; env::CrosswalkEnv = CrosswalkEnv(),
                    collision_cost::Float64 = -1.,
                    action_cost::Float64 = 0.0,
                    goal_reward::Float64 = 1.,
-                   γ::Float64  = 0.95)
+                   γ::Float64  = 0.9)
     return SingleOCPOMDP(env,
                    ego_type,
                    ped_type,
@@ -119,20 +125,23 @@ end
 
 ### REWARD MODEL ##################################################################################
 
-function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction, sp::SingleOCState)
-    r = 0.
-    if sp.crash
-        r += pomdp.collision_cost
-    end
-    if sp.ego.posG.x >= pomdp.x_goal
-        r += pomdp.goal_reward
-    elseif a.acc > 0.
-        r += pomdp.action_cost
-    else
-        r += pomdp.action_cost
-    end
-    return r
-end
+# function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction, sp::SingleOCState)
+#     r = 0.
+#     if sp == TERMINAL_STATE
+#         return r 
+#     end
+#     if sp.crash
+#         r += pomdp.collision_cost
+#     end
+#     if sp.ego.posG.x >= pomdp.x_goal
+#         r += pomdp.goal_reward
+#     elseif a.acc > 0.
+#         r += pomdp.action_cost
+#     else
+#         r += pomdp.action_cost
+#     end
+#     return r
+# end
 
 # other method for SARSOP
 function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction)
@@ -147,56 +156,28 @@ function POMDPs.reward(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction
     else
         r += pomdp.action_cost
     end
+    if isterminal(pomdp, s)
+        return 0.0
+    end
     return r
 end
 
 function POMDPs.isterminal(pomdp::SingleOCPOMDP, s::SingleOCState)
-    return s.crash || s.ego.posG.x >= pomdp.x_goal
-end
-
-######## DISTRIBUTION ############################################################################
-
-"""
-Concrete type to represent a distribution over state for the SingleOCcludedCrosswalk POMDP Problem
-"""
-mutable struct SingleOCDistribution
-    p::Vector{Float64}
-    it::Vector{SingleOCState}
-end
-
-SingleOCDistribution() = SingleOCDistribution(Float64[], SingleOCState[])
-
-POMDPs.iterator(d::SingleOCDistribution) = d.it
-
-# transition and observation pdf
-function POMDPs.pdf(d::SingleOCDistribution, s::SingleOCState)
-    for (i, sp) in enumerate(d.it)
-        if sp==s
-            return d.p[i]
-        end
-    end
-    return 0.
-end
-
-function POMDPs.rand(rng::AbstractRNG, d::SingleOCDistribution)
-    ns = sample(d.it, Weights(d.p)) # sample a neighbor state according to the distribution c
-    return ns
-end
-
-"""
-    most_likely_state(d::SingleOCDistribution)
-returns the most likely state given distribution d
-"""
-function most_likely_state(d::SingleOCDistribution)
-    val, ind = fargmax(d.p)
-    return d.it[ind]
+    return s == TERMINAL_STATE
+    # return s.ego.posG.x >= pomdp.x_goal || s.crash
 end
 
 ### HELPERS
 
 
-
-
+"""
+    most_likely_state(d::SparseCat)
+returns the most likely state given distribution d
+"""
+function most_likely_state(d::SparseCat)
+    val, ind = argmax(d.probs)
+    return d.vals[ind]
+end
 
 function POMDPs.discount(pomdp::SingleOCPOMDP)
     return pomdp.γ

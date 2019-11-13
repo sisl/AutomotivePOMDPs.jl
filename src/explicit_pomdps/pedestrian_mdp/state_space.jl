@@ -2,7 +2,7 @@
 Define a discrete state space for the pedestrian MDP problem
 =#
 
-function POMDPs.n_states(mdp::PedMDP)
+function n_states(mdp::PedMDP)
     n_ego = n_ego_states(mdp.env, mdp.pos_res, mdp.vel_res)
     n_ped = n_ped_states(mdp.env, mdp.pos_res, mdp.vel_ped_res)
     return n_ego*(n_ped + 1) # do not forget absent state

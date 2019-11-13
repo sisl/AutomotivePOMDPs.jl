@@ -32,7 +32,7 @@ end
 
 ### TRANSITION MODEL ##############################################################################
 
-function POMDPs.generate_s(pomdp::OIPOMDP, s::OIState, a::OIAction, rng::AbstractRNG)
+function POMDPs.gen(::DDNNode{:sp}, pomdp::OIPOMDP, s::OIState, a::OIAction, rng::AbstractRNG)
     actions = Array{Any}(length(s))
     pomdp.models[1].a = a
     is_ego_here = clamp(findfirst(EGO_ID, s),0, 1)
@@ -88,7 +88,7 @@ function POMDPs.initialstate(pomdp::OIPOMDP, rng::AbstractRNG, burn_in::Int64=1)
     scene = initial_scene(pomdp, rng)
     # clean_scene!(pomdp.env, scene)
     for t = 1:burn_in
-        scene = generate_s(pomdp, scene, OIAction(0.), rng)
+        scene = gen(DDNOut(:sp), pomdp, scene, OIAction(0.), rng)
     end
     return scene
 end
@@ -180,7 +180,7 @@ end
 
 # uncomment for vector representation
 # TODO find a better way to implement this to switch more easily between representations
-function POMDPs.generate_o(pomdp::OIPOMDP, s::Scene, a::OIAction, sp::Scene, rng::AbstractRNG)
+function POMDPs.gen(::DDNNode{:o}, pomdp::OIPOMDP, s::Scene, a::OIAction, sp::Scene, rng::AbstractRNG)
     n_features = 4
     pos_noise = pomdp.pos_obs_noise
     vel_noise = pomdp.vel_obs_noise
@@ -213,8 +213,8 @@ function POMDPs.generate_o(pomdp::OIPOMDP, s::Scene, a::OIAction, sp::Scene, rng
     return o
 end
 
-function POMDPs.generate_o(pomdp::OIPOMDP, s::OIState, rng::AbstractRNG)
-    return generate_o(pomdp, s, OIAction(0.), s, rng::AbstractRNG)
+function POMDPs.gen(::DDNNode{:o}, pomdp::OIPOMDP, s::OIState, rng::AbstractRNG)
+    return gen(DDNNode(:o), pomdp, s, OIAction(0.), s, rng::AbstractRNG)
 end
 
 function POMDPs.convert_o(::Type{Vector{Float64}}, o::OIObs, pomdp::OIPOMDP)

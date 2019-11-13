@@ -12,7 +12,7 @@ function AutoViz.render!(rendermodel::RenderModel, env::IntersectionEnv)
         add_instruction!(rendermodel, render_fill_region, (pts, colorant"gray"))
     end
 
-    stop_line = get_posG(Frenet(env.roadway[LaneTag(6,1)], env.params.stop_line), env.roadway)
+    stop_line = posg(Frenet(env.roadway[LaneTag(6,1)], env.params.stop_line), env.roadway)
     x_pos, y_pos = stop_line.x, stop_line.y
     stop_pts = zeros(2,2)
     stop_pts[1,:] =  [(x_pos - env.params.lane_width/2) , (x_pos + env.params.lane_width/2)]

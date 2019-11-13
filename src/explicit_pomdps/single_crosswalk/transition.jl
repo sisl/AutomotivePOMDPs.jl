@@ -2,6 +2,9 @@
 using GridInterpolations
 
 function POMDPs.transition(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAction, dt::Float64 = pomdp.ΔT)
+    if s.crash || s.ego.posG.x >= pomdp.x_goal || isterminal(pomdp, s)
+        return Deterministic(TERMINAL_STATE)
+    end
     ## Find Ego states first
     ego_states, ego_probs = ego_transition(pomdp, s.ego, a, dt)
 
@@ -11,7 +14,7 @@ function POMDPs.transition(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAc
     n_next_states = length(ego_states)*length(ped_states)
 
     ### Total state
-    next_states = Vector{SingleOCState}(n_next_states)
+    next_states = Vector{SingleOCState}(undef, n_next_states)
     next_probs = zeros(n_next_states)
     ind = 1
     for (i,ego) in enumerate(ego_states)
@@ -23,7 +26,7 @@ function POMDPs.transition(pomdp::SingleOCPOMDP, s::SingleOCState, a::SingleOCAc
         end
     end
     normalize!(next_probs, 1)
-    return SingleOCDistribution(next_probs, next_states)
+    return SparseCat(next_states, next_probs)
 end
 
 """
@@ -40,12 +43,12 @@ function ego_transition(pomdp::SingleOCPOMDP, ego::VehicleState, a::SingleOCActi
         v_ = 0.
     end
 
-    grid = RectangleGrid(get_X_grid(pomdp), get_V_grid(pomdp)) #XXX must not allSingleOCate the grid at each function call, find better implementation
+    grid = RectangleGrid(get_X_grid(pomdp), get_V_grid(pomdp)) #XXX must not allocate the grid at each function call, find better implementation
     index, weight = interpolants(grid, [x_, v_])
     n_pts = length(index)
 
-    states = Array{VehicleState}(n_pts)
-    probs = Array{Float64}(n_pts)
+    states = Array{VehicleState}(undef, n_pts)
+    probs = Array{Float64}(undef, n_pts)
     for i=1:n_pts
         xg, vg = ind2x(grid, index[i])
         states[i] = xv_to_state(pomdp, xg, vg)
@@ -79,7 +82,7 @@ function ped_transition(pomdp::SingleOCPOMDP, ped::VehicleState, dt::Float64 = p
             end
         end
         probs = ones(length(states) + 1)
-        probs[1:end - 1] = p_birth/length(states)
+        probs[1:end - 1] .= p_birth/length(states)
         # add the off the grid state
         push!(states, get_off_the_grid(pomdp))
         probs[end] = 1.0 - p_birth
@@ -87,7 +90,7 @@ function ped_transition(pomdp::SingleOCPOMDP, ped::VehicleState, dt::Float64 = p
         return probs, states
     end
 
-    grid = RectangleGrid(get_Y_grid(pomdp), get_V_ped_grid(pomdp)) #XXX preallSingleOCate
+    grid = RectangleGrid(get_Y_grid(pomdp), get_V_ped_grid(pomdp)) #XXX preallocate
     y_ = ped.posG.y + ped.v*dt
     if y_ > pomdp.y_goal
         return [1.0], [get_off_the_grid(pomdp)]
@@ -102,15 +105,15 @@ function ped_transition(pomdp::SingleOCPOMDP, ped::VehicleState, dt::Float64 = p
                 push!(states, state)
                 push!(probs, weight[i])
             else
-                state_ind = findall(x->x==state, states)
+                state_ind = findfirst(isequal(state), states)
                 probs[state_ind] += weight[i]
             end
         end
     end
     # add roughening
     normalize!(probs, 1)
-    probs += maximum(probs)
-    normalize!(probs)
+    probs .+= maximum(probs)
+    normalize!(probs, 1)
     return probs, states
 end
 

@@ -61,7 +61,7 @@ generate an initial state for the ego car, returns a Vehicle object
 function initial_ego(env::CrosswalkEnv, rng::AbstractRNG)
     x0 = env.params.start_pos
     y0 = 0. # parameterize
-    v0 = rand(rng, Uniform(6., env.params.speed_limit))
+    v0 = rand(rng, Distributions.Uniform(6., env.params.speed_limit))
     # v0 = 8.
 
     return Vehicle(VehicleState(VecSE2(x0, y0, 0.0), env.roadway.segments[1].lanes[1], env.roadway, v0),

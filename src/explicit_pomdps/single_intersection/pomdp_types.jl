@@ -148,8 +148,6 @@ end
 
 SingleOIDistribution() = SingleOIDistribution(Float64[], SingleOIState[])
 
-POMDPs.iterator(d::SingleOIDistribution) = d.it
-
 # transition and observation pdf
 function POMDPs.pdf(d::SingleOIDistribution, s::SingleOIState)
     for (i, sp) in enumerate(d.it)

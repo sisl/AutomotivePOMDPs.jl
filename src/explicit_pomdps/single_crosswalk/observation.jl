@@ -3,14 +3,16 @@
 function POMDPs.observation(pomdp::SingleOCPOMDP, a::SingleOCAction, sp::SingleOCState)
     if !is_observable_fixed(sp, pomdp.env) || off_the_grid(pomdp, sp.ped)
         o = SingleOCObs(false, sp.ego, get_off_the_grid(pomdp))
-        return SingleOCDistribution([1.0], [o])
-    elseif is_crash(pomdp, sp)
-        return SingleOCDistribution([1.0], [sp])
+        return Deterministic(o)
+    elseif collision_checker(sp.ego, sp.ped, pomdp.ego_type, pomdp.ped_type)
+        return Deterministic(sp)
+    elseif isterminal(pomdp, sp)
+        return Deterministic(sp)
     end
     ego = sp.ego
     ped = sp.ped
 
-    neighbors = Vector{VehicleState}(9)
+    neighbors = Vector{VehicleState}(undef, 9)
     neighbors[1] = yv_to_state(pomdp, ped.posG.y - pomdp.pos_res, ped.v)
     neighbors[2] = yv_to_state(pomdp, ped.posG.y + pomdp.pos_res, ped.v)
     neighbors[3] = yv_to_state(pomdp, ped.posG.y - pomdp.pos_res, ped.v - pomdp.vel_res)
@@ -21,11 +23,16 @@ function POMDPs.observation(pomdp::SingleOCPOMDP, a::SingleOCAction, sp::SingleO
     neighbors[8] = yv_to_state(pomdp, ped.posG.y, ped.v + pomdp.vel_res)
     neighbors[9] = yv_to_state(pomdp, ped.posG.y, ped.v)
 
+    grid = RectangleGrid(get_Y_grid(pomdp), get_V_ped_grid(pomdp)) #XXX preallocate
 
     states = SingleOCObs[]
     sizehint!(states, 9)
     for neighbor in neighbors
-        if in_bounds_ped(pomdp, neighbor) && !is_crash(pomdp, ego, neighbor)
+        if in_bounds_ped(pomdp, neighbor) && !collision_checker(ego, neighbor, pomdp.ego_type, pomdp.ped_type)
+            # make sure neighbor is in the grid
+            neigh_yv_ind, neigh_yv_weights = interpolants(grid, [neighbor.posG.y, neighbor.v])
+            neigh_yv = neigh_yv_ind[argmax(neigh_yv_weights)]
+            neighbor = yv_to_state(pomdp, ind2x(grid, neigh_yv)...)
             push!(states, SingleOCObs(false, ego, neighbor))
         end
     end
@@ -35,7 +42,7 @@ function POMDPs.observation(pomdp::SingleOCPOMDP, a::SingleOCAction, sp::SingleO
     end
     probs = normalize!(probs, 1)
     @assert length(probs) == length(states)
-    return SingleOCDistribution(probs, states)
+    return SparseCat(states, probs)
 end
 
 """

@@ -1,7 +1,7 @@
 name = "AutomotivePOMDPs"
 uuid = "dca8afc0-c686-11e8-0934-712707da73aa"
 repo = "https://github.com/sisl/AutomotivePOMDPs.jl"
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 AutoUrban = "1385418a-9289-5a49-ab93-843b508de4cb"
@@ -28,7 +28,8 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Vec = "44eeaf0b-fee4-471f-9310-ed6585cb3142"
 
 [extras]
+POMDPTesting = "92e6a534-49c2-5324-9027-86e3c861ab81"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["POMDPTesting", "Test"]
