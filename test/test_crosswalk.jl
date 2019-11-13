@@ -25,7 +25,7 @@ policy = RandomPolicy(pomdp, rng=rng)
 
 hr = HistoryRecorder(rng=rng, max_steps = 100)
 s0 = initialstate(pomdp, rng)
-initial_observation = generate_o(pomdp, s0, rng)
+initial_observation = initialobs(pomdp, s0, rng)
 initial_obs_vec = fill(initial_observation, K)
 hist = simulate(hr, pomdp, policy, up, initial_obs_vec, s0)
 

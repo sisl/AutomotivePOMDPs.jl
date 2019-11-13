@@ -25,6 +25,7 @@ function AutomotiveDrivingModels.set_desired_speed!(model::RouteFollowingIDM, v_
     model
 end
 
+AutomotiveDrivingModels.reset_hidden_state!(model::RouteFollowingIDM) = model
 
 
 """

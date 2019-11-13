@@ -31,7 +31,7 @@ end
 
 ### TRANSITION MODEL ##############################################################################
 
-function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
+function POMDPs.gen(::DDNNode{:sp}, pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
     # clean dict 
     ids = [veh.id for veh in s]
     key_ = deepcopy(keys(pomdp.models))
@@ -72,8 +72,8 @@ function POMDPs.generate_s(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng
     return sp
 end
 
-function POMDPModelTools.generate_sori(p::UrbanPOMDP, s, a, rng::AbstractRNG)
-    return generate_sor(p, s, a, rng)..., deepcopy(p.models)
+function POMDPModelTools.gen(::DDNOut{(:sp, :o, :r, :info)}, p::UrbanPOMDP, s, a, rng::AbstractRNG)
+    return gen(DDNOut(:sp, :o, :r), p, s, a, rng)..., deepcopy(p.models)
 end
 
 #TODO move to helpers
@@ -89,7 +89,7 @@ end
 function POMDPs.initialstate(pomdp::UrbanPOMDP, rng::AbstractRNG, burn_in::Int64=1)
     scene = initial_scene(pomdp, rng, true)
     for t = 1:burn_in
-        scene = generate_s(pomdp, scene, UrbanAction(0.), rng)
+        scene = gen(DDNOut(:sp), pomdp, scene, UrbanAction(0.), rng)
     end
     clean_scene!(pomdp.env, scene)
     # push! ego after traffic is steady
@@ -186,18 +186,18 @@ function initial_pedestrian(pomdp::UrbanPOMDP, scene::Scene, rng::AbstractRNG, f
     crosswalk_pos = env.params.crosswalk_pos[cw_ind]
 
     # position along the crosswalk
-    t0 = rand(rng, Uniform(-env.params.crosswalk_width[cw_ind]/2 + 1., env.params.crosswalk_width[cw_ind]/2 - 1.))
+    t0 = rand(rng, Distributions.Uniform(-env.params.crosswalk_width[cw_ind]/2 + 1., env.params.crosswalk_width[cw_ind]/2 - 1.))
     s0 = rand(rng, [0., get_end(env.crosswalks[cw_ind])])
     ϕ0 = float(π)
     if s0 == 0.
         ϕ0 = 0.
     end
     if first_scene
-        s0 = rand(rng, Uniform(0., get_end(env.crosswalks[cw_ind])))
+        s0 = rand(rng, Distributions.Uniform(0., get_end(env.crosswalks[cw_ind])))
     end
 
     #velocity
-    v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
+    v0 = rand(rng, Distributions.Uniform(0., env.params.ped_max_speed))
     posF = Frenet(env.crosswalks[cw_ind], s0, t0, ϕ0)
 
     ped_initialstate = VehicleState(posF, env.ped_roadway, v0);
@@ -215,7 +215,7 @@ end
 
 ### Observations ##################################################################################
 
-function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
+function POMDPs.gen(::DDNNode{:o}, pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAction, sp::UrbanState, rng::AbstractRNG)
     if pomdp.lidar
         return measure_lidar(pomdp, s, a, sp, rng)
     else
@@ -287,8 +287,8 @@ function n_dims(pomdp::UrbanPOMDP)
     return n_features*(pomdp.max_cars + pomdp.max_peds + n_obstacles + 1)
 end
 
-function POMDPs.generate_o(pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
-    return generate_o(pomdp, s, UrbanAction(0.), s, rng::AbstractRNG)
+function POMDPs.initialobs(pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
+    return gen(DDNNode(:o), pomdp, s, UrbanAction(0.), s, rng::AbstractRNG)
 end
 
 function rescale!(o::UrbanObs, pomdp::UrbanPOMDP)
@@ -376,11 +376,11 @@ function POMDPs.convert_o(::Type{Vector{Float64}}, o::UrbanObs, pomdp::UrbanPOMD
     return o
 end
 
-function POMDPModelTools.generate_sori(p::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
+function POMDPs.gen(::DDNOut{(:sp, :o, :r, :info)}, p::UrbanPOMDP, s::UrbanState, a::UrbanAction, rng::AbstractRNG)
     if p.lidar
-        return generate_sor(p, s, a, rng)..., p.sensor
+        return gen(DDNOut(:sp,:o,:r), p, s, a, rng)..., p.sensor
     else
-        return generate_sor(p, s, a, rng)..., nothing
+        return gen(DDNOut(:sp,:o,:r), p, s, a, rng)..., nothing
     end
 end
 

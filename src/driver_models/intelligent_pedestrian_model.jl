@@ -18,6 +18,8 @@ end
 AutomotiveDrivingModels.get_name(model::IntelligentPedestrian) = "IntelligentPedestrian"
 Base.rand(model::IntelligentPedestrian) = model.a
 
+AutomotiveDrivingModels.reset_hidden_state!(model::IntelligentPedestrian) = model
+
 function AutomotiveDrivingModels.observe!(model::IntelligentPedestrian,
                                         scene::EntityFrame{VehicleState, VehicleDef, Int64},
                                         roadway::Roadway,
@@ -62,7 +64,7 @@ end
 function get_distance_to_crosswalk(veh::Vehicle, crosswalk::Lane, roadway::Roadway)
     lane = get_lane(roadway, veh)
     cw_length = get_end(crosswalk)
-    cw_center = get_posG(Frenet(crosswalk, cw_length/2), roadway)
+    cw_center = posg(Frenet(crosswalk, cw_length/2), roadway)
     collision_point = VecSE2(cw_center.x, veh.state.posG.y)
     cw_proj = Frenet(collision_point, lane, roadway)
     Δs = cw_proj.s - veh.state.posF.s

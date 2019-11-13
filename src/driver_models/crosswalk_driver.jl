@@ -91,7 +91,7 @@ end
 function has_passed(model::CrosswalkDriver, ego::Vehicle, roadway::Roadway)
     cw_length = get_end(model.crosswalk)
     # cw_width = model.crosswalk.width
-    cw_center = get_posG(Frenet(model.crosswalk, cw_length/2, 0.), roadway)
+    cw_center = posg(Frenet(model.crosswalk, cw_length/2, 0.), roadway)
     cw_to_car = get_front(ego) - cw_center 
     car_vec = get_front(ego) - ego.state.posG
     has_passed = dot(cw_to_car, car_vec) > 0.
@@ -100,7 +100,7 @@ end
 
 function has_passed(model::CrosswalkDriver, ego::VehicleState, roadway::Roadway)
     cw_length = get_end(model.crosswalk)
-    cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+    cw_center = posg(Frenet(model.crosswalk, cw_length/2), roadway)
     cw_to_car = ego.posG - cw_center 
     car_vec = polar(1., ego.posG.θ) - ego.posG + ego.posG
     has_passed = dot(cw_to_car, car_vec) > 0.
@@ -177,7 +177,7 @@ function get_distance_to_crosswalk(model::CrosswalkDriver, veh::VehicleState, ro
     Δs = 0.
     # if lane ∈ model.conflict_lanes
     #     cw_length = get_end(model.crosswalk)
-    #     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+    #     cw_center = posg(Frenet(model.crosswalk, cw_length/2), roadway)
     #     collision_point = VecSE2(cw_center.x, veh.posG.y)
     #     cw_proj = Frenet(collision_point, lane, roadway)
     #     Δs = cw_proj.s - veh.posF.s + delta - model.crosswalk.width
@@ -189,7 +189,7 @@ function get_distance_to_crosswalk(model::CrosswalkDriver, veh::VehicleState, ro
     elseif lane ∈ model.conflict_lanes
         cw_length = get_end(model.crosswalk)
         cw_start = model.crosswalk.curve[1].pos
-        cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+        cw_center = posg(Frenet(model.crosswalk, cw_length/2), roadway)
         cw_to_car = veh.posG - cw_center 
         car_vec = polar(1., veh.posG.θ) - veh.posG + veh.posG
         d = dot(car_vec, cw_to_car)
@@ -283,7 +283,7 @@ end
 #         end
 #     end
 #     cw_length = get_end(model.crosswalk)
-#     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+#     cw_center = posg(Frenet(model.crosswalk, cw_length/2), roadway)
 #     collision_point = VecSE2(cw_center.x, ego.state.posG.y)
 #     # set to the maximum value
 #     buffer_ped = VehicleState(Frenet(model.crosswalk, model.ped_start), roadway,
@@ -342,7 +342,7 @@ end
 #
 # function dist_to_stop(model::CrosswalkDriver, ego::Vehicle, roadway::Roadway)
 #     cw_length = get_end(model.crosswalk)
-#     cw_center = get_posG(Frenet(model.crosswalk, cw_length/2), roadway)
+#     cw_center = posg(Frenet(model.crosswalk, cw_length/2), roadway)
 #     collision_point = VecSE2(cw_center.x, ego.state.posG.y)
 #     intersect_pt = Frenet(collision_point, model.intersect, roadway)
 #     return intersect_pt.s - model.crosswalk.width/2 - ego.state.posF.s - ego.def.length/2 - model.stop_delta

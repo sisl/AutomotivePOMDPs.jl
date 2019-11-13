@@ -6,7 +6,7 @@ using BeliefUpdaters
 using POMDPPolicies
 using POMDPTesting
 
-@testset begin "single crosswalk"
+@testset "single crosswalk" begin 
     params = CrosswalkParams(obstacles_visible = true)
     env = CrosswalkEnv(params)
     pomdp = SingleOCPOMDP(env = env,
@@ -16,7 +16,7 @@ using POMDPTesting
     obs_prob_consistency_check(pomdp)
 end
 
-@testset begin "crosswalk"
+@testset "crosswalk" begin 
     rng = MersenneTwister(1)
 
     pomdp = OCPOMDP(ΔT = 0.5, p_birth = 0.3, max_peds = 1)
@@ -29,7 +29,7 @@ end
 
     hr = HistoryRecorder(rng=rng, max_steps = 100)
     s0 = initialstate(pomdp, rng)
-    initial_observation = generate_o(pomdp, s0, rng)
+    initial_observation = initialobs(pomdp, s0, rng)
     initial_obs_vec = fill(initial_observation, 4)
     hist = simulate(hr, pomdp, policy, up, initial_obs_vec, s0)
 

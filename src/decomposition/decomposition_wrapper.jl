@@ -8,14 +8,14 @@ const KMarkovDecBelief = Vector{Tuple{Symbol, Array{Float64, 2}}}
 
 function initialize_dec_belief(up::KMarkovDecUpdater, pomdp::UrbanPOMDP, rng::AbstractRNG)
     s = initialstate(pomdp, rng)
-    o = generate_o(pomdp, s, rng)
+    o = initialobs(pomdp, s, rng)
     inputs = decompose_input(pomdp, o)
     init_b = initialize_dec_belief(up, inputs)
     return init_b
 end
 
 function initialize_dec_belief(up::KMarkovDecUpdater, pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
-    o = generate_o(pomdp, s, rng)
+    o = initialobs(pomdp, s, rng)
     inputs = decompose_input(pomdp, o)
     init_b = initialize_dec_belief(up, inputs)
     return init_b
@@ -56,12 +56,12 @@ const PreviousObsDecBelief = Vector{Tuple{Symbol, Array{Float64, 1}}}
 
 function initialize_dec_belief(up::PreviousObsDecUpdater, pomdp::UrbanPOMDP, rng::AbstractRNG)
     s = initialstate(pomdp, rng)
-    o = generate_o(pomdp, s, rng)
+    o = initialobs(pomdp, s, rng)
     inputs = decompose_input(pomdp, o)
     return inputs
 end
 function initialize_dec_belief(up::PreviousObsDecUpdater, pomdp::UrbanPOMDP, s::UrbanState, rng::AbstractRNG)
-    o = generate_o(pomdp, s, rng)
+    o = initialobs(pomdp, s, rng)
     inputs = decompose_input(pomdp, o)
     return inputs
 end

@@ -208,8 +208,8 @@ It only works for straight lanes!
 """
 function lane_to_segment(lane::Lane, roadway::Roadway)
     # only works for straight lanes
-    lane_a = lane.curve[1].pos #get_posG(Frenet(lane, 0.), roadway)
-    lane_b = lane.curve[end].pos #get_posG(Frenet(lane, get_end(lane)), roadway)
+    lane_a = lane.curve[1].pos #posg(Frenet(lane, 0.), roadway)
+    lane_b = lane.curve[end].pos #posg(Frenet(lane, get_end(lane)), roadway)
     return LineSegment(lane_a, lane_b)
 end
 

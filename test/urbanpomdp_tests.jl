@@ -6,7 +6,7 @@ using BeliefUpdaters
 using RLInterface
 using Random 
 
-@testset begin "Urban POMDP"
+@testset  "Urban POMDP" begin
     rng = MersenneTwister(1)
 
     params = UrbanParams(nlanes_main=1,
@@ -31,7 +31,7 @@ using Random
 
     hr = HistoryRecorder(rng=rng, max_steps = 100)
     s0 = initialstate(pomdp, rng)
-    initial_observation = generate_o(pomdp, s0, rng)
+    initial_observation = initialobs(pomdp, s0, rng)
     initial_obs_vec = fill(initial_observation, 4)
     hist = simulate(hr, pomdp, policy, up, initial_obs_vec, s0)
 

@@ -87,7 +87,7 @@ Create a new pedestrian entity at its initial state
 """
 function initial_pedestrian(scene::Scene, env::CrosswalkEnv, rng::AbstractRNG)
     # lateral position
-    d_lat = Uniform(env.params.roadway_length - env.params.crosswalk_width + 2, env.params.roadway_length + env.params.crosswalk_width-1)
+    d_lat = Distributions.Uniform(env.params.roadway_length - env.params.crosswalk_width + 2, env.params.roadway_length + env.params.crosswalk_width-1)
     x0 = 0.5*rand(rng, d_lat)
     # x0 =  0.5*env.params.roadway_length
 
@@ -98,7 +98,7 @@ function initial_pedestrian(scene::Scene, env::CrosswalkEnv, rng::AbstractRNG)
     θ = π/2
 
     #velocity
-    v0 = rand(rng, Uniform(0., env.params.ped_max_speed))
+    v0 = rand(rng, Distributions.Uniform(0., env.params.ped_max_speed))
     cw_roadway = Roadway([RoadSegment(2, [env.crosswalk])]);
     ped_initialstate = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, cw_roadway, v0);
     # ped_initialstate = VehicleState(VecSE2(x0, y0, θ), env.crosswalk, env.roadway, v0)
@@ -120,7 +120,7 @@ function initial_scene(models::Dict{Int64, DriverModel}, env::CrosswalkEnv, conf
     b0 = initialstate_distribution(pomdp, ego)
     for i = 1:n_ped
         ped_state = rand(config.rng, b0).ped
-        d_lat = Uniform(env.params.roadway_length - env.params.crosswalk_width + 2, env.params.roadway_length + env.params.crosswalk_width-1)
+        d_lat = Distributions.Uniform(env.params.roadway_length - env.params.crosswalk_width + 2, env.params.roadway_length + env.params.crosswalk_width-1)
         x0 = 0.5*rand(config.rng, d_lat)
         y0 = ped_state.posG.y
         cw_roadway = Roadway([RoadSegment(2, [env.crosswalk])])
