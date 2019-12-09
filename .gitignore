@@ -4,3 +4,8 @@ __pycache__/
 log/
 *.jld
 docs/build
+*.tex
+*.pdf
+*.pomdpx
+*.policy
+Manifest.toml
