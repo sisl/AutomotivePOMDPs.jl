@@ -10,7 +10,7 @@ const DecObs = Dict{Int64, SingleOCObs}
 Return the value of the belief according to the QMDP policy
 """
 function POMDPs.value(policy::AlphaVectorPolicy, b::SparseCat)
-    val = zeros(n_actions(policy.pomdp))
+    val = zeros(length(actions(policy.pomdp)))
     for (i,s) in enumerate(b.vals)
         val += value(policy, s)*b.probs[i]
         # si = stateindex(pomdp, s)
@@ -45,7 +45,7 @@ return the value of a given state using grid interpolations
 function POMDPs.value(policy::AlphaVectorPolicy, s::SingleOCState)
     # println("COUCOU")
     pomdp = policy.pomdp
-    val = zeros(n_actions(pomdp))
+    val = zeros(length(actions(pomdp)))
 
     ego_grid = RectangleGrid(get_X_grid(pomdp), get_V_grid(pomdp)) #XXX must not allSingleOCate the grid at each function call, find better implementation
     ego_indices, ego_weights = interpolants(ego_grid, [s.ego.posG.x, s.ego.v])
@@ -72,7 +72,8 @@ function POMDPs.value(policy::AlphaVectorPolicy, s::SingleOCState)
             state = SingleOCState(collision_checker(ego, ped, pomdp.ego_type, pomdp.ped_type),ego,ped)
             si = stateindex(pomdp, state)
             sum_weight += ego_weights[i]*ped_weights[j]
-            val += [a[si] for a in policy.alphas]*ego_weights[i]*ped_weights[j]
+            @show size([a[si] for a in policy.alphas]*ego_weights[i]*ped_weights[j])
+            val .+= [a[si] for a in policy.alphas]*ego_weights[i]*ped_weights[j]
         end
     end
     val /= sum_weight

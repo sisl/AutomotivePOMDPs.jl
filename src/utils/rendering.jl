@@ -54,25 +54,3 @@ function animate_scenes(scenes::Vector{Scene},
     end
     return duration, fps, render_rec
 end
-
-mutable struct IDOverlay <: SceneOverlay
-    verbosity::Int
-    color::Colorant
-    font_size::Int
-
-    function IDOverlay(verbosity::Int=1;
-        color::Colorant=colorant"white",
-        font_size::Int=20,
-        )
-
-        new(verbosity, color,font_size)
-    end
-end
-
-function AutoViz.render!(rendermodel::RenderModel, overlay::IDOverlay, scene::Scene, env::E) where E
-    font_size = overlay.font_size
-    for veh in scene
-        add_instruction!(rendermodel, render_text, ("$(veh.id)", veh.state.posG.x, veh.state.posG.y, font_size, overlay.color), incameraframe=true)
-    end
-    return rendermodel
-end

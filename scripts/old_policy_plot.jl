@@ -8,7 +8,6 @@ using AutomotivePOMDPs: xv_to_state, yv_to_state
 using POMDPModelTools
 using LinearAlgebra
 using ProgressMeter
-using Profile
 
 
 struct SARSOPPolicy{P<:Policy} 
@@ -21,7 +20,7 @@ end
 
 
 function POMDPs.value(policy::QMDPPolicy, b::SparseCat)
-    val = zeros(n_actions(policy.pomdp))
+    val = zeros(length(actions(policy.pomdp)))
     for (i,s) in enumerate(b.vals)
         val += value(policy, s)*b.p[i]
     end
@@ -33,7 +32,7 @@ function POMDPs.value(p::SARSOPPolicy, b::SparseCat)
     pomdp = policy.pomdp
     vectors = policy.alphas
     n = length(vectors)
-    utilities = zeros(n_actions(pomdp), n)
+    utilities = zeros(length(actions(pomdp)), n)
     for i=1:n
         act = actionindex(pomdp, policy.action_map[i])
         for (j, s) in enumerate(b.vals)
@@ -50,7 +49,7 @@ end
 function POMDPs.value(p::QMDPPolicy, s::SingleOCState)
     policy = p.p
     pomdp = policy.pomdp
-    val = zeros(n_actions(pomdp))
+    val = zeros(length(actions(pomdp)))
     alphas = hcat(policy.alphas...)
 
     ego_grid = RectangleGrid(get_X_grid(pomdp), get_V_grid(pomdp)) #XXX must not allocate the grid at each function call, find better implementation
@@ -100,7 +99,7 @@ end
 
 function get_grid_data(p::QMDPPolicy, grid::RectangleGrid, pomdp::SingleOCPOMDP, v_ego::Float64, v_ped::Float64)
     policy = p.p
-    values = zeros(n_actions(pomdp),length(grid))
+    values = zeros(length(actions(pomdp)),length(grid))
     alphas = hcat(policy.alphas...)
     for i=1:length(grid)
         x, y = ind2x(grid, i)
@@ -148,7 +147,7 @@ function compute_acts(pomdp::SingleOCPOMDP, p::QMDPPolicy, sig::Float64 = 0.01, 
     xrange = LinRange(X[1], X[end], n_pts)
     yrange = LinRange(Y[1], Y[end], n_pts)
     action_map = zeros(n_pts, n_pts)
-    n_acts = n_actions(pomdp)
+    n_acts = length(actions(pomdp))
     pomdp_amap = ordered_actions(pomdp)
 
     for (i,x) in enumerate(xrange)
@@ -179,7 +178,7 @@ function compute_acts(pomdp::SingleOCPOMDP, policy::SARSOPPolicy, sig::Float64 =
     xrange = LinRange(X[1], X[end], n_pts)
     yrange = LinRange(Y[1], Y[end], n_pts)
     action_map = zeros(n_pts, n_pts)
-    n_acts = n_actions(pomdp)
+    n_acts = length(actions(pomdp))
     pomdp_amap = ordered_actions(pomdp)
 
     @showprogress for (i,x) in enumerate(xrange)
@@ -205,5 +204,31 @@ function policy_plot(pomdp::SingleOCPOMDP, policy::Union{QMDPPolicy, SARSOPPolic
     xlabel = "Ego car position on the road",
     ylabel = "Pedestrian position along the crosswalk",
     title = "Policy Plot for a fixed ego velocity at $v_ego m/s and fixed pedestrian speed at $v_ped m/s")
+    return ax
+end
+
+function value_plot(pomdp::SingleOCPOMDP, policy::SARSOPPolicy;
+                    sig::Float64 = 0.01, v_ego::Float64 = 5., v_ped::Float64 = 1., n_bins::Int64 = 20, n_pts::Int64 = 100)
+    X, Y = get_XY_grid(pomdp)
+    X = X[1:21]
+    grid = RectangleGrid(X, Y)
+
+    xrange = LinRange(X[1], X[end], n_pts)
+    yrange = LinRange(Y[1], Y[end], n_pts)
+    vals = zeros(n_pts, n_pts)
+    @showprogress for (i,x) in enumerate(xrange)
+        for (j,y) in enumerate(yrange)
+            belief = get_belief(x, y, sig, n_bins, v_ego, v_ped)
+            vals[i,j] = maximum(value(policy, belief))
+        end
+    end
+    vals = vals'
+    vals = vals[end:-1:1,1:end]
+
+    cmap = ColorMaps.RGBArrayMap(colormap("RdBu"))
+    ax = Axis(Plots.Image(vals, (X[1], X[end]), (Y[1], Y[end]), colormap = cmap),
+    xlabel = "Ego car position on the road",
+    ylabel = "Pedestrian position along the crosswalk",
+    title = "Probability of success for a fixed ego velocity at $v_ego m/s and fixed pedestrian speed at $v_ped m/s")
     return ax
 end

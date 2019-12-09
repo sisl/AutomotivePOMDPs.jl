@@ -20,6 +20,7 @@ using Reel
 using Random
 using DataStructures
 using LinearAlgebra
+import Cairo
 
 """
 Abstract type to define driving environment with occlusion 
@@ -32,8 +33,7 @@ export
         # for rendering
         animate_hist,
         animate_record,
-        animate_scenes,
-        IDOverlay,
+        animate_scenes
 
         # helpers
         get_end,
