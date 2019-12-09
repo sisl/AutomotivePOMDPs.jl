@@ -33,7 +33,7 @@ export
         # for rendering
         animate_hist,
         animate_record,
-        animate_scenes
+        animate_scenes,
 
         # helpers
         get_end,
