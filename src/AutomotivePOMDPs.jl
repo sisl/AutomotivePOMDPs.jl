@@ -20,6 +20,8 @@ using Reel
 using Random
 using DataStructures
 using LinearAlgebra
+using LightXML
+using Rsvg
 import Cairo
 
 """

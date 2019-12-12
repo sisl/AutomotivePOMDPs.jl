@@ -72,6 +72,9 @@ function POMDPs.gen(::DDNNode{:sp}, pomdp::UrbanPOMDP, s::UrbanState, a::UrbanAc
     return sp
 end
 
+# add the info node to the DDN
+POMDPs.DDNStructure(::Type{UrbanPOMDP}) = pomdp_ddn() |> add_infonode
+
 function POMDPModelTools.gen(::DDNOut{(:sp, :o, :r, :info)}, p::UrbanPOMDP, s, a, rng::AbstractRNG)
     return gen(DDNOut(:sp, :o, :r), p, s, a, rng)..., deepcopy(p.models)
 end
