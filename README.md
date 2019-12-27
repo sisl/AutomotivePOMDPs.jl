@@ -10,20 +10,16 @@ This repository consists of different driving scenarios formulated as POMDPs. It
 
 ## Installation
 
-To install this package and its dependency run the following in the julia REPL:
-```julia
+To install this package, first add the SISL registry and the JuliaPOMDP registry such that all dependencies are automatically installed. 
+You can run the following in the julia REPL:
+```julia 
 using Pkg
-Pkg.add(PackageSpec(url="https://github.com/sisl/Vec.jl"))
-Pkg.add(PackageSpec(url="https://github.com/sisl/Records.jl"))
-Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveDrivingModels.jl"))
-Pkg.add(PackageSpec(url="https://github.com/sisl/AutoViz.jl"))
-Pkg.add(PackageSpec(url="https://github.com/sisl/AutoUrban.jl"))
-Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotiveSensors.jl"))
 Pkg.add("POMDPs")
 using POMDPs
 POMDPs.add_registry()
-Pkg.add(PackageSpec(url="https://github.com/sisl/AutomotivePOMDPs.jl"))
+Pkg.Registry.add("https://github.com/sisl/Registry")
 ```
+
 ## Code to run
 
 Run `docs/Urban POMDP tutoial.ipynb` for a visualization of the simulation environment.
@@ -42,16 +38,6 @@ use the function `fieldnames` if documentation is not yet written.
 
 Video of the `UrbanPOMDP` scenario:
 ![urban_lidar](urbanpomdp.gif)
-
-## Sensor Models
-
-- Gaussian noise with ray tracing occlusion checker
-- Simple Lidar
-
-## TODOs
-
-- [ ] Move geometry and road topology to AutoUrban
-- [ ] Move helpers function to AutomotiveDrivingModels.jl
 
 ## Dependencies
 
