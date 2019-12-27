@@ -1,9 +1,9 @@
 AutoViz._colortheme["CROSSWALK"] = colorant"white"
   
 # additional method to render the crosswalk environment with obstacles
-function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
+function AutoViz.add_renderable!(rendermodel::RenderModel, env::CrosswalkEnv)
     roadway = gen_straight_roadway(2, env.params.roadway_length)
-    AutoViz.render!(rendermodel, roadway)
+    AutoViz.add_renderable!(rendermodel, roadway)
 
     curve = env.crosswalk.curve
     n = length(curve)
@@ -28,10 +28,10 @@ function AutoViz.render!(rendermodel::RenderModel, env::CrosswalkEnv)
 end
 
 
-function AutoViz.render!(rendermodel::RenderModel, env::UrbanEnv)
+function AutoViz.add_renderable!(rendermodel::RenderModel, env::UrbanEnv)
     # regular roadway
     roadway = Roadway(env.roadway.segments[1:end-length(env.crosswalks)])
-    AutoViz.render!(rendermodel, roadway)
+    AutoViz.add_renderable!(rendermodel, roadway)
 
     for (i, cw) in enumerate(env.crosswalks)
         # crosswalk
