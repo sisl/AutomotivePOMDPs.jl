@@ -1,7 +1,7 @@
 name = "AutomotivePOMDPs"
 uuid = "dca8afc0-c686-11e8-0934-712707da73aa"
 repo = "https://github.com/sisl/AutomotivePOMDPs.jl"
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 AutoUrban = "1385418a-9289-5a49-ab93-843b508de4cb"
