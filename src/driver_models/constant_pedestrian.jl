@@ -27,7 +27,7 @@ end
 end
 
 AutomotiveDrivingModels.get_name(model::ConstantPedestrian) = "ConstantPedestrian"
-Base.rand(model::ConstantPedestrian) = model.a
+Base.rand(rng::AbstractRNG, model::ConstantPedestrian) = model.a
 Distributions.pdf(model::ConstantPedestrian, a::ConstantSpeedDawdling) = 1/3*pdf(Normal(0., model.dawdling_amp))
 AutomotiveDrivingModels.reset_hidden_state!(model::ConstantPedestrian) = model
 
